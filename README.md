@@ -1,19 +1,19 @@
-# [Nome do Projeto]
+# Projeto Back-End — Bulbe Energia
 
 > Uma ou duas linhas descrevendo o que o sistema faz e para qual empresa parceira foi desenvolvido.
 
 ## Sobre o projeto
 
-- **Empresa parceira:** [nome da empresa]
+- **Empresa parceira:** Bulbe Energia
 - **Problema que o projeto resolve:** [descrição breve do contexto e da demanda real da empresa]
-- **Continuidade:** este repositório é o backend construído no Projeto Ciência de Dados II, consumido pelo frontend entregue no Projeto Ciência de Dados I. Repositório do frontend: [link]
+- **Continuidade:** este repositório é o backend construído no Projeto Ciência de Dados II, consumido pelo frontend entregue no Projeto Ciência de Dados I. Repositório do frontend: [link](https://github.com/gabrielmercedo/Bulbe-Squad-cleanergy)
 
 ## Equipe
 
 | Nome | Matrícula | Frente principal |
 |---|---|---|
 | [nome do aluno] | [matrícula] | API / Banco de Dados / Autenticação / Testes |
-| [nome do aluno] | [matrícula] | |
+| Luiz Felipe Luppi Mendonça | 202502876254 | |
 | [nome do aluno] | [matrícula] | |
 
 ## Tecnologias utilizadas
