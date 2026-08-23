@@ -13,8 +13,8 @@
 | Nome | Matrícula | Frente principal |
 |---|---|---|
 | [nome do aluno] | [matrícula] | API / Banco de Dados / Autenticação / Testes |
-| Luiz Felipe Luppi Mendonça | 202502876254 | |
-| [nome do aluno] | [matrícula] | |
+| Luiz Felipe Luppi Mendonça | 2025 0287 6254 | |
+| Samuel Gandra Paranhos | 2025 0713 9975 | |
 
 ## Tecnologias utilizadas
 
