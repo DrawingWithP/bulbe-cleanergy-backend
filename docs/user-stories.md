@@ -8,7 +8,7 @@
 | US-04 | Como aplicação frontend, quero buscar dicas por meio da API, para que elas possam ser exibidas ao usuário | GET /v1/dicas | Baixa | 1 |
 | US-05 | Como aplicação frontend, quero buscar dados de um cliente específico, para que eu possa mostrá-los ao cliente | GET /v1/clientes/{id} | Média | 3 |
 | US-06 | Como aplicação frontend, quero buscar dados de uma adesão específica, para poder retomar uma adesão em andamento | GET /v1/adesoes/{id} | Média | 5 |
-| US-07 | Como aplicação frontend, quero atualizar dados de uma adesão específica, para dar continuidade à adesão em andamento | POST /v1/adesoes/{id} | Média | 3 |
+| US-07 | Como aplicação frontend, quero atualizar dados de uma adesão específica, para dar continuidade à adesão em andamento | PATCH /v1/adesoes/{id} | Média | 3 |
 | US-08 | Como aplicação frontend, quero deletar dados de uma adesão em andamento específica, caso o usuário decida cancelar uma adesão incompleta | DELETE /v1/adesoes/{id} | Baixa | 2 |
 | US-09 | Como aplicação frontend, quero enviar o CPF informado pelo usuário para a API, para que ela verifique se ele já é cliente e dispare o código | POST /v1/primeiro-acesso/verificacoes | Média | 5 |
 | US-10 | Como aplicação frontend, quero enviar um código para a API, para que ela confirme o código e habilite o acesso do cliente ao app | POST /v1/primeiro-acesso/confirmacoes | Média | 8 |
