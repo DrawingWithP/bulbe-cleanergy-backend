@@ -1,0 +1,84 @@
+@startuml
+
+title Diagrama de Casos de Uso - Bulbe Energia
+
+left to right direction
+
+actor Visitante
+actor "Cliente Bulbe" as Cliente
+actor Administrador
+
+rectangle "Sistema Bulbe Energia" {
+
+    usecase "Simular economia" as UC1
+    usecase "Consultar parceiros" as UC2
+    usecase "Consultar dicas" as UC3
+
+    usecase "Iniciar adesão" as UC4
+    usecase "Consultar adesão" as UC5
+    usecase "Atualizar adesão" as UC6
+    usecase "Cancelar adesão" as UC7
+
+    usecase "Realizar primeiro acesso" as UC8
+    usecase "Verificar CPF" as UC9
+    usecase "Confirmar código de acesso" as UC10
+
+    usecase "Consultar dados pessoais" as UC11
+    usecase "Atualizar dados pessoais" as UC12
+    usecase "Acompanhar ativação" as UC13
+
+    usecase "Consultar indicações" as UC14
+    usecase "Cadastrar indicação" as UC15
+    usecase "Cancelar indicação" as UC16
+
+    usecase "Acessar Clube Bulbe" as UC17
+    usecase "Consultar histórico de cartas" as UC18
+    usecase "Visualizar carta" as UC19
+    usecase "Abrir carta" as UC20
+
+    usecase "Consultar cupons" as UC21
+    usecase "Visualizar cupom" as UC22
+    usecase "Atualizar situação do cupom" as UC23
+
+    usecase "Gerenciar clientes" as UC24
+    usecase "Consultar adesões" as UC25
+    usecase "Atualizar etapa de ativação" as UC26
+    usecase "Gerenciar parceiros" as UC27
+    usecase "Gerenciar dicas" as UC28
+}
+
+Visitante --> UC1
+Visitante --> UC2
+Visitante --> UC3
+Visitante --> UC4
+Visitante --> UC5
+Visitante --> UC6
+Visitante --> UC7
+Visitante --> UC8
+
+UC8 .> UC9 : <<include>>
+UC8 .> UC10 : <<include>>
+
+Cliente --> UC2
+Cliente --> UC3
+Cliente --> UC11
+Cliente --> UC12
+Cliente --> UC13
+Cliente --> UC14
+Cliente --> UC15
+Cliente --> UC16
+Cliente --> UC17
+Cliente --> UC18
+Cliente --> UC19
+Cliente --> UC20
+Cliente --> UC21
+Cliente --> UC22
+Cliente --> UC23
+
+Administrador --> UC24
+Administrador --> UC25
+Administrador --> UC26
+Administrador --> UC27
+Administrador --> UC28
+
+@enduml
