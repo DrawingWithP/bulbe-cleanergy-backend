@@ -23,14 +23,13 @@
 | US-19 | Como aplicação frontend, quero consultar o histórico de cartas do cliente, para que possam ser exibidos na seção "Histórico de Cartas" | GET /v1/clientes/{id}/cartas | Média | 3 |
 | US-20 | Como aplicação frontend, quero consultar cartas do Clube Bulbe, para que possam ser exibidos ao cliente na tela | GET /v1/cartas/{id} | Média | 3 |
 | US-21 | Como aplicação frontend, quero notificar a API de que o usuário abriu uma carta, para que ele possa receber a recompensa | POST /v1/cartas/{id}/abertura | Alta | 3 |
-| US-22 | Como aplicação frontend, quero consultar os cupons que o cliente possui, para que possam ser exibidos ao cliente na tela | GET /v1/clientes/{id}/cupons | Média | 3 |
-| US-23 | Como aplicação frontend, quero consultar dados de um cupom específico, para que possam ser exibidos ao cliente na tela | GET /v1/cupons/{id} | Média | 2 |
-| US-24 | Como aplicação frontend, quero atualizar dados de um cupom específico, para que o sistema saiba se um cupom foi salvo ou usado | PATCH /v1/cupons/{id} | Média | 1 |
-| US-25 | Como aplicação frontend, quero cadastrar um novo parceiro do Clube Bulbe, para que ele possa ser exibido no app | POST /v1/parceiros | Baixa | 1 |
-| US-26 | Como aplicação frontend, quero consultar dados de um parceiro do Clube Bulbe específico, para que possam ser exibidos ao cliente na tela | GET /v1/parceiros/{id} | Média | 2 |
-| US-27 | Como aplicação frontend, quero excluir um parceiro do Clube Bulbe, para que possam ser removidos os parceiros caso necessário | DELETE /v1/parceiros/{id} | Baixa | 1 |
-| US-28 | Como aplicação frontend, quero cadastrar novas dicas no sistema, para que possam ser exibidas ao cliente na tela | POST /v1/dicas | Baixa | 1 |
-| US-29 | Como aplicação frontend, quero consultar dados de uma dica específica, para que possam ser exibidos ao cliente na tela | GET /v1/dicas/{id} | Média | 1 |
-| US-30 | Como aplicação frontend, quero atualizar dados de uma dica específica, para que possam ser exibidos ao cliente na tela | PUT /v1/dicas/{id} | Baixa | 1 |
-| US-31 | Como aplicação frontend, quero remover uma dica específica do sistema, para que ela não seja exibida no carrossel | DELETE /v1/dicas/{id} | Baixa | 1 |
-| US-32 | Como aplicação frontend, quero criar um novo cliente, para que o processo de adesão possa ser concluído | POST /v1/clientes | Alta | 8 |
+| US-22 | Como aplicação frontend, quero consultar dados de um cupom específico, para que possam ser exibidos ao cliente na tela | GET /v1/cupons/{id} | Média | 2 |
+| US-23 | Como aplicação frontend, quero atualizar dados de um cupom específico, para que o sistema saiba se um cupom foi salvo ou usado | PATCH /v1/cupons/{id} | Média | 1 |
+| US-24 | Como aplicação frontend, quero cadastrar um novo parceiro do Clube Bulbe, para que ele possa ser exibido no app | POST /v1/parceiros | Baixa | 1 |
+| US-25 | Como aplicação frontend, quero consultar dados de um parceiro do Clube Bulbe específico, para que possam ser exibidos ao cliente na tela | GET /v1/parceiros/{id} | Média | 2 |
+| US-26 | Como aplicação frontend, quero excluir um parceiro do Clube Bulbe, para que possam ser removidos os parceiros caso necessário | DELETE /v1/parceiros/{id} | Baixa | 1 |
+| US-27 | Como aplicação frontend, quero cadastrar novas dicas no sistema, para que possam ser exibidas ao cliente na tela | POST /v1/dicas | Baixa | 1 |
+| US-28 | Como aplicação frontend, quero consultar dados de uma dica específica, para que possam ser exibidos ao cliente na tela | GET /v1/dicas/{id} | Média | 1 |
+| US-29 | Como aplicação frontend, quero atualizar dados de uma dica específica, para que possam ser exibidos ao cliente na tela | PUT /v1/dicas/{id} | Baixa | 1 |
+| US-30 | Como aplicação frontend, quero remover uma dica específica do sistema, para que ela não seja exibida no carrossel | DELETE /v1/dicas/{id} | Baixa | 1 |
+| US-31 | Como aplicação frontend, quero criar um novo cliente, para que o processo de adesão possa ser concluído | POST /v1/clientes | Alta | 8 |
