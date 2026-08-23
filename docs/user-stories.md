@@ -33,3 +33,7 @@
 | US-29 | Como aplicação frontend, quero atualizar dados de uma dica específica, para que possam ser exibidos ao cliente na tela | PUT /v1/dicas/{id} | Baixa | 1 |
 | US-30 | Como aplicação frontend, quero remover uma dica específica do sistema, para que ela não seja exibida no carrossel | DELETE /v1/dicas/{id} | Baixa | 1 |
 | US-31 | Como aplicação frontend, quero criar um novo cliente, para que o processo de adesão possa ser concluído | POST /v1/clientes | Alta | 8 |
+| US-32	| Como aplicação frontend, quero listar as dicas de economia cadastradas via API, para que possam ser exibidas no carrossel e na seção de dicas do aplicativo | GET /v1/dicas |	Média |	2
+| US-33	| Como aplicação frontend, quero listar os parceiros do Clube Bulbe via API, para que possam ser exibidos na vitrine de benefícios do aplicativo | 	GET /v1/parceiros |	Média |	2
+| US-34	| Como aplicação frontend, quero atualizar os dados cadastrais do cliente via API, para que as informações de perfil permaneçam atualizadas no sistema | PUT /v1/clientes/{id}	| Média |	3
+| US-35	| Como aplicação frontend, quero consultar as solicitações de adesão via API, para que seja possível listar e acompanhar as entradas no sistema | 	GET /v1/adesoes |	Baixa | 2
