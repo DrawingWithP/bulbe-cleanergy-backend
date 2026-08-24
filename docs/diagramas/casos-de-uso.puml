@@ -47,38 +47,38 @@ rectangle "Sistema Bulbe Energia" {
     usecase "Gerenciar dicas" as UC28
 }
 
-Visitante --> UC1
-Visitante --> UC2
-Visitante --> UC3
-Visitante --> UC4
-Visitante --> UC5
-Visitante --> UC6
-Visitante --> UC7
-Visitante --> UC8
+Visitante → UC1
+Visitante → UC2
+Visitante → UC3
+Visitante → UC4
+Visitante → UC5
+Visitante → UC6
+Visitante → UC7
+Visitante → UC8
 
 UC8 .> UC9 : <<include>>
 UC8 .> UC10 : <<include>>
 
-Cliente --> UC2
-Cliente --> UC3
-Cliente --> UC11
-Cliente --> UC12
-Cliente --> UC13
-Cliente --> UC14
-Cliente --> UC15
-Cliente --> UC16
-Cliente --> UC17
-Cliente --> UC18
-Cliente --> UC19
-Cliente --> UC20
-Cliente --> UC21
-Cliente --> UC22
-Cliente --> UC23
+Cliente → UC2
+Cliente → UC3
+Cliente → UC11
+Cliente → UC12
+Cliente → UC13
+Cliente → UC14
+Cliente → UC15
+Cliente → UC16
+Cliente → UC17
+Cliente → UC18
+Cliente → UC19
+Cliente → UC20
+Cliente → UC21
+Cliente → UC22
+Cliente → UC23
 
-Administrador --> UC24
-Administrador --> UC25
-Administrador --> UC26
-Administrador --> UC27
-Administrador --> UC28
+Administrador → UC24
+Administrador → UC25
+Administrador → UC26
+Administrador → UC27
+Administrador → UC28
 
 @enduml
