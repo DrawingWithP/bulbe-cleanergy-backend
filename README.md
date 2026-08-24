@@ -15,6 +15,10 @@
 | [nome do aluno] | [matrícula] | API / Banco de Dados / Autenticação / Testes |
 | Luiz Felipe Luppi Mendonça | 2025 0287 6254 | |
 | Samuel Gandra Paranhos | 2025 0713 9975 | |
+| João Victor Silva Lenza | 2025 0701 4218 | |
+| Gabriel Mercedo Faria | 2025 0701 4226 | |
+| Rafael Alcântara Brescia | 2025 0100 7431 | |
+| Rodrigo Rennò | | |
 
 ## Tecnologias utilizadas
 
