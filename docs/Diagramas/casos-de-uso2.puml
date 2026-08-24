@@ -1,0 +1,67 @@
+@startuml
+left to right direction
+
+' --- ATORES ---
+actor "Cliente / App Frontend\n(Ator Primário)" as Cliente
+
+actor "Sistema de Pagamentos\n& Faturamento" as Pagamentos
+actor "Serviço de Notificação\n& SMS / WhatsApp" as Notificacoes
+actor "Provedor de Identidade\n& Auth" as AuthProvider
+
+' --- SISTEMA / BOUNDARY ---
+rectangle "Sistema, API Bulbe Energia" {
+
+    ' Módulo 1: Autenticação & Primeiro Acesso
+    usecase "UC001 - Realizar Primeiro Acesso" as UC_PrimeiroAcesso
+    usecase "UC002 - Cadastrar Cliente" as UC_CadCliente
+    usecase "UC003 - Gerenciar Perfil do Cliente" as UC_PerfilCliente
+
+    ' Módulo 2: Adesão & Ativação
+    usecase "UC004 - Iniciar e Gerenciar Adesão" as UC_Adesao
+    usecase "UC005 - Acompanhar Ativação do Serviço" as UC_Ativacao
+    usecase "UC006 - Realizar Simulação de Economia" as UC_Simulacao
+
+    ' Módulo 3: Clube Bulbe, Cartas & Recompensas
+    usecase "UC007 - Consultar Cartas do Clube" as UC_Cartas
+    usecase "UC008 - Abrir Carta da Semana" as UC_AbrirCarta
+    usecase "UC009 - Gerenciar e Usar Cupons" as UC_Cupons
+
+    ' Módulo 4: Parcerias, Conteúdo & Engajamento
+    usecase "UC010 - Consultar Vitrine de Parceiros" as UC_Parceiros
+    usecase "UC011 - Consultar Dicas de Economia" as UC_Dicas
+    usecase "UC012 - Registrar Indicação de Amigos" as UC_Indicacoes
+
+    ' Casos de Uso Suporte / Internos
+    usecase "UC013 - Validar Código de Verificação" as UC_ValidarSMS
+    usecase "UC014 - Processar Recompensa do Clube" as UC_Recompensa
+}
+
+' --- RELAÇÕES COM ATOR PRIMÁRIO ---
+Cliente --> UC_PrimeiroAcesso
+Cliente --> UC_CadCliente
+Cliente --> UC_PerfilCliente
+Cliente --> UC_Adesao
+Cliente --> UC_Ativacao
+Cliente --> UC_Simulacao
+Cliente --> UC_Cartas
+Cliente --> UC_Cupons
+Cliente --> UC_Parceiros
+Cliente --> UC_Dicas
+Cliente --> UC_Indicacoes
+
+' --- RELAÇÕES COM ATORES SECUNDÁRIOS ---
+UC_PrimeiroAcesso --> Notificacoes
+UC_PrimeiroAcesso --> AuthProvider
+UC_Adesao --> Pagamentos
+UC_Cupons --> Pagamentos
+
+' --- INCLUSÕES (<<include>>) ---
+UC_PrimeiroAcesso .> UC_ValidarSMS : <<include>>
+UC_PerfilCliente .> AuthProvider : <<include>>
+UC_Adesao .> UC_CadCliente : <<include>>
+
+' --- EXTENSÕES (<<extend>>) ---
+UC_AbrirCarta .> UC_Cartas : <<extend>>
+UC_Recompensa .> UC_AbrirCarta : <<extend>>
+UC_Cupons .> UC_Adesao : <<extend>>
+@enduml

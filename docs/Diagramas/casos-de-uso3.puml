@@ -1,0 +1,57 @@
+@startuml
+left to right direction
+
+actor "Cliente / App" as Cliente
+
+actor "API de Tarifas" as TariffAPI
+actor "Broker SMS" as BrokerSMS
+actor "Gateway de Pagamentos" as Pagamentos
+actor "Serviço de Notificação" as PushAPI
+
+rectangle "Sistema Bulbe Energia" {
+
+    ' 1. Simulação
+    usecase "Simular Economia" as UC_Simular
+    usecase "Consultar Tarifas" as UC_Tarifas
+
+    ' 2. Primeiro Acesso
+    usecase "Realizar Primeiro Acesso" as UC_Auth
+    usecase "Validar Código SMS" as UC_SMS
+
+    ' 3. Adesão e Ativação
+    usecase "Aderir ao Plano" as UC_Adesao
+    usecase "Acompanhar Ativação" as UC_Ativacao
+
+    ' 4. Clube Bulbe (Recompensas)
+    usecase "Abrir Carta Semanal" as UC_Carta
+    usecase "Usar Cupom" as UC_Cupom
+
+    ' 5. Engajamento e Conteúdo
+    usecase "Indicar Amigo" as UC_Indicar
+    usecase "Ver Dicas e Parceiros" as UC_Conteudo
+}
+
+' Jornada do Usuário (Top -> Down)
+Cliente --> UC_Simular
+Cliente --> UC_Auth
+Cliente --> UC_Adesao
+Cliente --> UC_Ativacao
+Cliente --> UC_Carta
+Cliente --> UC_Cupom
+Cliente --> UC_Indicar
+Cliente --> UC_Conteudo
+
+' Atores Secundários
+UC_Tarifas --> TariffAPI
+UC_SMS --> BrokerSMS
+UC_Adesao --> Pagamentos
+UC_Cupom --> Pagamentos
+UC_Indicar --> PushAPI
+
+' Relacionamentos
+UC_Simular .> UC_Tarifas : <<include>>
+UC_Auth .> UC_SMS : <<include>>
+UC_Cupom .> UC_Carta : <<extend>>
+
+@endl
+@enduml
