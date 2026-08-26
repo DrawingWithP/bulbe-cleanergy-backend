@@ -1,0 +1,45 @@
+@startuml
+
+title US-31 — Cadastrar novo cliente (POST /v1/clientes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+database "Banco de\nDados" as DB
+
+Cliente -> API : POST /v1/clientes\n{dados do cliente}
+
+activate API
+
+API -> API : validar dados obrigatórios\ne formatos
+
+alt dados inválidos
+
+  API --> Cliente : 400 Bad Request
+
+else dados válidos
+
+  API -> DB : SELECT cliente\nWHERE cpf = ? OR email = ?
+
+  DB --> API : resultado da consulta
+
+  alt CPF ou e-mail já cadastrado
+
+    API --> Cliente : 409 Conflict
+
+  else cliente não cadastrado
+
+    API -> DB : INSERT INTO clientes\n(dados do cliente)
+
+    DB --> API : cliente criado + id
+
+    API --> Cliente : 201 Created\n{dados do cliente}
+
+  end
+
+end
+
+deactivate API
+
+@enduml

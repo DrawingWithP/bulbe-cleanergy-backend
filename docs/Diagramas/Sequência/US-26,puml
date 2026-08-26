@@ -1,0 +1,35 @@
+@startuml
+
+title US-26 — Excluir parceiro do Clube Bulbe (DELETE /v1/parceiros/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+database "Banco de\nDados" as DB
+
+Cliente -> API : DELETE /v1/parceiros/{id}
+
+activate API
+
+API -> DB : SELECT parceiro\nWHERE id = ?
+
+DB --> API : resultado da consulta
+
+alt parceiro encontrado
+
+  API -> DB : DELETE FROM parceiros\nWHERE id = ?
+
+  DB --> API : parceiro excluído
+
+  API --> Cliente : 204 No Content
+
+else parceiro não encontrado
+
+  API --> Cliente : 404 Not Found
+
+end
+
+deactivate API
+
+@enduml

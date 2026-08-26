@@ -1,0 +1,37 @@
+@startuml
+
+title US-31 — Cadastrar novo cliente (POST /v1/clientes)
+
+start
+
+:Receber dados do cliente;
+
+:Validar dados obrigatórios\ne formatos;
+
+if (Dados válidos?) then (sim)
+
+  :Verificar CPF e e-mail\nno banco;
+
+  if (CPF ou e-mail já cadastrado?) then (sim)
+
+    :Retornar 409 Conflict;
+
+  else (não)
+
+    :Cadastrar novo cliente;
+
+    :Gerar id do cliente;
+
+    :Retornar 201 Created\ncom os dados do cliente;
+
+  endif
+
+else (não)
+
+  :Retornar 400 Bad Request;
+
+endif
+
+stop
+
+@enduml

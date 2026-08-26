@@ -1,0 +1,27 @@
+@startuml
+
+title US-27 — Cadastrar novas dicas no sistema (POST /v1/dicas)
+
+start
+
+:Receber dados da dica;
+
+:Validar dados obrigatórios\ne formatos;
+
+if (Dados válidos?) then (sim)
+
+  :Cadastrar nova dica\nno banco;
+
+  :Gerar id da dica;
+
+  :Retornar 201 Created\ncom os dados da dica;
+
+else (não)
+
+  :Retornar 400 Bad Request;
+
+endif
+
+stop
+
+@enduml

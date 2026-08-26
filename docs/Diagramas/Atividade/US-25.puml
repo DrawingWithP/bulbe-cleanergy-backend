@@ -1,0 +1,25 @@
+@startuml
+
+title US-25 — Consultar dados de um parceiro específico (GET /v1/parceiros/{id})
+
+start
+
+:Receber id do parceiro;
+
+:Consultar parceiro no banco;
+
+if (Parceiro existe?) then (sim)
+
+  :Montar dados do parceiro;
+
+  :Retornar 200 OK\ncom os dados do parceiro;
+
+else (não)
+
+  :Retornar 404 Not Found;
+
+endif
+
+stop
+
+@enduml
