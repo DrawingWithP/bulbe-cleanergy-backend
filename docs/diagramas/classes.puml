@@ -1,0 +1,42 @@
+@startuml
+class Usuario {
+    -cpf: String
+    -nome: String
+    -email: String
+    -celular: String
+    -cidade: String
+    -uf: String
+    +aderirAssinatura()
+}
+
+class Adesao {
+    -data: String
+    -cpf: String
+}
+
+Usuario "1" *-- "0..1" Adesao : possui
+
+class Indicacao {
+    -cpfIndicador: String
+    -cpfIndicado: String
+    -data: String
+}
+
+Usuario "1" *-- "*" Indicacao : possui
+
+class Cupom {
+    -parceiro: String
+    -validade: String
+    +usarCupom()
+}
+
+class Parceiro {
+    -nome: String
+}
+
+Cupom "*" --- "1" Parceiro : pertence
+
+class Dica {
+    -texto: String
+}
+@enduml
