@@ -1,0 +1,13 @@
+@startuml
+
+title US-28 - Consultar dados de uma dica específica (GET /v1/dicas/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+Cliente -> API : GET /v1/dicas/{id}
+
+API -> Cliente : Dica
+
+@enduml

@@ -1,0 +1,13 @@
+@startuml
+
+title US-24 - Cadastrar novo parceiro do Clube Bulbe (POST /v1/parceiros)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+Cliente -> API : POST /v1/parceiros
+
+API -> Cliente : 201
+
+@enduml

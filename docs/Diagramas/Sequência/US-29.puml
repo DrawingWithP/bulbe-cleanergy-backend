@@ -1,0 +1,13 @@
+@startuml
+
+title US-29 - Atualizar dados de uma dica (PUT /v1/dicas/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+Cliente -> API : PUT /v1/dicas/{id}
+
+API -> Cliente : 200
+
+@enduml

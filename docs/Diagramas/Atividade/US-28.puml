@@ -1,0 +1,17 @@
+@startuml
+
+title US-28 - Consultar dados de uma dica específica (GET /v1/dicas/{id})
+
+start
+:Fazer consulta;
+
+if (A dica existe?) then (sim) 
+    :Retornar a dica;
+    :Retornar 200;
+else (não) 
+    :Retornar 404;
+endif
+
+stop
+
+@enduml
