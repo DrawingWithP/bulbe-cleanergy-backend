@@ -1,0 +1,21 @@
+@startuml
+
+title US-28 - Atualizar dados de uma dica (PUT /v1/dicas/{id})
+
+start
+:Receber dica atualizada;
+
+if (A dica existe?) then (sim) 
+    if (Os dados são válidos?) then (sim)
+        :Atualizar dica;
+        :Retornar 200;
+    else (não)
+        :Retornar 400;
+    endif
+else (não) 
+    :Retornar 404;
+endif
+
+stop
+
+@enduml

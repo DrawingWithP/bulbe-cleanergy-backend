@@ -1,6 +1,6 @@
 @startuml
 
-title US-28 - Atualizar dados de uma dica (PUT /v1/dicas/{id})
+title US-29 - Atualizar dados de uma dica (PUT /v1/dicas/{id})
 
 participant "Cliente\n(App Bulbe)" as Cliente
 
