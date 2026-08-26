@@ -1,0 +1,33 @@
+@startuml
+
+title US-27 — Cadastrar novas dicas no sistema (POST /v1/dicas)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+database "Banco de\nDados" as DB
+
+Cliente -> API : POST /v1/dicas\n{dados da dica}
+
+activate API
+
+API -> API : validar dados obrigatórios\ne formatos
+
+alt dados inválidos
+
+  API --> Cliente : 400 Bad Request
+
+else dados válidos
+
+  API -> DB : INSERT INTO dicas\n(dados da dica)
+
+  DB --> API : dica criada + id
+
+  API --> Cliente : 201 Created\n{dados da dica}
+
+end
+
+deactivate API
+
+@enduml

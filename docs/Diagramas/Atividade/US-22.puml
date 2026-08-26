@@ -1,0 +1,18 @@
+@startuml
+
+start
+
+:Receber solicitação\nGET /v1/cupons/{id};
+
+:Consultar cupom no\nBanco de Dados;
+
+if (Cupom encontrado?) then (sim)
+    :Obter dados do cupom;
+    :Retornar 200 OK\ncom dados em JSON;
+else (não)
+    :Retornar 404 Not Found;
+endif
+
+stop
+
+@enduml

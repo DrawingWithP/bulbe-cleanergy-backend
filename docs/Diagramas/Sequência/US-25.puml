@@ -1,0 +1,31 @@
+@startuml
+
+title US-25 — Consultar dados de um parceiro específico (GET /v1/parceiros/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+
+participant "API\n(Bulbe Energia)" as API
+
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/parceiros/{id}
+
+activate API
+
+API -> DB : SELECT parceiro\nWHERE id = ?
+
+DB --> API : resultado da consulta
+
+alt parceiro encontrado
+
+  API --> Cliente : 200 OK\n{dados do parceiro}
+
+else parceiro não encontrado
+
+  API --> Cliente : 404 Not Found
+
+end
+
+deactivate API
+
+@enduml

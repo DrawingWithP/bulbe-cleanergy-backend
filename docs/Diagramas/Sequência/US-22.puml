@@ -1,0 +1,17 @@
+@startuml
+
+participant "Cliente\n(App Frontend)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/cupons/{id}
+API -> DB : SELECT cupom WHERE id = {id}
+DB --> API : dados do cupom
+
+alt cupom encontrado
+    API --> Cliente : 200 OK (JSON)
+else cupom não encontrado
+    API --> Cliente : 404 Not Found
+end
+
+@enduml

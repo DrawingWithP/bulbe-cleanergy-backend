@@ -1,0 +1,25 @@
+@startuml
+
+title US-26 — Excluir parceiro do Clube Bulbe (DELETE /v1/parceiros/{id})
+
+start
+
+:Receber id do parceiro;
+
+:Consultar parceiro no banco;
+
+if (Parceiro existe?) then (sim)
+
+  :Excluir parceiro;
+
+  :Retornar 204 No Content;
+
+else (não)
+
+  :Retornar 404 Not Found;
+
+endif
+
+stop
+
+@enduml

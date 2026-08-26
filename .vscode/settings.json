@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "*.puml": "plantuml",
+    "*.plantuml": "plantuml"
+  },
+  "plantuml.render": "PlantUMLServer",
+  "plantuml.server": "https://www.plantuml.com/plantuml",
+  "plantuml.exportFormat": "png",
+  "plantuml.exportOutDir": "out"
+}
