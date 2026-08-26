@@ -1,0 +1,15 @@
+@startuml
+participant "Cliente(App Bulbe)" as client
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+client -> API : POST/v1/adesões/
+API -> DB : INSERT usuario
+DB  --> API : ID / confirma
+
+alt criação sucedida
+  API --> client : 200 OK (JSON)
+else erro de criação
+  API --> client : 404 Not Found
+end
+@enduml

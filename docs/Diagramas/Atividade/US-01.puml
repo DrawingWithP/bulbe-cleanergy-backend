@@ -1,0 +1,11 @@
+@startuml
+start
+:Inserir dados de novo usuário;
+while (Dados corretos?) is (não)
+:Devolver mensagem de erro\n\nretry;
+endwhile (sim)
+
+:Jogar no DB;
+:Entrar para inserir dados conta de luz;
+stop
+@enduml
