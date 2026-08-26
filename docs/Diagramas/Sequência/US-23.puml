@@ -1,0 +1,26 @@
+@startuml
+participant "Cliente (Frontend)" as Cliente
+participant "API" as API
+database "Banco de Dados" as DB
+
+Cliente -> API: PATCH /v1/cupons/{id} (JSON com novo status)
+activate API
+
+API -> DB: SELECT * FROM cupons WHERE id = {id}
+activate DB
+DB --> API: Retorna dados do cupom (ou vazio)
+deactivate DB
+
+alt Cupom não encontrado
+    API --> Cliente: 404 Not Found
+else Cupom existe
+    API -> DB: UPDATE cupons SET status = novo_status WHERE id = {id}
+    activate DB
+    DB --> API: Confirmação de alteração
+    deactivate DB
+    
+    API --> Cliente: 200 OK (ou 204 No Content)
+end
+
+deactivate API
+@enduml

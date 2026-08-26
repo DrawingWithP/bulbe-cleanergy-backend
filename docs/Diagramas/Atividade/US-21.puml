@@ -1,0 +1,20 @@
+@startuml
+start
+:Usuário clica em abrir carta;
+:API recebe POST /v1/cartas/{id}/abertura;
+if (Carta existe e pertence ao usuário?) then (não)
+  :Retorna erro 404;
+  stop
+else (sim)
+  if (Carta já foi aberta?) then (sim)
+    :Retorna erro 400;
+    stop
+  else (não)
+    :Atualiza status da carta para "aberta";
+    :Gera e adiciona recompensa ao inventário;
+    :Retorna 200 OK com os dados da recompensa;
+    stop
+  endif
+endif
+@endumh
+@enduml

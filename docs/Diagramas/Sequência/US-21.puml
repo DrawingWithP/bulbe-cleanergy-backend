@@ -1,0 +1,13 @@
+@startuml
+participant "Cliente\n(App Frontend)" as client
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+client -> API : POST /v1/cartas/{id}/abertura\nCliente abre carta
+API -> DB : UPDATE carta\nStatus aberta
+API -> DB : INSERT/UPDATE\nCarta no inverntário
+DB --> API : ID/confirmação
+
+API --> client : 200 OK
+
+@enduml

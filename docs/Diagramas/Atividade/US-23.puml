@@ -1,0 +1,24 @@
+@startuml
+start
+:Cliente envia requisição PATCH /v1/cupons/{id};
+:API valida o formato do ID e do novo status;
+if (Os dados são válidos?) then (não)
+  :Retorna erro 400 Bad Request;
+  stop
+else (sim)
+  :API consulta o Banco de Dados pelo ID;
+  if (Cupom existe?) then (não)
+    :Retorna erro 404 Not Found;
+    stop
+  else (sim)
+    if (O status enviado é permitido/válido?) then (não)
+      :Retorna erro 422 Unprocessable Entity;
+      stop
+    else (sim)
+      :Executa UPDATE no Banco de Dados (atualiza o status);
+      :Retorna status 200 OK (ou 204 No Content);
+      stop
+    endif
+  endif
+endif
+@enduml
