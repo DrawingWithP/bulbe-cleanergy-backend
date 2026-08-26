@@ -1,0 +1,21 @@
+@startuml
+title US-33 — Listar parceiros do Clube Bulbe (GET /v1/parceiros)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/parceiros
+activate API
+
+API -> DB : SELECT * FROM parceiros\nWHERE ativo = true
+DB --> API : lista de parceiros ativos
+
+alt existem parceiros ativos
+  API --> Cliente : 200 OK (lista de parceiros)
+else nenhum parceiro encontrado
+  API --> Cliente : 200 OK ([])
+end
+
+deactivate API
+@enduml

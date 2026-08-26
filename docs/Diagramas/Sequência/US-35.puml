@@ -1,0 +1,21 @@
+@startuml
+title US-35 — Listar solicitações de adesão (GET /v1/adesoes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/adesoes
+activate API
+
+API -> DB : SELECT * FROM adesoes
+DB --> API : lista de adesões
+
+alt existem adesões
+  API --> Cliente : 200 OK (lista de adesões)
+else nenhuma adesão encontrada
+  API --> Cliente : 200 OK ([])
+end
+
+deactivate API
+@enduml

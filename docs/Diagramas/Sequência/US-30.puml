@@ -1,0 +1,24 @@
+@startuml
+title US-30 — Remover uma dica específica (DELETE /v1/dicas/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : DELETE /v1/dicas/{id}
+activate API
+
+API -> DB : SELECT dica WHERE id = ?
+DB --> API : dados da dica
+
+alt dica não encontrada
+  API --> Cliente : 404 Not Found
+else dica encontrada
+  API -> DB : DELETE dica WHERE id = ?
+  DB --> API : remoção realizada
+
+  API --> Cliente : 200 OK\n(mensagem de confirmação)\nou 204 No Content
+end
+
+deactivate API
+@enduml

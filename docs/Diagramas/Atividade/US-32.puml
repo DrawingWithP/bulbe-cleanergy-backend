@@ -1,0 +1,17 @@
+@startuml
+title US-32 — Listar dicas de economia (GET /v1/dicas)
+
+start
+:Receber requisição GET /v1/dicas;
+:Consultar dicas de economia no banco;
+
+if (Existem dicas cadastradas?) then (sim)
+  :Montar lista de dicas;
+else (não)
+  :Montar lista vazia [];
+endif
+
+:Retornar 200 OK\ncom a lista em JSON;
+
+stop
+@enduml
