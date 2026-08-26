@@ -1,0 +1,17 @@
+@startuml
+title US-33 — Listar parceiros do Clube Bulbe (GET /v1/parceiros)
+
+start
+:Receber requisição GET /v1/parceiros;
+:Consultar parceiros ativos no banco;
+
+if (Existem parceiros ativos?) then (sim)
+  :Montar lista de parceiros;
+else (não)
+  :Montar lista vazia [];
+endif
+
+:Retornar 200 OK\ncom a lista em JSON;
+
+stop
+@enduml

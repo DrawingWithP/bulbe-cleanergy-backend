@@ -1,0 +1,16 @@
+@startuml
+title US-30 — Remover uma dica específica (DELETE /v1/dicas/{id})
+
+start
+:Receber id da dica;
+:Consultar dica no banco;
+
+if (Dica existe?) then (sim)
+  :Remover dica do banco;
+  :Retornar 200 OK\ncom mensagem de confirmação\nou 204 No Content;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

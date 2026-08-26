@@ -1,0 +1,24 @@
+@startuml
+title US-34 — Atualizar dados do cliente (PUT /v1/clientes/{id})
+
+start
+:Receber id do cliente e dados atualizados;
+:Validar dados obrigatórios e formatos;
+
+if (Dados válidos?) then (sim)
+  :Consultar cliente no banco;
+
+  if (Cliente existe?) then (sim)
+    :Atualizar dados do cliente;
+    :Salvar alterações no banco;
+    :Retornar 200 OK\ncom os dados atualizados;
+  else (não)
+    :Retornar 404 Not Found;
+  endif
+
+else (não)
+  :Retornar 400 Bad Request;
+endif
+
+stop
+@enduml

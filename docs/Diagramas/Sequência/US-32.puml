@@ -1,0 +1,21 @@
+@startuml
+title US-32 — Listar dicas de economia (GET /v1/dicas)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/dicas
+activate API
+
+API -> DB : SELECT * FROM dicas
+DB --> API : lista de dicas
+
+alt existem dicas cadastradas
+  API --> Cliente : 200 OK (lista de dicas)
+else nenhuma dica encontrada
+  API --> Cliente : 200 OK ([])
+end
+
+deactivate API
+@enduml

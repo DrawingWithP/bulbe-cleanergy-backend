@@ -1,0 +1,30 @@
+@startuml
+title US-34 — Atualizar dados do cliente (PUT /v1/clientes/{id})
+
+participant "Cliente\n(App Bulbe)" as ClienteApp
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+ClienteApp -> API : PUT /v1/clientes/{id}\n+ dados atualizados
+activate API
+
+API -> API : Validar dados obrigatórios\ne formatos
+
+alt dados inválidos
+  API --> ClienteApp : 400 Bad Request
+else dados válidos
+  API -> DB : SELECT cliente WHERE id = ?
+  DB --> API : dados do cliente
+
+  alt cliente não encontrado
+    API --> ClienteApp : 404 Not Found
+  else cliente encontrado
+    API -> DB : UPDATE cliente\nSET dados atualizados
+    DB --> API : cliente atualizado
+
+    API --> ClienteApp : 200 OK\n(dados atualizados)
+  end
+end
+
+deactivate API
+@enduml
