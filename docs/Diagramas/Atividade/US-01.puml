@@ -1,11 +1,27 @@
 @startuml
-start
-:Inserir dados de novo usuário;
-while (Dados corretos?) is (não)
-:Devolver mensagem de erro\n\nretry;
-endwhile (sim)
+title US-01 — Criar nova adesão (POST /v1/adesoes)
 
-:Jogar no DB;
-:Entrar para inserir dados conta de luz;
+start
+:Receber dados da adesão;
+:Validar campos obrigatórios;
+
+if (Dados válidos?) then (sim)
+  :Consultar área de atendimento\nda instalação;
+  if (Instalação atendida pela Bulbe?) then (sim)
+    :Calcular economia mensal estimada;
+    :Registrar adesão com situação "enviada";
+    fork
+      :Enviar e-mail de confirmação\nda solicitação;
+    fork again
+      :Notificar time comercial da Bulbe;
+    end fork
+    :Retornar 201 Created\ncom a adesão criada;
+  else (não)
+    :Retornar 422 Unprocessable Entity;
+  endif
+else (não)
+  :Retornar 400 Bad Request\ncom os campos inválidos;
+endif
+
 stop
 @enduml

@@ -1,0 +1,21 @@
+@startuml
+title US-16 — Consultar uma indicação específica (GET /v1/indicacoes/{id})
+
+start
+:Receber id da indicação;
+:Consultar indicação no banco;
+
+if (Indicação existe?) then (sim)
+  :Mascarar contato do indicado;
+  if (Situação = "aderiu"?) then (sim)
+    :Informar bônus creditado\ne data da adesão;
+  else (não)
+    :Informar situação pendente\nou expirada;
+  endif
+  :Retornar 200 OK\ncom os dados da indicação;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

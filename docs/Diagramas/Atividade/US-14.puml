@@ -1,0 +1,25 @@
+@startuml
+title US-14 — Listar indicações do cliente (GET /v1/clientes/{id}/indicacoes)
+
+start
+:Receber id do cliente e filtros;
+:Buscar cliente no banco;
+
+if (Cliente existe?) then (sim)
+  fork
+    :Consultar indicações do cliente;
+  fork again
+    :Somar bônus já creditado;
+  end fork
+  if (Cliente possui indicações?) then (sim)
+    :Montar lista com situação\nde cada indicação;
+  else (não)
+    :Montar lista vazia\ncom bônus zerado;
+  endif
+  :Retornar 200 OK\ncom indicações e bônus;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

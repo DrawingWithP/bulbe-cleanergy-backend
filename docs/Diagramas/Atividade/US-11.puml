@@ -1,0 +1,26 @@
+@startuml
+title US-11 — Consultar status da ativação (GET /v1/clientes/{id}/ativacao)
+
+start
+:Receber id do cliente;
+:Buscar cliente no banco;
+
+if (Cliente existe?) then (sim)
+  fork
+    :Consultar etapa atual da ativação;
+  fork again
+    :Consultar situação das 5 etapas;
+  end fork
+  :Calcular percentual concluído;
+  if (Ativação concluída?) then (sim)
+    :Informar cliente ativo\ne data de conclusão;
+  else (não)
+    :Informar etapa atual\ne prazo estimado;
+  endif
+  :Retornar 200 OK\ncom o resumo da ativação;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

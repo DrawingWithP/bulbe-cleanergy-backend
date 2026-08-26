@@ -1,0 +1,27 @@
+@startuml
+title US-05 — Buscar dados de um cliente (GET /v1/clientes/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/clientes/{id}
+activate API
+
+API -> API : validar formato do id (UUID v4)
+
+alt id em formato inválido
+  API --> Cliente : 400 Bad Request
+else id válido
+  API -> DB : SELECT cliente WHERE id = ?
+  DB --> API : dados do cliente
+
+  alt cliente encontrado
+    API -> API : mascarar CPF e telefone
+    API --> Cliente : 200 OK (JSON)
+  else cliente não encontrado
+    API --> Cliente : 404 Not Found
+  end
+end
+deactivate API
+@enduml

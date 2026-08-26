@@ -1,0 +1,25 @@
+@startuml
+title US-02 — Listar parceiros do Clube (GET /v1/parceiros)
+
+start
+:Receber requisição de listagem;
+:Ler filtros (categoria, ativo)\ne paginação (page, limit);
+
+if (Parâmetros válidos?) then (sim)
+  fork
+    :Consultar página de parceiros;
+  fork again
+    :Contar total de parceiros;
+  end fork
+  if (Há parceiros para os filtros?) then (sim)
+    :Montar lista com logo,\ncategoria e desconto;
+  else (não)
+    :Montar lista vazia;
+  endif
+  :Retornar 200 OK\ncom data, page e total;
+else (não)
+  :Retornar 400 Bad Request;
+endif
+
+stop
+@enduml

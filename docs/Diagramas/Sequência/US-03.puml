@@ -1,0 +1,23 @@
+@startuml
+title US-03 — Listar cupons do cliente (GET /v1/clientes/{id}/cupons)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/clientes/{id}/cupons?situacao&page&limit
+activate API
+
+API -> DB : SELECT cliente WHERE id = ?
+DB --> API : cliente
+
+alt cliente não encontrado
+  API --> Cliente : 404 Not Found
+else cliente encontrado
+  API -> DB : SELECT cupons WHERE cliente_id = ?\nAND filtros LIMIT/OFFSET
+  DB --> API : cupons do cliente
+  API -> API : marcar cupons vencidos\ncomo "expirado"
+  API --> Cliente : 200 OK {data, page, total}
+end
+deactivate API
+@enduml

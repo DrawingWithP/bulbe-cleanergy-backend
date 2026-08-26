@@ -1,0 +1,28 @@
+@startuml
+title US-18 — Consultar situação no Clube Bulbe (GET /v1/clientes/{id}/clube)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/clientes/{id}/clube
+activate API
+
+API -> DB : SELECT cliente WHERE id = ?
+DB --> API : cliente
+
+alt cliente não encontrado
+  API --> Cliente : 404 Not Found
+else cliente encontrado
+  par sequência do clube
+    API -> DB : SELECT sequencia_semanas WHERE cliente_id = ?
+    DB --> API : sequência atual e meta de 5 semanas
+  else próxima carta
+    API -> DB : SELECT proxima_carta WHERE cliente_id = ?
+    DB --> API : data de liberação da carta
+  end
+  API -> API : verificar se a carta já está disponível
+  API --> Cliente : 200 OK\n{sequencia, meta, proxima_carta}
+end
+deactivate API
+@enduml

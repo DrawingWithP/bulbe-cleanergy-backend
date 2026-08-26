@@ -1,0 +1,25 @@
+@startuml
+title US-18 — Consultar situação no Clube Bulbe (GET /v1/clientes/{id}/clube)
+
+start
+:Receber id do cliente;
+:Buscar cliente no banco;
+
+if (Cliente existe?) then (sim)
+  fork
+    :Consultar sequência de semanas;
+  fork again
+    :Consultar data da próxima carta;
+  end fork
+  if (Carta já disponível?) then (sim)
+    :Marcar próxima carta\ncomo disponível para abertura;
+  else (não)
+    :Informar quanto falta\npara a próxima carta;
+  endif
+  :Retornar 200 OK\ncom a situação no Clube;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

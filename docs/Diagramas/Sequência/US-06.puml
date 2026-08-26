@@ -1,0 +1,21 @@
+@startuml
+title US-06 — Buscar uma adesão específica (GET /v1/adesoes/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/adesoes/{id}
+activate API
+
+API -> DB : SELECT adesao WHERE id = ?
+DB --> API : dados da adesão
+
+alt adesão encontrada
+  API -> API : identificar etapa em que\no cadastro foi interrompido
+  API --> Cliente : 200 OK (JSON com situacao)
+else adesão não encontrada
+  API --> Cliente : 404 Not Found
+end
+deactivate API
+@enduml

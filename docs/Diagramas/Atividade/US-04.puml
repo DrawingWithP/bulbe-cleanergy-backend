@@ -1,0 +1,21 @@
+@startuml
+title US-04 — Buscar dicas de economia (GET /v1/dicas)
+
+start
+:Receber requisição do carrossel de dicas;
+:Ler parâmetros page e limit;
+
+if (Paginação válida?) then (sim)
+  fork
+    :Consultar página de dicas;
+  fork again
+    :Contar total de dicas;
+  end fork
+  :Montar resposta com título,\nconteúdo e economia estimada;
+  :Retornar 200 OK;
+else (não)
+  :Retornar 400 Bad Request;
+endif
+
+stop
+@enduml

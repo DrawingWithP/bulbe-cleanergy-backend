@@ -1,0 +1,21 @@
+@startuml
+title US-16 — Consultar uma indicação específica (GET /v1/indicacoes/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/indicacoes/{id}
+activate API
+
+API -> DB : SELECT indicacao WHERE id = ?
+DB --> API : dados da indicação
+
+alt indicação encontrada
+  API -> API : mascarar contato do indicado
+  API --> Cliente : 200 OK (JSON com situacao e bonus)
+else indicação não encontrada
+  API --> Cliente : 404 Not Found
+end
+deactivate API
+@enduml

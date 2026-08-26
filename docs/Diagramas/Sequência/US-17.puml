@@ -1,0 +1,26 @@
+@startuml
+title US-17 — Excluir uma indicação pendente (DELETE /v1/indicacoes/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : DELETE /v1/indicacoes/{id}
+activate API
+
+API -> DB : SELECT indicacao WHERE id = ?
+DB --> API : situação da indicação
+
+alt indicação não encontrada
+  API --> Cliente : 404 Not Found
+else indicação já convertida
+  API --> Cliente : 409 Conflict\n(bônus já creditado)
+else indicação pendente
+  API -> DB : UPDATE indicacao SET situacao = 'cancelada'
+  DB --> API : confirmação
+  API -> DB : DELETE convite_pendente
+  DB --> API : confirmação
+  API --> Cliente : 204 No Content
+end
+deactivate API
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+title US-15 — Cadastrar nova indicação (POST /v1/indicacoes)
+
+start
+:Receber dados da indicação;
+:Validar nome e contato do indicado;
+
+if (Dados válidos?) then (sim)
+  :Verificar se o contato já foi\nindicado ou já é cliente;
+  if (Contato disponível?) then (sim)
+    :Registrar indicação como "pendente";
+    fork
+      :Enviar convite ao indicado;
+    fork again
+      :Vincular bônus de R$ 50\nao cliente indicador;
+    end fork
+    :Retornar 201 Created\ncom a indicação criada;
+  else (não)
+    :Retornar 409 Conflict;
+  endif
+else (não)
+  :Retornar 400 Bad Request;
+endif
+
+stop
+@enduml

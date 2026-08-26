@@ -1,0 +1,28 @@
+@startuml
+title US-19 — Consultar histórico de cartas (GET /v1/clientes/{id}/cartas)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/clientes/{id}/cartas?situacao&page&limit
+activate API
+
+API -> DB : SELECT cliente WHERE id = ?
+DB --> API : cliente
+
+alt cliente não encontrado
+  API --> Cliente : 404 Not Found
+else cliente encontrado
+  par histórico paginado
+    API -> DB : SELECT cartas WHERE cliente_id = ?\nAND filtros LIMIT/OFFSET
+    DB --> API : cartas do cliente
+  else contagem total
+    API -> DB : SELECT COUNT(*) cartas WHERE cliente_id = ?
+    DB --> API : total de cartas
+  end
+  API -> API : marcar cartas vencidas como "expirada"
+  API --> Cliente : 200 OK {data, page, total}
+end
+deactivate API
+@enduml

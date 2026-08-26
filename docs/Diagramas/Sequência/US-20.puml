@@ -1,0 +1,24 @@
+@startuml
+title US-20 — Consultar uma carta do Clube (GET /v1/cartas/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/cartas/{id}
+activate API
+
+API -> DB : SELECT carta WHERE id = ?
+DB --> API : dados da carta
+
+alt carta não encontrada
+  API --> Cliente : 404 Not Found
+else carta já aberta
+  API -> DB : SELECT cupom WHERE carta_id = ?
+  DB --> API : recompensa associada
+  API --> Cliente : 200 OK (carta + cupom)
+else carta ainda não aberta
+  API --> Cliente : 200 OK (carta sem recompensa)
+end
+deactivate API
+@enduml

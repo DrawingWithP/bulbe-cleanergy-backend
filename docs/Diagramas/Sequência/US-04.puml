@@ -1,0 +1,26 @@
+@startuml
+title US-04 — Buscar dicas de economia (GET /v1/dicas)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/dicas?page&limit
+activate API
+
+API -> API : validar page e limit
+
+alt paginação inválida
+  API --> Cliente : 400 Bad Request
+else paginação válida
+  par consulta paginada
+    API -> DB : SELECT dicas LIMIT/OFFSET
+    DB --> API : dicas de economia
+  else contagem total
+    API -> DB : SELECT COUNT(*) dicas
+    DB --> API : total de registros
+  end
+  API --> Cliente : 200 OK {data, page, total}
+end
+deactivate API
+@enduml

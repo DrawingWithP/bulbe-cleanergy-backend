@@ -1,0 +1,31 @@
+@startuml
+title US-15 — Cadastrar nova indicação (POST /v1/indicacoes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+participant "Serviço de Envio\n(WhatsApp / SMS)" as Envio
+
+Cliente -> API : POST /v1/indicacoes\n{cliente_id, nome, contato}
+activate API
+
+API -> API : validar dados do indicado
+
+alt dados inválidos
+  API --> Cliente : 400 Bad Request
+else dados válidos
+  API -> DB : SELECT indicacao / cliente\nWHERE contato = ?
+  DB --> API : resultado da checagem
+
+  alt contato já indicado ou já é cliente
+    API --> Cliente : 409 Conflict
+  else contato disponível
+    API -> DB : INSERT indicacao (situacao = 'pendente')
+    DB --> API : id da indicação
+    API -> Envio : enviar convite ao indicado
+    Envio --> API : envio aceito
+    API --> Cliente : 201 Created (JSON)
+  end
+end
+deactivate API
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+title US-17 — Excluir uma indicação pendente (DELETE /v1/indicacoes/{id})
+
+start
+:Receber id da indicação;
+:Buscar indicação no banco;
+
+if (Indicação existe?) then (sim)
+  if (Indicação ainda pendente?) then (sim)
+    :Cancelar a indicação;
+    fork
+      :Remover convite pendente;
+    fork again
+      :Liberar contato para\nnova indicação;
+    end fork
+    :Retornar 204 No Content;
+  else (não)
+    :Retornar 409 Conflict\n(bônus já creditado);
+  endif
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

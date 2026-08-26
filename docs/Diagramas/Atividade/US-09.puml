@@ -1,0 +1,26 @@
+@startuml
+title US-09 — Verificar CPF no primeiro acesso (POST /v1/primeiro-acesso/verificacoes)
+
+start
+:Receber CPF e canal de contato;
+:Validar formato do CPF;
+
+if (CPF válido?) then (sim)
+  :Buscar cliente pelo CPF;
+  if (CPF pertence a um cliente?) then (sim)
+    :Gerar código de confirmação\ncom prazo de expiração;
+    fork
+      :Registrar verificação no banco;
+    fork again
+      :Enviar código por WhatsApp ou SMS;
+    end fork
+    :Retornar 202 Accepted\ncom destino mascarado;
+  else (não)
+    :Retornar 404 Not Found;
+  endif
+else (não)
+  :Retornar 400 Bad Request;
+endif
+
+stop
+@enduml

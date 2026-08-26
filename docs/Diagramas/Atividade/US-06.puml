@@ -1,0 +1,20 @@
+@startuml
+title US-06 — Buscar uma adesão específica (GET /v1/adesoes/{id})
+
+start
+:Receber id da adesão;
+:Consultar adesão no banco;
+
+if (Adesão existe?) then (sim)
+  if (Situação = "rascunho"?) then (sim)
+    :Indicar etapa de retomada\ndo cadastro;
+  else (não)
+    :Indicar situação atual\n(enviada, aprovada ou recusada);
+  endif
+  :Retornar 200 OK\ncom os dados da adesão;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+title US-07 — Atualizar uma adesão (PATCH /v1/adesoes/{id})
+
+start
+:Receber id e campos a atualizar;
+:Validar dados enviados;
+
+if (Dados válidos?) then (sim)
+  :Buscar adesão no banco;
+  if (Adesão existe?) then (sim)
+    if (Adesão já aprovada?) then (não)
+      fork
+        :Atualizar dados cadastrais\nda adesão;
+      fork again
+        :Recalcular economia estimada;
+      end fork
+      :Retornar 200 OK\ncom a adesão atualizada;
+    else (sim)
+      :Retornar 409 Conflict\n(adesão não pode ser alterada);
+    endif
+  else (não)
+    :Retornar 404 Not Found;
+  endif
+else (não)
+  :Retornar 400 Bad Request;
+endif
+
+stop
+@enduml

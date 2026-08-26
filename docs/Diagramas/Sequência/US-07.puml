@@ -1,0 +1,31 @@
+@startuml
+title US-07 — Atualizar uma adesão (PATCH /v1/adesoes/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : PATCH /v1/adesoes/{id}\n{campos a atualizar}
+activate API
+
+API -> API : validar corpo da requisição
+
+alt dados inválidos
+  API --> Cliente : 400 Bad Request
+else dados válidos
+  API -> DB : SELECT adesao WHERE id = ?
+  DB --> API : adesão atual
+
+  alt adesão não encontrada
+    API --> Cliente : 404 Not Found
+  else adesão já aprovada
+    API --> Cliente : 409 Conflict
+  else adesão editável
+    API -> API : recalcular economia estimada\nse o valor da conta mudou
+    API -> DB : UPDATE adesao SET campos
+    DB --> API : adesão atualizada
+    API --> Cliente : 200 OK (JSON)
+  end
+end
+deactivate API
+@enduml

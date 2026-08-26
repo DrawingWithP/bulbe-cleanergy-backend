@@ -1,0 +1,26 @@
+@startuml
+title US-09 — Verificar CPF no primeiro acesso (POST /v1/primeiro-acesso/verificacoes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+participant "Serviço de Envio\n(WhatsApp / SMS)" as Envio
+
+Cliente -> API : POST /v1/primeiro-acesso/verificacoes\n{cpf, canal}
+activate API
+
+API -> DB : SELECT cliente WHERE cpf = ?
+DB --> API : cliente correspondente
+
+alt CPF não encontrado
+  API --> Cliente : 404 Not Found
+else CPF encontrado
+  API -> API : gerar código de confirmação\ne definir expiração
+  API -> DB : INSERT verificacao (codigo, expira_em)
+  DB --> API : verificacao_id
+  API -> Envio : enviar código pelo canal escolhido
+  Envio --> API : envio aceito
+  API --> Cliente : 202 Accepted\n{verificacao_id, destino_mascarado}
+end
+deactivate API
+@enduml

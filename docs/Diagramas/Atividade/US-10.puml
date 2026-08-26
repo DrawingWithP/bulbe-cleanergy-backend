@@ -1,0 +1,27 @@
+@startuml
+title US-10 — Confirmar código de primeiro acesso (POST /v1/primeiro-acesso/confirmacoes)
+
+start
+:Receber verificacao_id e código;
+:Buscar verificação no banco;
+
+if (Código ainda válido?) then (sim)
+  if (Código informado confere?) then (sim)
+    fork
+      :Habilitar acesso do cliente ao app;
+    fork again
+      :Invalidar o código utilizado;
+    fork again
+      :Registrar data da confirmação;
+    end fork
+    :Retornar 201 Created\ncom acesso habilitado;
+  else (não)
+    :Contabilizar tentativa incorreta;
+    :Retornar 400 Bad Request;
+  endif
+else (não)
+  :Retornar 410 Gone\n(código expirado);
+endif
+
+stop
+@enduml

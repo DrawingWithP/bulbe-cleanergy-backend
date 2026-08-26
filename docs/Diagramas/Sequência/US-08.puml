@@ -1,0 +1,26 @@
+@startuml
+title US-08 — Cancelar uma adesão em andamento (DELETE /v1/adesoes/{id})
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : DELETE /v1/adesoes/{id}
+activate API
+
+API -> DB : SELECT adesao WHERE id = ?
+DB --> API : situação da adesão
+
+alt adesão não encontrada
+  API --> Cliente : 404 Not Found
+else adesão já aprovada
+  API --> Cliente : 409 Conflict
+else adesão não concluída
+  API -> DB : UPDATE adesao SET situacao = 'cancelada'
+  DB --> API : confirmação
+  API -> DB : INSERT log_auditoria (cancelamento)
+  DB --> API : confirmação
+  API --> Cliente : 204 No Content
+end
+deactivate API
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+title US-13 — Simular economia (POST /v1/simulacoes)
+
+start
+:Receber valor da conta, meses\ne amigos indicados;
+:Validar parâmetros da simulação;
+
+if (Parâmetros válidos?) then (sim)
+  :Buscar percentual de desconto vigente;
+  fork
+    :Calcular desconto mensal\ne do período;
+  fork again
+    :Calcular bônus das indicações;
+  end fork
+  :Montar comparativo com e sem Bulbe;
+  :Retornar 200 OK\ncom a economia estimada;
+else (não)
+  :Retornar 400 Bad Request\n(valor, meses ou indicações fora da faixa);
+endif
+
+stop
+@enduml

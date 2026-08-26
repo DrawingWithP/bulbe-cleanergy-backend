@@ -1,0 +1,25 @@
+@startuml
+title US-19 — Consultar histórico de cartas (GET /v1/clientes/{id}/cartas)
+
+start
+:Receber id do cliente e filtros;
+:Buscar cliente no banco;
+
+if (Cliente existe?) then (sim)
+  fork
+    :Consultar página do histórico\nde cartas;
+  fork again
+    :Contar total de cartas;
+  end fork
+  if (Existe carta vencida?) then (sim)
+    :Atualizar situação para "expirada";
+  else (não)
+    :Manter situação atual das cartas;
+  endif
+  :Retornar 200 OK\ncom o histórico de cartas;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

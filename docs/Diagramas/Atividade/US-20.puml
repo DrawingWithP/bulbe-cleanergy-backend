@@ -1,0 +1,25 @@
+@startuml
+title US-20 — Consultar uma carta do Clube (GET /v1/cartas/{id})
+
+start
+:Receber id da carta;
+:Consultar carta no banco;
+
+if (Carta existe?) then (sim)
+  if (Carta já foi aberta?) then (sim)
+    fork
+      :Buscar cupom gerado;
+    fork again
+      :Buscar parceiro da recompensa;
+    end fork
+    :Montar carta com a recompensa;
+  else (não)
+    :Montar carta com situação\n"disponível" ou "expirada";
+  endif
+  :Retornar 200 OK\ncom os dados da carta;
+else (não)
+  :Retornar 404 Not Found;
+endif
+
+stop
+@enduml

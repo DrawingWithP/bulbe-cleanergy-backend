@@ -1,0 +1,27 @@
+@startuml
+title US-02 — Listar parceiros do Clube (GET /v1/parceiros)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/parceiros?categoria&ativo&page&limit
+activate API
+
+API -> API : validar parâmetros de paginação
+
+par consulta paginada
+  API -> DB : SELECT parceiros\nWHERE filtros LIMIT/OFFSET
+  DB --> API : lista de parceiros
+else contagem total
+  API -> DB : SELECT COUNT(*) parceiros
+  DB --> API : total de registros
+end
+
+alt existem parceiros
+  API --> Cliente : 200 OK {data, page, total}
+else nenhum parceiro encontrado
+  API --> Cliente : 200 OK {data: [], page, total: 0}
+end
+deactivate API
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+title US-11 — Consultar status da ativação (GET /v1/clientes/{id}/ativacao)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : GET /v1/clientes/{id}/ativacao
+activate API
+
+API -> DB : SELECT cliente WHERE id = ?
+DB --> API : cliente
+
+alt cliente não encontrado
+  API --> Cliente : 404 Not Found
+else cliente encontrado
+  par resumo da ativação
+    API -> DB : SELECT ativacao WHERE cliente_id = ?
+    DB --> API : etapa atual e prazo estimado
+  else etapas da jornada
+    API -> DB : SELECT etapas WHERE cliente_id = ?
+    DB --> API : situação das 5 etapas
+  end
+  API -> API : calcular percentual concluído
+  API --> Cliente : 200 OK\n{percentual, etapa_atual, prazo}
+end
+deactivate API
+@enduml

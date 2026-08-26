@@ -1,15 +1,29 @@
 @startuml
-participant "Cliente(App Bulbe)" as client
+title US-01 — Criar nova adesão (POST /v1/adesoes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
 participant "API\n(Bulbe Energia)" as API
 database "Banco de\nDados" as DB
 
-client -> API : POST/v1/adesões/
-API -> DB : INSERT usuario
-DB  --> API : ID / confirma
+Cliente -> API : POST /v1/adesoes\n{nome, cpf, endereco, distribuidora,\nnumero_instalacao, valor_conta_atual}
+activate API
 
-alt criação sucedida
-  API --> client : 200 OK (JSON)
-else erro de criação
-  API --> client : 404 Not Found
+API -> API : validar campos obrigatórios
+
+alt dados inválidos
+  API --> Cliente : 400 Bad Request (erro.campos)
+else dados válidos
+  API -> DB : SELECT area_atendimento\nWHERE numero_instalacao = ?
+  DB --> API : cobertura da instalação
+
+  alt instalação fora da área atendida
+    API --> Cliente : 422 Unprocessable Entity
+  else instalação atendida
+    API -> API : calcular economia_mensal_estimada
+    API -> DB : INSERT adesao (situacao = 'enviada')
+    DB --> API : id da adesão
+    API --> Cliente : 201 Created (JSON)
+  end
 end
+deactivate API
 @enduml

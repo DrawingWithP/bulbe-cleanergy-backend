@@ -1,0 +1,28 @@
+@startuml
+title US-10 — Confirmar código de primeiro acesso (POST /v1/primeiro-acesso/confirmacoes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : POST /v1/primeiro-acesso/confirmacoes\n{verificacao_id, codigo}
+activate API
+
+API -> DB : SELECT verificacao WHERE id = ?
+DB --> API : código e data de expiração
+
+alt código expirado
+  API --> Cliente : 410 Gone
+else código diferente do esperado
+  API -> DB : UPDATE verificacao SET tentativas = tentativas + 1
+  DB --> API : confirmação
+  API --> Cliente : 400 Bad Request
+else código válido
+  API -> DB : UPDATE cliente SET acesso_habilitado = true
+  DB --> API : confirmação
+  API -> DB : UPDATE verificacao SET situacao = 'usada'
+  DB --> API : confirmação
+  API --> Cliente : 201 Created\n{cliente_id, acesso_habilitado}
+end
+deactivate API
+@enduml

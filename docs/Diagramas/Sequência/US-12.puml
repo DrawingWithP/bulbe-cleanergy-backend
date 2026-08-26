@@ -1,0 +1,29 @@
+@startuml
+title US-12 — Atualizar etapas da ativação (PATCH /v1/clientes/{id}/ativacao)
+
+participant "Back-office /\nIntegração CEMIG" as Origem
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Origem -> API : PATCH /v1/clientes/{id}/ativacao\n{etapa_atual, observacao}
+activate API
+
+API -> API : validar etapa (1 a 5)
+
+alt etapa fora do intervalo
+  API --> Origem : 400 Bad Request
+else etapa válida
+  API -> DB : SELECT cliente WHERE id = ?
+  DB --> API : cliente
+
+  alt cliente não encontrado
+    API --> Origem : 404 Not Found
+  else cliente encontrado
+    API -> DB : UPDATE ativacao SET etapa_atual, atualizado_em
+    DB --> API : confirmação
+    API -> API : recalcular percentual e prazo
+    API --> Origem : 200 OK (JSON atualizado)
+  end
+end
+deactivate API
+@enduml

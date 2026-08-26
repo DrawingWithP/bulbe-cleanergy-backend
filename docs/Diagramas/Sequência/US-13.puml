@@ -1,0 +1,25 @@
+@startuml
+title US-13 — Simular economia (POST /v1/simulacoes)
+
+participant "Cliente\n(App Bulbe)" as Cliente
+participant "API\n(Bulbe Energia)" as API
+database "Banco de\nDados" as DB
+
+Cliente -> API : POST /v1/simulacoes\n{valor_conta, meses, amigos_indicados}
+activate API
+
+API -> API : validar faixas dos parâmetros
+
+alt parâmetros inválidos
+  API --> Cliente : 400 Bad Request
+else parâmetros válidos
+  API -> DB : SELECT percentual_desconto vigente
+  DB --> API : regra de desconto
+
+  API -> API : calcular desconto mensal e do período
+  API -> API : calcular bônus por indicações
+  note right of API : a simulação não é persistida
+  API --> Cliente : 200 OK\n{economia_total, comparativo}
+end
+deactivate API
+@enduml
