@@ -60,3 +60,8 @@
 ### Pendências
 - Ver `NOTAS_PARA_O_LIDER.md` (handler de `ErroDeNegocio` em `main.py`, dependências `anthropic`/`python-dotenv`).
 - Testar de ponta a ponta quando `app/database` e `app/painel` estiverem prontos e a chave configurada.
+
+## Ajuste após o primeiro teste real (líder)
+- `prompts.py`: nova seção "Histórico da conversa". Como o histórico só traz texto, o modelo
+  achava que não tinha consultado as ferramentas nas respostas anteriores e se "corrigia" a cada
+  pergunta, refazendo consultas. Agora ele confia nas respostas anteriores e responde só à pergunta atual.
