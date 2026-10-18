@@ -1,9 +1,10 @@
 """
 Camada de Persistencia, modelos ORM (SQLAlchemy 2) do banco ficticio da Bulbe.
 
-17 tabelas: funcionarios, usinas, clientes, adesoes, ativacoes, ativacao_eventos, faturas,
+20 tabelas: funcionarios, usinas, clientes, adesoes, ativacoes, ativacao_eventos, faturas,
 indicacoes, parceiros, clube_status, cartas, cupons, dicas, simulacoes, notificacoes,
-atendimentos e chat_historico.
+atendimentos, chat_historico, chat_conversas, chat_mensagens e auditoria_acessos
+(as 3 ultimas entraram na v2 do sistema de gerenciamento).
 
 Convencoes:
 - IDs de cliente, adesao, carta, cupom, indicacao e parceiro: UUID v4 em string (36 chars).
@@ -51,6 +52,14 @@ TIPOS_NOTIFICACAO = ("vencimento", "ativacao", "clube", "indicacao", "promocao")
 CANAIS_NOTIFICACAO = ("app", "whatsapp", "email")
 CANAIS_ATENDIMENTO = ("whatsapp", "email", "app", "ouvidoria")
 STATUS_ATENDIMENTO = ("aberto", "em_andamento", "resolvido")
+PAPEIS_CHAT = ("user", "assistant")
+ACOES_AUDITORIA = (
+    "login_ok", "login_falha", "login_bloqueado", "alerta_email", "ver_ficha", "ver_auditoria", "expurgo",
+)
+
+# Tamanhos maximos de texto usados nas tabelas novas (a camada de consultas corta antes de gravar)
+TAMANHO_TITULO_CONVERSA = 120
+TAMANHO_DETALHE_AUDITORIA = 500
 
 
 def gerar_uuid() -> str:
@@ -89,10 +98,16 @@ class Funcionario(Base):
     chats: Mapped[list["ChatHistorico"]] = relationship(
         back_populates="funcionario", cascade="all, delete-orphan"
     )
+    conversas: Mapped[list["ChatConversa"]] = relationship(
+        back_populates="funcionario", cascade="all, delete-orphan"
+    )
 
 
 class ChatHistorico(Base):
-    """Auditoria das perguntas feitas ao chatbot (LGPD). Origem: painel (novo)."""
+    """
+    Auditoria das perguntas feitas ao chatbot (LGPD) e base das metricas de uso/custo.
+    Origem: painel (novo). As colunas de uso (modelo, tokens, custo, duracao) entraram na v2.
+    """
 
     __tablename__ = "chat_historico"
 
@@ -102,8 +117,84 @@ class ChatHistorico(Base):
     resposta: Mapped[str] = mapped_column(Text)
     ferramentas_usadas: Mapped[str] = mapped_column(Text, default="[]")  # lista em JSON
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=agora_utc, index=True)
+    # --- v2: conversa no servidor e uso/custo da API ---
+    conversa_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("chat_conversas.id", ondelete="SET NULL"), index=True
+    )
+    modelo: Mapped[Optional[str]] = mapped_column(String(60))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_read_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_creation_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    custo_estimado_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    duracao_ms: Mapped[Optional[int]] = mapped_column(Integer)
 
     funcionario: Mapped["Funcionario"] = relationship(back_populates="chats")
+
+
+class ChatConversa(Base):
+    """Conversa do chatbot guardada no servidor (v2). Origem: painel (novo)."""
+
+    __tablename__ = "chat_conversas"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gerar_uuid)
+    funcionario_id: Mapped[int] = mapped_column(ForeignKey("funcionarios.id"), index=True)
+    titulo: Mapped[str] = mapped_column(String(TAMANHO_TITULO_CONVERSA))
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=agora_utc)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=agora_utc, index=True)
+
+    funcionario: Mapped["Funcionario"] = relationship(back_populates="conversas")
+    mensagens: Mapped[list["ChatMensagem"]] = relationship(
+        back_populates="conversa", cascade="all, delete-orphan", order_by="ChatMensagem.ordem"
+    )
+
+
+class ChatMensagem(Base):
+    """
+    Mensagem de uma conversa do chatbot (v2). conteudo_json guarda o conteudo EXATO enviado/recebido
+    da API (lista de blocos ou string, em JSON); texto e o que a interface mostra (pode ser vazio).
+    O historico e so de acrescimo: as mensagens nunca sao alteradas depois de gravadas.
+    """
+
+    __tablename__ = "chat_mensagens"
+    __table_args__ = (
+        UniqueConstraint("conversa_id", "ordem", name="uq_chat_mensagens_conversa_ordem"),
+        _check_em("papel", PAPEIS_CHAT, "ck_chat_mensagens_papel"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversa_id: Mapped[str] = mapped_column(ForeignKey("chat_conversas.id", ondelete="CASCADE"), index=True)
+    ordem: Mapped[int] = mapped_column(Integer)
+    papel: Mapped[str] = mapped_column(String(20))
+    conteudo_json: Mapped[str] = mapped_column(Text)
+    texto: Mapped[str] = mapped_column(Text, default="")
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=agora_utc)
+
+    conversa: Mapped["ChatConversa"] = relationship(back_populates="mensagens")
+
+
+class AuditoriaAcesso(Base):
+    """
+    Trilha de auditoria do painel (v2): logins, bloqueios, alertas, fichas vistas e expurgos.
+    funcionario_id e nulo em login falho de e-mail inexistente. Origem: painel (novo).
+    """
+
+    __tablename__ = "auditoria_acessos"
+    __table_args__ = (_check_em("acao", ACOES_AUDITORIA, "ck_auditoria_acessos_acao"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    funcionario_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("funcionarios.id", ondelete="SET NULL"), index=True
+    )
+    email_informado: Mapped[Optional[str]] = mapped_column(String(160), index=True)
+    acao: Mapped[str] = mapped_column(String(30), index=True)
+    recurso_tipo: Mapped[Optional[str]] = mapped_column(String(40))
+    recurso_id: Mapped[Optional[str]] = mapped_column(String(64))
+    ip: Mapped[Optional[str]] = mapped_column(String(45))
+    detalhe: Mapped[Optional[str]] = mapped_column(String(TAMANHO_DETALHE_AUDITORIA))
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=agora_utc, index=True)
+
+    funcionario: Mapped[Optional["Funcionario"]] = relationship()
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +294,9 @@ class Fatura(Base):
         _check_em("situacao", SITUACOES_FATURA, "ck_faturas_situacao"),
         CheckConstraint("length(mes_referencia) = 7", name="ck_faturas_mes_referencia"),
         CheckConstraint("consumo_kwh >= 0", name="ck_faturas_consumo"),
-        CheckConstraint("desconto >= 0 AND bonus_indicacao >= 0", name="ck_faturas_descontos"),
+        CheckConstraint(
+            "desconto >= 0 AND bonus_indicacao >= 0 AND bonus_clube >= 0", name="ck_faturas_descontos"
+        ),
         CheckConstraint("valor_total >= 0", name="ck_faturas_valor_total"),
     )
 
@@ -214,6 +307,8 @@ class Fatura(Base):
     valor_sem_bulbe: Mapped[float] = mapped_column(Float)
     desconto: Mapped[float] = mapped_column(Float, default=0.0)
     bonus_indicacao: Mapped[float] = mapped_column(Float, default=0.0)
+    # v2: bonus especial de R$ 50 do Clube Bulbe (5 semanas seguidas), aplicado na fatura seguinte
+    bonus_clube: Mapped[float] = mapped_column(Float, default=0.0)
     valor_total: Mapped[float] = mapped_column(Float)
     vencimento: Mapped[date] = mapped_column(Date, index=True)
     situacao: Mapped[str] = mapped_column(String(20), default="em_aberto", index=True)

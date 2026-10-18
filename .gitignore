@@ -13,3 +13,12 @@ __pycache__/
 
 # Ambiente virtual local
 .venv/
+
+# Ambientes virtuais (qualquer pasta)
+venv/
+
+# Arquivos do macOS
+.DS_Store
+
+# Cache do pytest
+.pytest_cache/

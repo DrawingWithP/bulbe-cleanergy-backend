@@ -3,10 +3,14 @@
 > Banco: **SQLite** (arquivo `app/database/bulbe_ficticio.db`, configurável por `BULBE_DB_URL`), mapeado com
 > **SQLAlchemy 2** em `app/database/modelos.py` e populado por `app/database/seed.py` com dados **fictícios**
 > e determinísticos (`random.Random(42)`, sem Faker).
+>
+> **v2:** 3 tabelas novas (`chat_conversas`, `chat_mensagens`, `auditoria_acessos`) e colunas novas em `faturas`
+> (`bonus_clube`) e `chat_historico` (conversa, modelo, tokens, custo e duração). Não há migração de dados (ao subir, `inicializar_banco()` só acrescenta as colunas que faltarem): depois de atualizar,
+> o banco local é **recriado** com `python -m app.database.seed` (ver [guia-do-painel.md](guia-do-painel.md#31-recriar-o-banco-depois-de-atualizar-para-a-v2)).
 
 ## Convenções
 
-- **IDs**: `clientes`, `adesoes`, `cartas`, `cupons`, `indicacoes` e `parceiros` usam **UUID v4 em texto** (36 caracteres).
+- **IDs**: `clientes`, `adesoes`, `cartas`, `cupons`, `indicacoes`, `parceiros` e `chat_conversas` usam **UUID v4 em texto** (36 caracteres).
   As demais tabelas usam **inteiro autoincremento**.
 - **Datas**: `date` (`AAAA-MM-DD`) e `datetime` em **UTC**; as consultas devolvem tudo como texto ISO 8601.
 - **Dinheiro**: `float` com 2 casas, em reais.
@@ -16,7 +20,7 @@
 - **Enumerações** são guardadas como texto; os valores aceitos aparecem na descrição e são garantidos por
   restrições `CHECK` no banco (assim como as faixas: etapa 1–5, sequência 0–5, meses 1–60, CPF com 11 dígitos).
 - **Unicidade** garantida no banco: e-mail do funcionário, CPF e nº de instalação do cliente, código de indicação,
-  nome do parceiro, uma fatura por cliente e mês, uma carta por cliente e semana.
+  nome do parceiro, uma fatura por cliente e mês, uma carta por cliente e semana, uma `ordem` por conversa (v2).
 - **Chaves estrangeiras** ligadas no SQLite com `PRAGMA foreign_keys=ON`. `cartas.cupom_id` ↔ `cupons.carta_id`
   formam uma FK circular (resolvida com `use_alter` + `post_update`).
 - "null" na coluna Tipo indica campo opcional (`Optional` em `modelos.py`).
@@ -28,11 +32,11 @@
 |---|---|---|---|
 | `funcionarios` | Funcionários que acessam o painel | Painel | 3 |
 | `usinas` | Fazendas solares da Bulbe | Bulbe | 4 (1 em manutenção) |
-| `clientes` | Clientes (assinantes) | Bulbe | 64 (40 `ativo`, 16 `em_ativacao`, 8 `cancelado`) |
+| `clientes` | Clientes (assinantes) | Bulbe | 64 (40 `ativo`, 3 deles ativados nos últimos 30 dias; 16 `em_ativacao`, 1 deles atrasado; 8 `cancelado`) |
 | `adesoes` | Pedidos de adesão (app, site, WhatsApp) | Squad + Bulbe | 16 (8 aprovadas, 4 enviadas, 2 rascunhos, 2 recusadas) |
 | `ativacoes` | Etapa atual da jornada de ativação | Squad | 1 por cliente |
 | `ativacao_eventos` | Histórico de passagens de etapa | Squad | 1 por etapa atingida |
-| `faturas` | Faturas mensais (2ª via, histórico) | Bulbe | até 12 meses por cliente ativo; 5 inadimplentes com faturas vencidas; nenhuma para quem está em ativação |
+| `faturas` | Faturas mensais (2ª via, histórico) | Bulbe | até 12 meses por cliente ativo; 5 inadimplentes com faturas vencidas; nenhuma para quem está em ativação; **v2:** R$ 50 de `bonus_clube` na primeira fatura depois da abertura da carta especial |
 | `indicacoes` | Indique e Ganhe | Bulbe | várias (aderiu, pendente, expirada) |
 | `parceiros` | Parceiros do Clube Bulbe | Squad | 6 (Araújo, Inter, Livelo, Bulbe e duas marcas inventadas, uma inativa) |
 | `clube_status` | Sequência do cliente no Clube | Squad | 1 por cliente com acesso ao app que não cancelou |
@@ -42,7 +46,10 @@
 | `simulacoes` | Simulações de economia (visitante ou cliente) | Squad | 200 |
 | `notificacoes` | Notificações enviadas ao cliente | Bulbe | várias |
 | `atendimentos` | Chamados de atendimento | Bulbe | ~40 |
-| `chat_historico` | Auditoria das conversas com o chatbot | Painel | começa vazia |
+| `chat_historico` | Registro de cada pergunta ao chatbot, com tokens e custo estimado | Painel | começa vazia |
+| `chat_conversas` | **v2:** conversas do chat guardadas no servidor | Painel | começa vazia |
+| `chat_mensagens` | **v2:** mensagens de cada conversa, só de acréscimo | Painel | começa vazia |
+| `auditoria_acessos` | **v2:** auditoria de logins, bloqueios, alertas, fichas abertas e expurgos | Painel | ~125 registros fictícios dos últimos 90 dias (todos com 2 dias ou mais) |
 
 As datas do seed são relativas a `date.today()`: o banco sempre "parece atual". Com a mesma semente, no mesmo dia,
 o conteúdo é igual (só o *salt* dos hashes muda).
@@ -55,7 +62,10 @@ hide circle
 skinparam linetype ortho
 
 entity funcionarios { *id : int }
-entity chat_historico { *id : int\n--\nfuncionario_id : int <<FK>> }
+entity chat_historico { *id : int\n--\nfuncionario_id : int <<FK>>\nconversa_id : uuid <<FK, null>> }
+entity chat_conversas { *id : uuid\n--\nfuncionario_id : int <<FK>> }
+entity chat_mensagens { *id : int\n--\nconversa_id : uuid <<FK>> }
+entity auditoria_acessos { *id : int\n--\nfuncionario_id : int <<FK, null>> }
 entity usinas { *id : int }
 entity clientes { *id : uuid\n--\nusina_id : int <<FK>> }
 entity adesoes { *id : uuid\n--\ncliente_id : uuid <<FK, null>> }
@@ -73,6 +83,10 @@ entity notificacoes { *id : int\n--\ncliente_id : uuid <<FK>> }
 entity atendimentos { *id : int\n--\ncliente_id : uuid <<FK>> }
 
 funcionarios ||--o{ chat_historico
+funcionarios ||--o{ chat_conversas
+chat_conversas ||--o{ chat_mensagens
+chat_conversas |o--o{ chat_historico
+funcionarios |o--o{ auditoria_acessos
 usinas ||--o{ clientes
 clientes |o--o{ adesoes
 clientes ||--o| ativacoes
@@ -177,7 +191,8 @@ Percentual exibido: etapa 1 → 15%, 2 → 30%, 3 → 45%, 4 → 70%, 5 → 90%;
 | `valor_sem_bulbe` | float | Quanto pagaria sem a Bulbe |
 | `desconto` | float | Desconto Bulbe: 15% de `valor_sem_bulbe` (no banco fictício, `valor_sem_bulbe` já representa a parcela sobre a qual o desconto incide) |
 | `bonus_indicacao` | float | Bônus de indicação aplicado na fatura |
-| `valor_total` | float | Valor cobrado |
+| `bonus_clube` | float, padrão 0 | **v2:** bônus especial de R$ 50 do Clube Bulbe, aplicado na fatura seguinte de quem completou 5 semanas seguidas |
+| `valor_total` | float | Valor cobrado: `valor_sem_bulbe − desconto − bonus_indicacao − bonus_clube`, nunca negativo |
 | `vencimento` | date | Data de vencimento |
 | `situacao` | texto | `paga`, `em_aberto` ou `vencida` |
 | `pago_em` | date, null | Data do pagamento |
@@ -285,7 +300,9 @@ Percentual exibido: etapa 1 → 15%, 2 → 30%, 3 → 45%, 4 → 70%, 5 → 90%;
 | `criado_em` | datetime | Abertura |
 | `resolvido_em` | datetime, null | Encerramento |
 
-### `chat_historico` — origem: painel (auditoria / LGPD)
+### `chat_historico` — origem: painel (registro do chatbot / LGPD)
+Uma linha por pergunta respondida. As colunas novas da v2 são opcionais (linhas antigas ficam com o padrão).
+
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | int (PK) | Identificador |
@@ -293,7 +310,50 @@ Percentual exibido: etapa 1 → 15%, 2 → 30%, 3 → 45%, 4 → 70%, 5 → 90%;
 | `pergunta` | texto | Mensagem do funcionário |
 | `resposta` | texto | Resposta do chatbot |
 | `ferramentas_usadas` | texto (JSON), padrão `[]` | Lista de ferramentas chamadas, ex.: `["buscar_clientes","obter_ativacao"]` |
+| `conversa_id` | uuid (FK → `chat_conversas.id`, `ON DELETE SET NULL`), null | **v2:** conversa a que a pergunta pertence (null se a conversa já foi expurgada) |
+| `modelo` | texto, null | **v2:** modelo que respondeu, ex.: `claude-haiku-5-5` |
+| `input_tokens` | int, padrão 0 | **v2:** tokens de entrada somados em todas as voltas |
+| `output_tokens` | int, padrão 0 | **v2:** tokens de saída somados |
+| `cache_read_tokens` | int, padrão 0 | **v2:** tokens lidos do cache de prompt |
+| `cache_creation_tokens` | int, padrão 0 | **v2:** tokens gravados no cache de prompt |
+| `custo_estimado_usd` | float, padrão 0 | **v2:** custo estimado da pergunta, em dólares (ver [arquitetura.md](arquitetura.md#5-uso-e-custo-do-chatbot)) |
+| `duracao_ms` | int, null | **v2:** tempo total da resposta, em milissegundos |
 | `criado_em` | datetime | Data da troca |
+
+### `chat_conversas` — origem: painel (v2)
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | uuid (PK) | Identificador da conversa (devolvido à interface como `conversa_id`) |
+| `funcionario_id` | int (FK → `funcionarios.id`) | Dono da conversa; nenhum outro funcionário consegue lê-la ou continuá-la |
+| `titulo` | texto (até 120 caracteres) | Início da primeira pergunta |
+| `criado_em` | datetime | Criação |
+| `atualizado_em` | datetime | Última mensagem acrescentada; usada pela retenção (`CHAT_RETENCAO_DIAS`) |
+
+### `chat_mensagens` — origem: painel (v2)
+Histórico **só de acréscimo**: mensagens nunca são editadas, reordenadas nem removidas (exceto pelo expurgo da conversa inteira).
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | int (PK) | Identificador |
+| `conversa_id` | uuid (FK → `chat_conversas.id`, `ON DELETE CASCADE`) | Conversa; as mensagens saem junto com ela no expurgo |
+| `ordem` | int, único por conversa | Posição da mensagem na conversa |
+| `papel` | texto (`CHECK`) | `user` ou `assistant` (papéis da API da Anthropic) |
+| `conteudo_json` | texto (JSON) | Conteúdo **exato** enviado ou recebido da API (texto, `thinking`, `tool_use`, `tool_result`), reenviado sem alteração nas próximas perguntas |
+| `texto` | texto | Texto visível na interface; vazio em mensagens só de ferramentas |
+| `criado_em` | datetime | Gravação |
+
+### `auditoria_acessos` — origem: painel (v2, LGPD)
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | int (PK) | Identificador |
+| `funcionario_id` | int (FK → `funcionarios.id`), null | Funcionário envolvido; null em falha de login com e-mail que não existe |
+| `email_informado` | texto (até 160), null | E-mail digitado no login, em minúsculas (para contar falhas e bloquear) |
+| `acao` | texto (`CHECK`) | `login_ok`, `login_falha`, `login_bloqueado`, `alerta_email`, `ver_ficha`, `ver_auditoria` ou `expurgo` |
+| `recurso_tipo` | texto, null | Tipo do recurso acessado, ex.: `cliente` em `ver_ficha` |
+| `recurso_id` | texto, null | Id do recurso, ex.: o id do cliente cuja ficha foi aberta |
+| `ip` | texto (até 45), null | IP de origem da requisição (IPv4 ou IPv6) |
+| `detalhe` | texto (até 500 caracteres), null | Complemento, ex.: motivo de falha no envio do alerta ou contagem do expurgo. **Nunca** contém senha |
+| `criado_em` | datetime | Momento da ação; usado pela retenção (`AUDITORIA_RETENCAO_DIAS`) |
 
 ## Personagens fixos do seed
 
@@ -310,13 +370,21 @@ Além das colunas, `app/database/consultas.py` devolve alguns campos derivados (
 
 | Consulta | Campos derivados |
 |---|---|
-| `buscar_clientes` | `etapa_ativacao` (int ou null) |
+| `buscar_clientes` / `buscar_clientes_paginado` | `etapa_ativacao` (int ou null); v2: filtro `etapa` e versão paginada |
+| `listar_clientes_parados` (v2) | `etapa_atual`, `nome_etapa`, `dias_na_etapa`, `dias_desde_cadastro`, `previsao_conclusao`, `atrasado` (passou dos 90 dias do cadastro) |
+| `resumo_ativacoes` (v2) | `em_ativacao`, `por_etapa`, `dias_medios_na_etapa`, `atrasados_90_dias`, `ativados_30_dias`, `tempo_medio_ativacao_dias` |
 | `obter_ativacao` | `total_etapas` (5), `nome_etapa`, `titulo`, `descricao`, `percentual_concluido`, `prazo_ativacao_dias` (90), `dias_desde_cadastro`, `etapas[]` (`concluida`/`atual`/`pendente`), `eventos[]` |
-| `resumo_economia_cliente` | `meses_faturados`, `economia_total_desconto`, `bonus_indicacao_total`, `economia_total`, `faturas_vencidas`, `valor_em_aberto` (devolve null se o cliente não existe) |
+| `resumo_economia_cliente` | `meses_faturados`, `economia_total_desconto`, `bonus_indicacao_total`, `bonus_clube_total` (v2), `economia_total` (v2: soma também o bônus do Clube), `faturas_vencidas`, `valor_em_aberto` (devolve null se o cliente não existe) |
 | `listar_indicacoes` | `bonus_por_indicacao` (50.0), `bonus_acumulado`, `total` (null se o cliente não existe) |
-| `listar_faturas` | inclui `cliente_id` |
-| `listar_faturas_vencidas` | `fatura_id`, `cliente_id`, `cliente_nome`, `mes_referencia`, `valor_total`, `vencimento`, `dias_em_atraso` |
-| `listar_atendimentos` | inclui `cliente_nome` |
+| `listar_faturas` | inclui `cliente_id` e (v2) `bonus_clube` |
+| `listar_faturas_vencidas` | `fatura_id`, `cliente_id`, `cliente_nome`, `mes_referencia`, `valor_total`, `bonus_clube` (v2), `vencimento`, `dias_em_atraso` |
+| `listar_atendimentos` / `listar_atendimentos_paginado` | inclui `cliente_nome` |
+| `listar_auditoria` (v2) | inclui `funcionario_nome` |
+| `listar_conversas` (v2) | inclui `total_mensagens` |
+| `metricas_uso_chatbot` (v2) | perguntas, conversas, funcionários ativos, tokens, custo total e médio, duração média, por funcionário, ferramentas mais usadas, por dia |
 | `listar_usinas` | inclui `clientes_ativos` |
-| `metricas_gerais` | `ativacao_por_etapa` conta só clientes `em_ativacao` (etapas 1–4; a chave `"5"` costuma valer 0); `clube.cupons_ativos` conta só a situação `ativo` |
+| `metricas_gerais` | `ativacao_por_etapa` conta clientes `em_ativacao` nas etapas 1–4; **v2:** a chave `"5"` passa a contar os clientes **ativados nos últimos 30 dias** (descrita em `ativacao_etapa5_descricao`), `clube.bonus_pagos` soma os `bonus_clube` das faturas e `economia_total_gerada` passa a incluir esse bônus; `clube.cupons_ativos` conta só a situação `ativo` |
 | `simular_economia` | `percentual_desconto`, `desconto_mensal`, `desconto_periodo`, `bonus_indicacoes`, `economia_total`, `nova_conta_mensal`, `comparativo{}`, `observacao` (não grava em `simulacoes`) |
+
+As listas paginadas (`buscar_clientes_paginado`, `listar_adesoes_paginado`, `listar_atendimentos_paginado`,
+`listar_auditoria`) devolvem `{data, pagina, por_pagina, total, total_paginas}`, com `por_pagina` de 1 a 100.

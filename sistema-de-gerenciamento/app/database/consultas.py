@@ -1,35 +1,51 @@
 """
 Camada de Persistencia, consultas somente leitura do banco ficticio da Bulbe.
 
-Regras (secao 1.6 do contrato):
+Regras (secao 1.6 de docs/CONTRATOS.md e secao 1.2 de docs/CONTRATOS-MELHORIAS.md):
 - Cada funcao abre a propria sessao com obter_sessao().
 - Devolve apenas tipos JSON-serializaveis (dict/list/str/int/float/bool/None).
   Datas viram "AAAA-MM-DD" e instantes viram "AAAA-MM-DDTHH:MM:SSZ" (UTC). Nunca objetos ORM.
 - Os dados NAO sao mascarados aqui (o painel mostra completo; o chatbot mascara do lado dele).
-- "Nao encontrado" ou filtro invalido: None / lista vazia (nunca levanta excecao).
-- Unica escrita: registrar_chat() (auditoria do chatbot).
+- "Nao encontrado" ou filtro invalido: None / lista vazia / pagina vazia (consultas nunca levantam excecao).
+- Formato paginado (v2): {"data", "pagina", "por_pagina", "total", "total_paginas"};
+  pagina < 1 vira 1, por_pagina fica entre 1 e 100 e total_paginas e sempre >= 1.
+- Escritas (v2): registrar_chat, criar_conversa, adicionar_mensagens, registrar_auditoria e
+  expurgar_dados_antigos. Todos os instantes gravados saem de agora_utc().
 """
 import json
+import logging
+import math
 import re
 import unicodedata
-from datetime import date, datetime, timedelta, timezone
+from collections import Counter
+from collections.abc import Iterator
+from datetime import date, datetime, time, timedelta, timezone
 from functools import lru_cache
+from typing import Any
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import delete, func, or_, select, update
+from sqlalchemy.orm import Session, selectinload
 
 from app.database.conexao import obter_sessao
 from app.database.modelos import (
+    ACOES_AUDITORIA,
+    PAPEIS_CHAT,
     SITUACOES_ADESAO,
     SITUACOES_CUPOM,
     SITUACOES_FATURA,
     STATUS_ATENDIMENTO,
     STATUS_CLIENTE,
+    TAMANHO_DETALHE_AUDITORIA,
+    TAMANHO_TITULO_CONVERSA,
     Adesao,
     Atendimento,
     Ativacao,
+    AtivacaoEvento,
+    AuditoriaAcesso,
     Carta,
+    ChatConversa,
     ChatHistorico,
+    ChatMensagem,
     Cliente,
     ClubeStatus,
     Cupom,
@@ -42,8 +58,11 @@ from app.database.modelos import (
     Simulacao,
     Usina,
     agora_utc,
+    gerar_uuid,
 )
 from app.database.seguranca import gerar_hash_senha, verificar_senha
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Regras de negocio (secao 1.4)
@@ -66,6 +85,10 @@ ETAPAS_ATIVACAO = {
 OBSERVACAO_SIMULACAO = (
     "O desconto de 15% não incide sobre a taxa de iluminação pública nem sobre PIS/COFINS."
 )
+ETAPA5_DESCRICAO = "ativados nos últimos 30 dias"
+JANELA_ATIVADOS_DIAS = 30
+POR_PAGINA_MAXIMO = 100
+TAMANHO_MODELO = 60
 
 @lru_cache(maxsize=1)
 def _hash_ficticio() -> str:
@@ -120,56 +143,147 @@ def _texto_valido(valor: str | None, permitidos: tuple[str, ...]) -> bool:
     return valor is None or valor in permitidos
 
 
+def _inteiro(valor: Any, padrao: int = 0, minimo: int | None = 0) -> int:
+    """Converte para int (padrao se nao der) e aplica o minimo, se houver."""
+    try:
+        numero = int(valor)
+    except (TypeError, ValueError, OverflowError):
+        numero = padrao
+    return numero if minimo is None else max(minimo, numero)
+
+
+def _decimal(valor: Any) -> float:
+    """Converte para float >= 0 (0.0 se invalido, negativo, NaN ou infinito)."""
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return 0.0
+    return numero if math.isfinite(numero) and numero > 0 else 0.0
+
+
+def _cortar(texto: Any, tamanho: int) -> str | None:
+    """str cortada no tamanho maximo da coluna; None continua None."""
+    if texto is None:
+        return None
+    return str(texto)[:tamanho]
+
+
+def _usd(valor: float | None) -> float:
+    """Valores em dolar com 6 casas (o custo de uma pergunta e fracao de centavo)."""
+    return round(float(valor or 0.0), 6)
+
+
+def _paginacao(pagina: Any, por_pagina: Any, padrao: int = 20) -> tuple[int, int]:
+    """Normaliza a paginacao: pagina >= 1 e por_pagina entre 1 e 100."""
+    return _inteiro(pagina, 1, 1), min(_inteiro(por_pagina, padrao, 1), POR_PAGINA_MAXIMO)
+
+
+def _resultado_paginado(data: list[dict], pagina: int, por_pagina: int, total: int) -> dict:
+    """Formato paginado padrao da v2 (total_paginas >= 1 mesmo sem resultados)."""
+    return {
+        "data": data,
+        "pagina": pagina,
+        "por_pagina": por_pagina,
+        "total": int(total),
+        "total_paginas": max(1, math.ceil(int(total) / por_pagina)),
+    }
+
+
+def _etapa_filtro(etapa: Any) -> tuple[bool, int | None]:
+    """(valida, numero): None e valido (sem filtro); fora de 1..5 ou nao numerico e invalido."""
+    if etapa is None:
+        return True, None
+    try:
+        numero = int(etapa)
+    except (TypeError, ValueError):
+        return False, None
+    return 1 <= numero <= TOTAL_ETAPAS, numero
+
+
 # ---------------------------------------------------------------------------
 # Clientes
 # ---------------------------------------------------------------------------
-def buscar_clientes(termo: str | None = None, status: str | None = None,
-                    cidade: str | None = None, limite: int = 20) -> list[dict]:
+def _cliente_resumo(cli: Cliente) -> dict:
+    """Item de lista de clientes (buscar_clientes e buscar_clientes_paginado)."""
+    return {
+        "id": cli.id,
+        "nome": cli.nome,
+        "email": cli.email,
+        "cpf": cli.cpf,
+        "telefone": cli.telefone,
+        "cidade": cli.cidade,
+        "uf": cli.uf,
+        "status": cli.status,
+        "etapa_ativacao": cli.ativacao.etapa_atual if cli.ativacao else None,
+        "criado_em": _iso(cli.criado_em),
+    }
+
+
+def _clientes_filtrados(sessao: Session, termo: str | None, status: str | None,
+                        cidade: str | None, etapa: int | None) -> Iterator[Cliente]:
     """
-    Busca clientes. 'termo' casa (sem diferenciar maiusculas/acentos) com nome, e-mail,
-    codigo de indicacao, CPF (so digitos) ou numero de instalacao. Ordenado por nome.
+    Clientes que passam nos filtros, ordenados por nome. 'termo' casa (sem diferenciar
+    maiusculas/acentos) com nome, e-mail, codigo de indicacao, CPF (so digitos) ou instalacao.
+    Quem chama ja validou status e etapa.
     """
-    if not _texto_valido(status, STATUS_CLIENTE):
-        return []
-    limite = _limitar(limite)
     termo_norm = _normalizar(termo)
     # So compara por digitos quando o termo "parece" um documento (ex.: 123.456.789-09)
     digitos = re.sub(r"\D", "", termo or "") if termo and re.fullmatch(r"[\d.\-/\s]+", termo.strip()) else ""
     cidade_norm = _normalizar(cidade)
 
-    with obter_sessao() as sessao:
-        consulta = select(Cliente).options(selectinload(Cliente.ativacao)).order_by(Cliente.nome)
-        if status:
-            consulta = consulta.where(Cliente.status == status)
-        resultado: list[dict] = []
-        for cli in sessao.scalars(consulta):
-            if cidade_norm and cidade_norm not in _normalizar(cli.cidade):
+    consulta = select(Cliente).options(selectinload(Cliente.ativacao)).order_by(Cliente.nome, Cliente.id)
+    if status:
+        consulta = consulta.where(Cliente.status == status)
+    if etapa is not None:
+        consulta = consulta.join(Ativacao, Ativacao.cliente_id == Cliente.id).where(Ativacao.etapa_atual == etapa)
+    for cli in sessao.scalars(consulta):
+        if cidade_norm and cidade_norm not in _normalizar(cli.cidade):
+            continue
+        if termo_norm:
+            if digitos:
+                casou = digitos in cli.cpf or digitos in cli.numero_instalacao
+            else:
+                casou = any(
+                    termo_norm in _normalizar(campo)
+                    for campo in (cli.nome, cli.email, cli.codigo_indicacao, cli.numero_instalacao)
+                )
+            if not casou:
                 continue
-            if termo_norm:
-                if digitos:
-                    casou = digitos in cli.cpf or digitos in cli.numero_instalacao
-                else:
-                    casou = any(
-                        termo_norm in _normalizar(campo)
-                        for campo in (cli.nome, cli.email, cli.codigo_indicacao, cli.numero_instalacao)
-                    )
-                if not casou:
-                    continue
-            resultado.append({
-                "id": cli.id,
-                "nome": cli.nome,
-                "email": cli.email,
-                "cpf": cli.cpf,
-                "telefone": cli.telefone,
-                "cidade": cli.cidade,
-                "uf": cli.uf,
-                "status": cli.status,
-                "etapa_ativacao": cli.ativacao.etapa_atual if cli.ativacao else None,
-                "criado_em": _iso(cli.criado_em),
-            })
+        yield cli
+
+
+def buscar_clientes(termo: str | None = None, status: str | None = None,
+                    cidade: str | None = None, limite: int = 20, etapa: int | None = None) -> list[dict]:
+    """
+    Busca clientes (ordenado por nome). 'termo' casa (sem diferenciar maiusculas/acentos) com nome,
+    e-mail, codigo de indicacao, CPF (so digitos) ou numero de instalacao.
+    v2: filtro opcional 'etapa' (1..5) pela etapa_atual da ativacao; etapa invalida -> lista vazia.
+    """
+    etapa_ok, etapa_num = _etapa_filtro(etapa)
+    if not _texto_valido(status, STATUS_CLIENTE) or not etapa_ok:
+        return []
+    limite = _limitar(limite)
+    with obter_sessao() as sessao:
+        resultado: list[dict] = []
+        for cli in _clientes_filtrados(sessao, termo, status, cidade, etapa_num):
+            resultado.append(_cliente_resumo(cli))
             if len(resultado) >= limite:
                 break
         return resultado
+
+
+def buscar_clientes_paginado(termo: str | None = None, status: str | None = None, cidade: str | None = None,
+                             etapa: int | None = None, pagina: int = 1, por_pagina: int = 20) -> dict:
+    """Mesma busca de buscar_clientes, no formato paginado padrao. Filtro invalido -> pagina vazia."""
+    pagina, por_pagina = _paginacao(pagina, por_pagina)
+    etapa_ok, etapa_num = _etapa_filtro(etapa)
+    if not _texto_valido(status, STATUS_CLIENTE) or not etapa_ok:
+        return _resultado_paginado([], pagina, por_pagina, 0)
+    with obter_sessao() as sessao:
+        todos = list(_clientes_filtrados(sessao, termo, status, cidade, etapa_num))
+        inicio = (pagina - 1) * por_pagina
+        data = [_cliente_resumo(cli) for cli in todos[inicio:inicio + por_pagina]]
+        return _resultado_paginado(data, pagina, por_pagina, len(todos))
 
 
 def obter_cliente(cliente_id: str) -> dict | None:
@@ -267,6 +381,120 @@ def obter_ativacao(cliente_id: str) -> dict | None:
         }
 
 
+def _em_ativacao_com_referencia(sessao: Session) -> list[tuple[Cliente, Ativacao, int, int]]:
+    """
+    Clientes em_ativacao como (cliente, ativacao, dias_na_etapa, dias_desde_cadastro).
+    dias_na_etapa conta desde o ultimo movimento da ativacao: o mais recente entre o ultimo
+    evento (ativacao_eventos) e ativacoes.atualizado_em.
+    """
+    hoje = _hoje()
+    ultimos_eventos = dict(sessao.execute(
+        select(AtivacaoEvento.cliente_id, func.max(AtivacaoEvento.ocorrido_em)).group_by(AtivacaoEvento.cliente_id)
+    ).all())
+    linhas = sessao.execute(
+        select(Cliente, Ativacao)
+        .join(Ativacao, Ativacao.cliente_id == Cliente.id)
+        .where(Cliente.status == "em_ativacao")
+    ).all()
+    resultado = []
+    for cli, ativacao in linhas:
+        referencias = [d for d in (ativacao.atualizado_em, ultimos_eventos.get(cli.id)) if d is not None]
+        referencia = max(referencias) if referencias else cli.criado_em
+        resultado.append((
+            cli,
+            ativacao,
+            max(0, (hoje - referencia.date()).days),
+            max(0, (hoje - cli.criado_em.date()).days),
+        ))
+    return resultado
+
+
+def _datas_ativacao(sessao: Session) -> dict[str, tuple[datetime, datetime]]:
+    """
+    cliente_id -> (cadastro, liberacao da energia) de quem chegou a etapa 5, qualquer que seja o status atual.
+    A liberacao e o primeiro evento da etapa 5 (ou ativacoes.atualizado_em, se nao houver evento).
+    """
+    primeiros = dict(sessao.execute(
+        select(AtivacaoEvento.cliente_id, func.min(AtivacaoEvento.ocorrido_em))
+        .where(AtivacaoEvento.etapa == TOTAL_ETAPAS)
+        .group_by(AtivacaoEvento.cliente_id)
+    ).all())
+    linhas = sessao.execute(
+        select(Cliente.id, Cliente.criado_em, Ativacao.etapa_atual, Ativacao.atualizado_em)
+        .join(Ativacao, Ativacao.cliente_id == Cliente.id)
+    ).all()
+    resultado: dict[str, tuple[datetime, datetime]] = {}
+    for cliente_id, criado_em, etapa, atualizado_em in linhas:
+        ativado_em = primeiros.get(cliente_id) or (atualizado_em if etapa == TOTAL_ETAPAS else None)
+        if ativado_em is not None:
+            resultado[cliente_id] = (criado_em, ativado_em)
+    return resultado
+
+
+def listar_clientes_parados(etapa: int | None = None, dias_minimos: int = 30, limite: int = 50) -> list[dict]:
+    """
+    Clientes em_ativacao sem avancar de etapa ha pelo menos 'dias_minimos' dias (desde o ultimo
+    evento/atualizacao da ativacao), do mais parado ao menos parado. Etapa invalida -> lista vazia.
+    atrasado = passou dos 90 dias do cadastro.
+    """
+    etapa_ok, etapa_num = _etapa_filtro(etapa)
+    if not etapa_ok:
+        return []
+    minimo = _inteiro(dias_minimos, 30, 0)
+    limite = _limitar(limite)
+    with obter_sessao() as sessao:
+        itens = [
+            item for item in _em_ativacao_com_referencia(sessao)
+            if item[2] >= minimo and (etapa_num is None or item[1].etapa_atual == etapa_num)
+        ]
+        itens.sort(key=lambda item: (-item[2], -item[3], item[0].nome))
+        return [
+            {
+                "cliente_id": cli.id,
+                "nome": cli.nome,
+                "cidade": cli.cidade,
+                "etapa_atual": ativacao.etapa_atual,
+                "nome_etapa": ETAPAS_ATIVACAO[ativacao.etapa_atual][0],
+                "dias_na_etapa": dias_etapa,
+                "dias_desde_cadastro": dias_cadastro,
+                "previsao_conclusao": _iso(ativacao.previsao_conclusao),
+                "atrasado": dias_cadastro > PRAZO_ATIVACAO_DIAS,
+            }
+            for cli, ativacao, dias_etapa, dias_cadastro in itens[:limite]
+        ]
+
+
+def resumo_ativacoes() -> dict:
+    """
+    Resumo do funil de ativacao: clientes em_ativacao por etapa (1..4) e a media de dias parados
+    em cada etapa, atrasados (mais de 90 dias do cadastro), ativados nos ultimos 30 dias e tempo
+    medio de ativacao (cadastro -> energia liberada, em dias; None se ninguem foi ativado).
+    """
+    with obter_sessao() as sessao:
+        itens = _em_ativacao_com_referencia(sessao)
+        por_etapa = {str(e): 0 for e in range(1, TOTAL_ETAPAS)}
+        soma_dias = {str(e): 0 for e in range(1, TOTAL_ETAPAS)}
+        for _, ativacao, dias_etapa, _ in itens:
+            chave = str(ativacao.etapa_atual)
+            if chave in por_etapa:
+                por_etapa[chave] += 1
+                soma_dias[chave] += dias_etapa
+        datas = _datas_ativacao(sessao)
+        corte = _agora() - timedelta(days=JANELA_ATIVADOS_DIAS)
+        tempos = [max(0, (ativado.date() - criado.date()).days) for criado, ativado in datas.values()]
+        return {
+            "em_ativacao": len(itens),
+            "por_etapa": por_etapa,
+            "dias_medios_na_etapa": {
+                chave: round(soma_dias[chave] / por_etapa[chave], 1) if por_etapa[chave] else 0.0
+                for chave in por_etapa
+            },
+            "atrasados_90_dias": sum(1 for item in itens if item[3] > PRAZO_ATIVACAO_DIAS),
+            "ativados_30_dias": sum(1 for _, ativado in datas.values() if ativado >= corte),
+            "tempo_medio_ativacao_dias": round(sum(tempos) / len(tempos), 1) if tempos else None,
+        }
+
+
 # ---------------------------------------------------------------------------
 # Faturas e economia
 # ---------------------------------------------------------------------------
@@ -279,6 +507,7 @@ def _fatura_para_dict(f: Fatura) -> dict:
         "valor_sem_bulbe": _dinheiro(f.valor_sem_bulbe),
         "desconto": _dinheiro(f.desconto),
         "bonus_indicacao": _dinheiro(f.bonus_indicacao),
+        "bonus_clube": _dinheiro(f.bonus_clube),
         "valor_total": _dinheiro(f.valor_total),
         "vencimento": _iso(f.vencimento),
         "situacao": f.situacao,
@@ -322,6 +551,7 @@ def listar_faturas_vencidas(limite: int = 20) -> list[dict]:
                 "cliente_id": f.cliente_id,
                 "cliente_nome": nome,
                 "mes_referencia": f.mes_referencia,
+                "bonus_clube": _dinheiro(f.bonus_clube),
                 "valor_total": _dinheiro(f.valor_total),
                 "vencimento": _iso(f.vencimento),
                 "dias_em_atraso": max(0, (hoje - f.vencimento).days),
@@ -334,6 +564,7 @@ def resumo_economia_cliente(cliente_id: str) -> dict | None:
     """
     Totais de economia do cliente a partir das faturas. Cliente inexistente -> None
     (regra geral do contrato para "nao encontrado").
+    v2: bonus_clube_total (bonus especial do Clube Bulbe), tambem somado em economia_total.
     """
     with obter_sessao() as sessao:
         if sessao.get(Cliente, cliente_id) is None:
@@ -341,12 +572,14 @@ def resumo_economia_cliente(cliente_id: str) -> dict | None:
         faturas = list(sessao.scalars(select(Fatura).where(Fatura.cliente_id == cliente_id)))
         desconto = sum(f.desconto for f in faturas)
         bonus = sum(f.bonus_indicacao for f in faturas)
+        bonus_clube = sum(f.bonus_clube or 0.0 for f in faturas)
         return {
             "cliente_id": cliente_id,
             "meses_faturados": len(faturas),
             "economia_total_desconto": _dinheiro(desconto),
             "bonus_indicacao_total": _dinheiro(bonus),
-            "economia_total": _dinheiro(desconto + bonus),
+            "bonus_clube_total": _dinheiro(bonus_clube),
+            "economia_total": _dinheiro(desconto + bonus + bonus_clube),
             "faturas_vencidas": sum(1 for f in faturas if f.situacao == "vencida"),
             "valor_em_aberto": _dinheiro(
                 sum(f.valor_total for f in faturas if f.situacao in ("em_aberto", "vencida"))
@@ -479,6 +712,29 @@ def listar_notificacoes(cliente_id: str, limite: int = 10) -> list[dict]:
         ]
 
 
+def _atendimento_para_dict(a: Atendimento, cliente_nome: str) -> dict:
+    return {
+        "id": a.id,
+        "cliente_id": a.cliente_id,
+        "cliente_nome": cliente_nome,
+        "canal": a.canal,
+        "assunto": a.assunto,
+        "descricao": a.descricao,
+        "status": a.status,
+        "criado_em": _iso(a.criado_em),
+        "resolvido_em": _iso(a.resolvido_em),
+    }
+
+
+def _filtros_atendimento(cliente_id: str | None, status: str | None) -> list[Any]:
+    filtros: list[Any] = []
+    if cliente_id is not None:
+        filtros.append(Atendimento.cliente_id == cliente_id)
+    if status:
+        filtros.append(Atendimento.status == status)
+    return filtros
+
+
 def listar_atendimentos(cliente_id: str | None = None, status: str | None = None,
                         limite: int = 20) -> list[dict]:
     """Atendimentos (de um cliente ou de todos), mais recentes primeiro, com o nome do cliente."""
@@ -488,27 +744,54 @@ def listar_atendimentos(cliente_id: str | None = None, status: str | None = None
         consulta = (
             select(Atendimento, Cliente.nome)
             .join(Cliente, Cliente.id == Atendimento.cliente_id)
-            .order_by(Atendimento.criado_em.desc())
+            .where(*_filtros_atendimento(cliente_id, status))
+            .order_by(Atendimento.criado_em.desc(), Atendimento.id.desc())
             .limit(_limitar(limite))
         )
-        if cliente_id is not None:
-            consulta = consulta.where(Atendimento.cliente_id == cliente_id)
-        if status:
-            consulta = consulta.where(Atendimento.status == status)
-        return [
-            {
-                "id": a.id,
-                "cliente_id": a.cliente_id,
-                "cliente_nome": nome,
-                "canal": a.canal,
-                "assunto": a.assunto,
-                "descricao": a.descricao,
-                "status": a.status,
-                "criado_em": _iso(a.criado_em),
-                "resolvido_em": _iso(a.resolvido_em),
-            }
-            for a, nome in sessao.execute(consulta).all()
-        ]
+        return [_atendimento_para_dict(a, nome) for a, nome in sessao.execute(consulta).all()]
+
+
+def listar_atendimentos_paginado(cliente_id: str | None = None, status: str | None = None,
+                                 pagina: int = 1, por_pagina: int = 20) -> dict:
+    """Atendimentos no formato paginado padrao (mais recentes primeiro, itens com cliente_nome)."""
+    pagina, por_pagina = _paginacao(pagina, por_pagina)
+    if not _texto_valido(status, STATUS_ATENDIMENTO):
+        return _resultado_paginado([], pagina, por_pagina, 0)
+    filtros = _filtros_atendimento(cliente_id, status)
+    with obter_sessao() as sessao:
+        total = sessao.scalar(select(func.count()).select_from(Atendimento).where(*filtros)) or 0
+        consulta = (
+            select(Atendimento, Cliente.nome)
+            .join(Cliente, Cliente.id == Atendimento.cliente_id)
+            .where(*filtros)
+            .order_by(Atendimento.criado_em.desc(), Atendimento.id.desc())
+            .offset((pagina - 1) * por_pagina)
+            .limit(por_pagina)
+        )
+        data = [_atendimento_para_dict(a, nome) for a, nome in sessao.execute(consulta).all()]
+        return _resultado_paginado(data, pagina, por_pagina, total)
+
+
+def _adesao_para_dict(a: Adesao) -> dict:
+    return {
+        "id": a.id,
+        "nome": a.nome,
+        "email": a.email,
+        "cpf": a.cpf,
+        "telefone": a.telefone,
+        "cidade": a.cidade,
+        "uf": a.uf,
+        "distribuidora": a.distribuidora,
+        "numero_instalacao": a.numero_instalacao,
+        "valor_conta_atual": _dinheiro(a.valor_conta_atual) if a.valor_conta_atual is not None else None,
+        "economia_mensal_estimada": (
+            _dinheiro(a.economia_mensal_estimada) if a.economia_mensal_estimada is not None else None
+        ),
+        "situacao": a.situacao,
+        "origem": a.origem,
+        "cliente_id": a.cliente_id,
+        "criado_em": _iso(a.criado_em),
+    }
 
 
 def listar_adesoes(situacao: str | None = None, limite: int = 20) -> list[dict]:
@@ -516,31 +799,29 @@ def listar_adesoes(situacao: str | None = None, limite: int = 20) -> list[dict]:
     if not _texto_valido(situacao, SITUACOES_ADESAO):
         return []
     with obter_sessao() as sessao:
-        consulta = select(Adesao).order_by(Adesao.criado_em.desc()).limit(_limitar(limite))
+        consulta = select(Adesao).order_by(Adesao.criado_em.desc(), Adesao.id).limit(_limitar(limite))
         if situacao:
             consulta = consulta.where(Adesao.situacao == situacao)
-        return [
-            {
-                "id": a.id,
-                "nome": a.nome,
-                "email": a.email,
-                "cpf": a.cpf,
-                "telefone": a.telefone,
-                "cidade": a.cidade,
-                "uf": a.uf,
-                "distribuidora": a.distribuidora,
-                "numero_instalacao": a.numero_instalacao,
-                "valor_conta_atual": _dinheiro(a.valor_conta_atual) if a.valor_conta_atual is not None else None,
-                "economia_mensal_estimada": (
-                    _dinheiro(a.economia_mensal_estimada) if a.economia_mensal_estimada is not None else None
-                ),
-                "situacao": a.situacao,
-                "origem": a.origem,
-                "cliente_id": a.cliente_id,
-                "criado_em": _iso(a.criado_em),
-            }
-            for a in sessao.scalars(consulta)
-        ]
+        return [_adesao_para_dict(a) for a in sessao.scalars(consulta)]
+
+
+def listar_adesoes_paginado(situacao: str | None = None, pagina: int = 1, por_pagina: int = 20) -> dict:
+    """Adesoes no formato paginado padrao (mais recentes primeiro)."""
+    pagina, por_pagina = _paginacao(pagina, por_pagina)
+    if not _texto_valido(situacao, SITUACOES_ADESAO):
+        return _resultado_paginado([], pagina, por_pagina, 0)
+    filtros = [Adesao.situacao == situacao] if situacao else []
+    with obter_sessao() as sessao:
+        total = sessao.scalar(select(func.count()).select_from(Adesao).where(*filtros)) or 0
+        consulta = (
+            select(Adesao)
+            .where(*filtros)
+            .order_by(Adesao.criado_em.desc(), Adesao.id)
+            .offset((pagina - 1) * por_pagina)
+            .limit(por_pagina)
+        )
+        data = [_adesao_para_dict(a) for a in sessao.scalars(consulta)]
+        return _resultado_paginado(data, pagina, por_pagina, total)
 
 
 # ---------------------------------------------------------------------------
@@ -614,13 +895,18 @@ def _contar_por(sessao, coluna, valores: tuple[str, ...]) -> dict[str, int]:  # 
 
 
 def metricas_gerais() -> dict:
-    """Numeros gerais para a visao geral do painel."""
+    """
+    Numeros gerais para a visao geral do painel.
+    v2: ativacao_por_etapa["1".."4"] conta os clientes em_ativacao em cada etapa e ["5"] conta os
+    clientes ATIVADOS nos ultimos 30 dias (ativacao_etapa5_descricao explica isso);
+    clube.bonus_pagos soma faturas.bonus_clube; economia_total_gerada inclui o bonus do Clube.
+    """
     agora = _agora()
     limite_30_dias = agora - timedelta(days=30)
     with obter_sessao() as sessao:
         clientes = _contar_por(sessao, Cliente.status, STATUS_CLIENTE)
 
-        # Funil de ativacao: apenas clientes com status em_ativacao
+        # Funil de ativacao: etapas 1-4 = clientes com status em_ativacao; etapa 5 = ativados em 30 dias
         por_etapa = dict(
             sessao.execute(
                 select(Ativacao.etapa_atual, func.count())
@@ -628,6 +914,9 @@ def metricas_gerais() -> dict:
                 .where(Cliente.status == "em_ativacao")
                 .group_by(Ativacao.etapa_atual)
             ).all()
+        )
+        por_etapa[TOTAL_ETAPAS] = sum(
+            1 for _, ativado_em in _datas_ativacao(sessao).values() if ativado_em >= limite_30_dias
         )
 
         vencidas, valor_vencido = sessao.execute(
@@ -639,7 +928,12 @@ def metricas_gerais() -> dict:
             select(func.count()).select_from(Fatura).where(Fatura.situacao == "em_aberto")
         ) or 0
         economia = sessao.scalar(
-            select(func.coalesce(func.sum(Fatura.desconto + Fatura.bonus_indicacao), 0.0)).select_from(Fatura)
+            select(func.coalesce(
+                func.sum(Fatura.desconto + Fatura.bonus_indicacao + func.coalesce(Fatura.bonus_clube, 0.0)), 0.0
+            )).select_from(Fatura)
+        ) or 0.0
+        bonus_pagos = sessao.scalar(
+            select(func.coalesce(func.sum(Fatura.bonus_clube), 0.0)).select_from(Fatura)
         ) or 0.0
 
         indicacoes = _contar_por(sessao, Indicacao.situacao, ("pendente", "aderiu", "expirada"))
@@ -661,6 +955,7 @@ def metricas_gerais() -> dict:
         return {
             "clientes": {"total": sum(clientes.values()), **clientes},
             "ativacao_por_etapa": {str(e): int(por_etapa.get(e, 0)) for e in range(1, TOTAL_ETAPAS + 1)},
+            "ativacao_etapa5_descricao": ETAPA5_DESCRICAO,
             "faturas": {
                 "vencidas": int(vencidas),
                 "valor_vencido": _dinheiro(valor_vencido),
@@ -676,6 +971,7 @@ def metricas_gerais() -> dict:
                 "clientes_com_sequencia": int(com_sequencia),
                 "cupons_ativos": cupons["ativo"],
                 "cupons_usados": cupons["usado"],
+                "bonus_pagos": _dinheiro(bonus_pagos),
             },
             "adesoes": adesoes,
             "simulacoes_30_dias": int(simulacoes),
@@ -755,12 +1051,394 @@ def obter_funcionario(funcionario_id: int) -> dict | None:
         return _funcionario_para_dict(funcionario)
 
 
-def registrar_chat(funcionario_id: int, pergunta: str, resposta: str, ferramentas_usadas: list[str]) -> None:
-    """Grava uma troca do chatbot (auditoria/LGPD). Unica funcao de escrita deste modulo."""
+def obter_funcionario_por_email(email: str) -> dict | None:
+    """
+    {id, nome, email, perfil, ativo} do funcionario com aquele e-mail (sem diferenciar maiusculas,
+    ignorando espacos nas pontas), inclusive inativos; None se nao existe. Usado pelo painel para
+    preencher funcionario_id na auditoria de login falho.
+    """
+    email_norm = (email or "").strip().lower() if isinstance(email, str) else ""
+    if not email_norm:
+        return None
     with obter_sessao() as sessao:
+        funcionario = sessao.scalar(select(Funcionario).where(func.lower(Funcionario.email) == email_norm))
+        if funcionario is None:
+            return None
+        return {**_funcionario_para_dict(funcionario), "ativo": bool(funcionario.ativo)}
+
+
+def registrar_chat(funcionario_id: int, pergunta: str, resposta: str, ferramentas_usadas: list[str], *,
+                   conversa_id: str | None = None, modelo: str | None = None, uso: dict | None = None,
+                   duracao_ms: int | None = None) -> None:
+    """
+    Grava uma troca do chatbot (auditoria/LGPD e metricas de uso).
+    v2 (parametros opcionais, so por nome): conversa_id, modelo, duracao_ms e
+    uso = {input_tokens, output_tokens, cache_read_tokens, cache_creation_tokens, custo_estimado_usd}.
+    Valores de uso ausentes ou invalidos viram 0. Uma conversa_id que nao existe (ex.: ja expurgada)
+    e gravada como nula, para a auditoria nunca falhar por causa dela.
+    """
+    uso = uso if isinstance(uso, dict) else {}
+    with obter_sessao() as sessao:
+        if conversa_id is not None and sessao.get(ChatConversa, str(conversa_id)) is None:
+            logger.warning("registrar_chat: conversa %s nao existe; gravando sem conversa_id.", conversa_id)
+            conversa_id = None
         sessao.add(ChatHistorico(
             funcionario_id=funcionario_id,
             pergunta=pergunta,
             resposta=resposta,
             ferramentas_usadas=json.dumps(list(ferramentas_usadas or []), ensure_ascii=False),
+            criado_em=_agora(),
+            conversa_id=str(conversa_id) if conversa_id is not None else None,
+            modelo=_cortar(modelo, TAMANHO_MODELO) or None,
+            input_tokens=_inteiro(uso.get("input_tokens")),
+            output_tokens=_inteiro(uso.get("output_tokens")),
+            cache_read_tokens=_inteiro(uso.get("cache_read_tokens")),
+            cache_creation_tokens=_inteiro(uso.get("cache_creation_tokens")),
+            custo_estimado_usd=_decimal(uso.get("custo_estimado_usd")),
+            duracao_ms=_inteiro(duracao_ms) if duracao_ms is not None else None,
         ))
+
+
+# ---------------------------------------------------------------------------
+# Chat: conversas guardadas no servidor (v2)
+# ---------------------------------------------------------------------------
+def _conversa_para_dict(c: ChatConversa) -> dict:
+    return {
+        "id": c.id,
+        "titulo": c.titulo,
+        "criado_em": _iso(c.criado_em),
+        "atualizado_em": _iso(c.atualizado_em),
+    }
+
+
+def criar_conversa(funcionario_id: int, titulo: str) -> dict:
+    """
+    Cria uma conversa vazia do funcionario. O titulo e cortado em 120 caracteres
+    (vazio vira "Nova conversa"). Funcionario inexistente -> ValueError.
+    """
+    titulo_limpo = (str(titulo or "")).strip()[:TAMANHO_TITULO_CONVERSA] or "Nova conversa"
+    agora = _agora()
+    with obter_sessao() as sessao:
+        if sessao.get(Funcionario, funcionario_id) is None:
+            raise ValueError(f"Funcionário {funcionario_id} não existe.")
+        conversa = ChatConversa(
+            id=gerar_uuid(), funcionario_id=funcionario_id, titulo=titulo_limpo,
+            criado_em=agora, atualizado_em=agora,
+        )
+        sessao.add(conversa)
+        return _conversa_para_dict(conversa)
+
+
+def listar_conversas(funcionario_id: int, limite: int = 20) -> list[dict]:
+    """Conversas do funcionario, das mais recentes (atualizado_em) para as mais antigas, com total_mensagens."""
+    with obter_sessao() as sessao:
+        contagem = (
+            select(ChatMensagem.conversa_id, func.count().label("total"))
+            .group_by(ChatMensagem.conversa_id)
+            .subquery()
+        )
+        consulta = (
+            select(ChatConversa, func.coalesce(contagem.c.total, 0))
+            .outerjoin(contagem, contagem.c.conversa_id == ChatConversa.id)
+            .where(ChatConversa.funcionario_id == funcionario_id)
+            .order_by(ChatConversa.atualizado_em.desc(), ChatConversa.criado_em.desc(), ChatConversa.id)
+            .limit(_limitar(limite))
+        )
+        return [
+            {**_conversa_para_dict(conversa), "total_mensagens": int(total)}
+            for conversa, total in sessao.execute(consulta).all()
+        ]
+
+
+def _carregar_conteudo(conteudo_json: str) -> Any:
+    """json.loads do conteudo gravado (se, por algum motivo, nao for JSON valido, devolve o texto cru)."""
+    try:
+        return json.loads(conteudo_json)
+    except (TypeError, ValueError):
+        logger.warning("chat_mensagens com conteudo_json invalido; devolvendo o texto cru.")
+        return conteudo_json
+
+
+def obter_conversa(conversa_id: str, funcionario_id: int) -> dict | None:
+    """
+    Conversa com todas as mensagens em ordem. None se nao existe OU se pertence a outro funcionario.
+    "conteudo" e o json.loads(conteudo_json): identico ao que foi gravado, pronto para reenviar a API.
+    """
+    with obter_sessao() as sessao:
+        conversa = sessao.get(ChatConversa, str(conversa_id), options=[selectinload(ChatConversa.mensagens)])
+        if conversa is None or conversa.funcionario_id != _inteiro(funcionario_id, -1, None):
+            return None
+        return {
+            **_conversa_para_dict(conversa),
+            "mensagens": [
+                {
+                    "ordem": m.ordem,
+                    "papel": m.papel,
+                    "conteudo": _carregar_conteudo(m.conteudo_json),
+                    "texto": m.texto or "",
+                    "criado_em": _iso(m.criado_em),
+                }
+                for m in sorted(conversa.mensagens, key=lambda m: m.ordem)
+            ],
+        }
+
+
+def adicionar_mensagens(conversa_id: str, mensagens: list[dict]) -> None:
+    """
+    Acrescenta mensagens no fim da conversa (ordem crescente, continuando da ultima) e atualiza
+    atualizado_em. O historico e so de acrescimo: nenhuma mensagem antiga e alterada.
+    Cada item: {papel: "user"|"assistant", conteudo: list|str, texto: str}; conteudo_json =
+    json.dumps(conteudo, ensure_ascii=False). Papel invalido, item sem conteudo ou conversa
+    inexistente -> ValueError (nada e gravado).
+    """
+    preparadas: list[tuple[str, str, str]] = []
+    for item in mensagens or []:
+        if not isinstance(item, dict) or "conteudo" not in item:
+            raise ValueError("Cada mensagem precisa ser um dict com 'papel', 'conteudo' e 'texto'.")
+        papel = item.get("papel")
+        if papel not in PAPEIS_CHAT:
+            raise ValueError(f"Papel inválido: {papel!r} (use 'user' ou 'assistant').")
+        texto = item.get("texto")
+        preparadas.append((papel, json.dumps(item["conteudo"], ensure_ascii=False), "" if texto is None else str(texto)))
+    if not preparadas:
+        return
+
+    agora = _agora()
+    with obter_sessao() as sessao:
+        conversa = sessao.get(ChatConversa, str(conversa_id))
+        if conversa is None:
+            raise ValueError(f"Conversa {conversa_id} não existe.")
+        ultima = sessao.scalar(
+            select(func.max(ChatMensagem.ordem)).where(ChatMensagem.conversa_id == conversa.id)
+        ) or 0
+        for posicao, (papel, conteudo_json, texto) in enumerate(preparadas, start=1):
+            sessao.add(ChatMensagem(
+                conversa_id=conversa.id, ordem=ultima + posicao, papel=papel,
+                conteudo_json=conteudo_json, texto=texto, criado_em=agora,
+            ))
+        conversa.atualizado_em = agora
+
+
+def metricas_uso_chatbot(dias: int = 30) -> dict:
+    """
+    Uso e custo estimado do chatbot nos ultimos 'dias' dias de calendario (hoje incluso, 1 a 3650),
+    a partir de chat_historico. por_dia traz todos os dias do periodo (inclusive os sem uso).
+    duracao_media_ms considera so as trocas com duracao registrada (0 se nenhuma).
+    """
+    dias = min(_inteiro(dias, 30, 1), 3650)
+    hoje = _hoje()
+    inicio = hoje - timedelta(days=dias - 1)
+    corte = datetime.combine(inicio, time.min)
+    with obter_sessao() as sessao:
+        linhas = sessao.execute(
+            select(
+                ChatHistorico.funcionario_id, ChatHistorico.conversa_id, ChatHistorico.ferramentas_usadas,
+                ChatHistorico.input_tokens, ChatHistorico.output_tokens, ChatHistorico.cache_read_tokens,
+                ChatHistorico.cache_creation_tokens, ChatHistorico.custo_estimado_usd,
+                ChatHistorico.duracao_ms, ChatHistorico.criado_em,
+            ).where(ChatHistorico.criado_em >= corte)
+        ).all()
+        nomes = dict(sessao.execute(select(Funcionario.id, Funcionario.nome)).all())
+
+    totais = Counter()
+    ferramentas: Counter[str] = Counter()
+    por_funcionario: dict[int, dict] = {}
+    por_dia = {
+        (inicio + timedelta(days=i)).isoformat(): {"perguntas": 0, "custo": 0.0} for i in range(dias)
+    }
+    conversas: set[str] = set()
+    duracoes: list[int] = []
+    custo_total = 0.0
+    for (func_id, conversa_id, ferramentas_json, entrada, saida, cache_leitura, cache_escrita,
+         custo, duracao, criado_em) in linhas:
+        custo = float(custo or 0.0)
+        custo_total += custo
+        totais["input_tokens"] += int(entrada or 0)
+        totais["output_tokens"] += int(saida or 0)
+        totais["cache_read_tokens"] += int(cache_leitura or 0)
+        totais["cache_creation_tokens"] += int(cache_escrita or 0)
+        if conversa_id:
+            conversas.add(conversa_id)
+        if duracao is not None:
+            duracoes.append(int(duracao))
+        try:
+            nomes_ferramentas = json.loads(ferramentas_json or "[]")
+        except (TypeError, ValueError):
+            nomes_ferramentas = []
+        if isinstance(nomes_ferramentas, list):
+            ferramentas.update(str(nome) for nome in nomes_ferramentas)
+        item = por_funcionario.setdefault(func_id, {"perguntas": 0, "custo": 0.0})
+        item["perguntas"] += 1
+        item["custo"] += custo
+        dia = por_dia.get(criado_em.date().isoformat())
+        if dia is not None:
+            dia["perguntas"] += 1
+            dia["custo"] += custo
+
+    perguntas = len(linhas)
+    return {
+        "periodo_dias": dias,
+        "perguntas": perguntas,
+        "conversas": len(conversas),
+        "funcionarios_ativos": len(por_funcionario),
+        "input_tokens": totais["input_tokens"],
+        "output_tokens": totais["output_tokens"],
+        "cache_read_tokens": totais["cache_read_tokens"],
+        "cache_creation_tokens": totais["cache_creation_tokens"],
+        "custo_estimado_usd": _usd(custo_total),
+        "custo_medio_por_pergunta_usd": _usd(custo_total / perguntas) if perguntas else 0.0,
+        "duracao_media_ms": round(sum(duracoes) / len(duracoes)) if duracoes else 0,
+        "por_funcionario": sorted(
+            (
+                {
+                    "funcionario_id": func_id,
+                    "nome": nomes.get(func_id),
+                    "perguntas": dados["perguntas"],
+                    "custo_estimado_usd": _usd(dados["custo"]),
+                }
+                for func_id, dados in por_funcionario.items()
+            ),
+            key=lambda item: (-item["perguntas"], -item["custo_estimado_usd"], item["funcionario_id"]),
+        ),
+        "ferramentas_mais_usadas": [
+            {"nome": nome, "usos": usos}
+            for nome, usos in sorted(ferramentas.items(), key=lambda par: (-par[1], par[0]))
+        ],
+        "por_dia": [
+            {"data": data, "perguntas": dados["perguntas"], "custo_estimado_usd": _usd(dados["custo"])}
+            for data, dados in por_dia.items()
+        ],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Auditoria de acessos e retencao (v2)
+# ---------------------------------------------------------------------------
+def registrar_auditoria(acao: str, *, funcionario_id: int | None = None, email_informado: str | None = None,
+                        recurso_tipo: str | None = None, recurso_id: str | None = None,
+                        ip: str | None = None, detalhe: str | None = None) -> None:
+    """
+    Grava um registro em auditoria_acessos (instante = agora_utc()). Acao fora de ACOES_AUDITORIA
+    -> ValueError. Textos sao cortados no tamanho da coluna (detalhe: 500 caracteres).
+    """
+    if acao not in ACOES_AUDITORIA:
+        raise ValueError(f"Ação de auditoria inválida: {acao!r}.")
+    email = _cortar(email_informado.strip() if isinstance(email_informado, str) else email_informado, 160)
+    with obter_sessao() as sessao:
+        sessao.add(AuditoriaAcesso(
+            funcionario_id=funcionario_id,
+            email_informado=email or None,
+            acao=acao,
+            recurso_tipo=_cortar(recurso_tipo, 40),
+            recurso_id=_cortar(recurso_id, 64),
+            ip=_cortar(ip, 45),
+            detalhe=_cortar(detalhe, TAMANHO_DETALHE_AUDITORIA),
+            criado_em=_agora(),
+        ))
+
+
+def listar_auditoria(funcionario_id: int | None = None, acao: str | None = None,
+                     pagina: int = 1, por_pagina: int = 50) -> dict:
+    """Registros de auditoria (mais recentes primeiro) no formato paginado, com funcionario_nome."""
+    pagina, por_pagina = _paginacao(pagina, por_pagina, 50)
+    if not _texto_valido(acao, ACOES_AUDITORIA):
+        return _resultado_paginado([], pagina, por_pagina, 0)
+    filtros: list[Any] = []
+    if funcionario_id is not None:
+        try:
+            filtros.append(AuditoriaAcesso.funcionario_id == int(funcionario_id))
+        except (TypeError, ValueError):
+            return _resultado_paginado([], pagina, por_pagina, 0)
+    if acao:
+        filtros.append(AuditoriaAcesso.acao == acao)
+    with obter_sessao() as sessao:
+        total = sessao.scalar(select(func.count()).select_from(AuditoriaAcesso).where(*filtros)) or 0
+        consulta = (
+            select(AuditoriaAcesso, Funcionario.nome)
+            .outerjoin(Funcionario, Funcionario.id == AuditoriaAcesso.funcionario_id)
+            .where(*filtros)
+            .order_by(AuditoriaAcesso.criado_em.desc(), AuditoriaAcesso.id.desc())
+            .offset((pagina - 1) * por_pagina)
+            .limit(por_pagina)
+        )
+        data = [
+            {
+                "id": r.id,
+                "funcionario_id": r.funcionario_id,
+                "funcionario_nome": nome,
+                "email_informado": r.email_informado,
+                "acao": r.acao,
+                "recurso_tipo": r.recurso_tipo,
+                "recurso_id": r.recurso_id,
+                "ip": r.ip,
+                "detalhe": r.detalhe,
+                "criado_em": _iso(r.criado_em),
+            }
+            for r, nome in sessao.execute(consulta).all()
+        ]
+        return _resultado_paginado(data, pagina, por_pagina, total)
+
+
+def contar_falhas_login(email: str, minutos: int = 15) -> int:
+    """
+    Quantos login_falha daquele e-mail (sem diferenciar maiusculas) aconteceram nos ultimos 'minutos'.
+    Casa pelo email_informado ou pelo funcionario dono do e-mail (caso o registro so tenha o id).
+    """
+    email_norm = (email or "").strip().lower()
+    if not email_norm:
+        return 0
+    corte = _agora() - timedelta(minutes=_inteiro(minutos, 15, 0))
+    with obter_sessao() as sessao:
+        ids_do_email = select(Funcionario.id).where(func.lower(Funcionario.email) == email_norm)
+        return int(sessao.scalar(
+            select(func.count())
+            .select_from(AuditoriaAcesso)
+            .where(
+                AuditoriaAcesso.acao == "login_falha",
+                AuditoriaAcesso.criado_em >= corte,
+                or_(
+                    func.lower(AuditoriaAcesso.email_informado) == email_norm,
+                    AuditoriaAcesso.funcionario_id.in_(ids_do_email),
+                ),
+            )
+        ) or 0)
+
+
+def expurgar_dados_antigos(dias_chat: int = 180, dias_auditoria: int = 730) -> dict:
+    """
+    Retencao (LGPD): apaga chat_historico mais antigo que dias_chat (pelo criado_em), as conversas
+    cuja ultima atualizacao e mais antiga que dias_chat (com todas as mensagens delas) e a
+    auditoria mais antiga que dias_auditoria. Valores negativos ou invalidos viram o padrao/0.
+    Devolve quantas linhas saíram de cada tabela: {chat_historico, chat_conversas, chat_mensagens, auditoria}.
+    """
+    agora = _agora()
+    corte_chat = agora - timedelta(days=_inteiro(dias_chat, 180, 0))
+    corte_auditoria = agora - timedelta(days=_inteiro(dias_auditoria, 730, 0))
+    sem_sincronizar = {"synchronize_session": False}
+    with obter_sessao() as sessao:
+        conversas_antigas = select(ChatConversa.id).where(ChatConversa.atualizado_em < corte_chat)
+        chat_historico = sessao.execute(
+            delete(ChatHistorico).where(ChatHistorico.criado_em < corte_chat), execution_options=sem_sincronizar
+        ).rowcount
+        # trocas recentes que apontam para uma conversa expurgada ficam sem conversa_id
+        sessao.execute(
+            update(ChatHistorico).where(ChatHistorico.conversa_id.in_(conversas_antigas)).values(conversa_id=None),
+            execution_options=sem_sincronizar,
+        )
+        chat_mensagens = sessao.execute(
+            delete(ChatMensagem).where(ChatMensagem.conversa_id.in_(conversas_antigas)),
+            execution_options=sem_sincronizar,
+        ).rowcount
+        chat_conversas = sessao.execute(
+            delete(ChatConversa).where(ChatConversa.atualizado_em < corte_chat), execution_options=sem_sincronizar
+        ).rowcount
+        auditoria = sessao.execute(
+            delete(AuditoriaAcesso).where(AuditoriaAcesso.criado_em < corte_auditoria),
+            execution_options=sem_sincronizar,
+        ).rowcount
+        return {
+            "chat_historico": int(chat_historico or 0),
+            "chat_conversas": int(chat_conversas or 0),
+            "chat_mensagens": int(chat_mensagens or 0),
+            "auditoria": int(auditoria or 0),
+        }

@@ -3,11 +3,15 @@ Camada de Ferramentas, Chatbot.
 
 Define as ferramentas (tools) que o Claude pode chamar e executa cada uma
 delas contra as consultas SOMENTE LEITURA de `app.database.consultas`
-(mapeamento 1-para-1, secao 1.6 do contrato).
+(mapeamento 1-para-1, secao 1.6 do contrato e secao 1.2 do contrato das melhorias).
 
 Uma unica especificacao (`_ESPECIFICACAO`) gera:
-- a lista `TOOLS` (JSON Schema enviado a API);
+- a lista `TOOLS` (JSON Schema enviado a API, com `eager_input_streaming`);
 - a validacao/conversao das entradas antes de chamar a consulta.
+
+Com `eager_input_streaming` a API deixa de validar a entrada das ferramentas
+durante o streaming; por isso a validacao local (`validar_entrada`) e obrigatoria
+e roda sempre antes de qualquer consulta.
 
 Antes de devolver o resultado ao modelo, CPF e telefone sao mascarados
 recursivamente (LGPD) e o resultado e serializado em JSON.
@@ -45,6 +49,17 @@ _CLIENTE_ID: dict = {
 }
 
 
+_ETAPA_ATIVACAO: dict = {
+    "tipo": "integer",
+    "minimo": 1,
+    "maximo": 5,
+    "descricao": (
+        "Etapa da jornada de ativacao: 1 Cadastro, 2 Documentos, 3 Solicitacao a CEMIG, "
+        "4 Analise CEMIG, 5 Energia liberada."
+    ),
+}
+
+
 def _limite(padrao: int, maximo: int, descricao: str = "Quantidade maxima de itens.") -> dict:
     """Parametro inteiro de limite de itens."""
     return {
@@ -62,10 +77,10 @@ _ESPECIFICACAO: dict[str, dict] = {
     "buscar_clientes": {
         "descricao": (
             "Busca clientes da Bulbe. O termo casa (sem diferenciar maiusculas) com nome, e-mail, "
-            "CPF (so digitos), numero de instalacao ou codigo de indicacao. Pode filtrar por status e cidade. "
-            "Devolve lista resumida: id, nome, email, cpf (mascarado), telefone (mascarado), cidade, uf, "
-            "status e etapa_ativacao. Use SEMPRE primeiro para descobrir o id do cliente antes das outras "
-            "ferramentas. Sem filtros, lista os clientes mais recentes."
+            "CPF (so digitos), numero de instalacao ou codigo de indicacao. Pode filtrar por status, cidade e "
+            "etapa da ativacao. Devolve lista resumida: id, nome, email, cpf (mascarado), telefone (mascarado), "
+            "cidade, uf, status e etapa_ativacao. Use SEMPRE primeiro para descobrir o id do cliente antes das "
+            "outras ferramentas. Sem filtros, lista os clientes mais recentes."
         ),
         "parametros": {
             "termo": {
@@ -78,8 +93,41 @@ _ESPECIFICACAO: dict[str, dict] = {
                 "descricao": "Filtra pelo status do cliente.",
             },
             "cidade": {"tipo": "string", "descricao": "Filtra pela cidade (ex.: Belo Horizonte, Contagem)."},
+            "etapa": {
+                **_ETAPA_ATIVACAO,
+                "descricao": "Filtra pela etapa atual da ativacao. " + _ETAPA_ATIVACAO["descricao"],
+            },
             "limite": _limite(20, 50),
         },
+    },
+    "listar_clientes_parados": {
+        "descricao": (
+            "Clientes em ativacao que NAO avancam de etapa ha pelo menos dias_minimos dias, do mais parado ao "
+            "menos parado: cliente_id, nome, cidade, etapa_atual, nome_etapa, dias_na_etapa, dias_desde_cadastro, "
+            "previsao_conclusao e atrasado (true quando ja passou dos 90 dias do cadastro). Use para gargalos da "
+            "ativacao, clientes travados numa etapa e acompanhamento do time de ativacao/CEMIG."
+        ),
+        "parametros": {
+            "etapa": {
+                **_ETAPA_ATIVACAO,
+                "descricao": "Opcional: so clientes parados nesta etapa. " + _ETAPA_ATIVACAO["descricao"],
+            },
+            "dias_minimos": {
+                "tipo": "integer",
+                "minimo": 0,
+                "maximo": 365,
+                "descricao": "Minimo de dias sem avancar de etapa (0 a 365). Padrao 30.",
+            },
+            "limite": _limite(50, 100, "Quantidade maxima de clientes."),
+        },
+    },
+    "resumo_ativacoes": {
+        "descricao": (
+            "Visao geral da jornada de ativacao: total de clientes em ativacao, quantos em cada etapa (1 a 4), "
+            "media de dias parados em cada etapa, quantos passaram dos 90 dias, quantos foram ativados nos "
+            "ultimos 30 dias e o tempo medio de ativacao em dias. Use para perguntas gerais sobre ativacoes."
+        ),
+        "parametros": {},
     },
     "obter_cliente": {
         "descricao": (
@@ -98,7 +146,8 @@ _ESPECIFICACAO: dict[str, dict] = {
     "listar_faturas": {
         "descricao": (
             "Faturas de um cliente (mais recentes primeiro): mes de referencia, consumo em kWh, valor sem Bulbe, desconto, "
-            "bonus de indicacao, valor total, vencimento, situacao e data de pagamento. Use para 2a via, historico de "
+            "bonus de indicacao, bonus_clube (R$ 50 do Clube Bulbe ao completar 5 semanas, ja descontado do valor total), "
+            "valor total, vencimento, situacao e data de pagamento. Use para 2a via, historico de "
             "pagamentos e faturas vencidas/em aberto de UM cliente."
         ),
         "parametros": {
@@ -114,7 +163,7 @@ _ESPECIFICACAO: dict[str, dict] = {
     "listar_faturas_vencidas": {
         "descricao": (
             "Faturas vencidas (nao pagas apos o vencimento) de TODOS os clientes, da mais antiga para a mais recente: "
-            "fatura_id, cliente_id, cliente_nome, mes de referencia, valor total, vencimento e dias em atraso. "
+            "fatura_id, cliente_id, cliente_nome, mes de referencia, valor total, bonus_clube, vencimento e dias em atraso. "
             "Use para perguntas como 'quais clientes tem fatura vencida' ou inadimplencia em geral."
         ),
         "parametros": {
@@ -124,7 +173,8 @@ _ESPECIFICACAO: dict[str, dict] = {
     "resumo_economia_cliente": {
         "descricao": (
             "Resumo financeiro do cliente: meses faturados, economia total com desconto, total de bonus de indicacao, "
-            "economia total, quantidade de faturas vencidas e valor em aberto."
+            "total de bonus do Clube Bulbe (bonus_clube_total), economia total (desconto + bonus), quantidade de "
+            "faturas vencidas e valor em aberto."
         ),
         "parametros": {"cliente_id": _CLIENTE_ID},
     },
@@ -217,9 +267,10 @@ _ESPECIFICACAO: dict[str, dict] = {
     },
     "metricas_gerais": {
         "descricao": (
-            "Metricas gerais da operacao: clientes por status, clientes por etapa de ativacao, faturas vencidas "
-            "(quantidade e valor) e em aberto, economia total gerada, indicacoes, Clube Bulbe, adesoes por situacao, "
-            "simulacoes nos ultimos 30 dias e uso do app. Use para perguntas de visao geral e totais."
+            "Metricas gerais da operacao: clientes por status, clientes por etapa de ativacao (a chave '5' conta os "
+            "clientes ATIVADOS nos ultimos 30 dias), faturas vencidas (quantidade e valor) e em aberto, economia total "
+            "gerada, indicacoes, Clube Bulbe (inclui bonus_pagos), adesoes por situacao, simulacoes nos ultimos 30 dias "
+            "e uso do app. Use para perguntas de visao geral e totais."
         ),
         "parametros": {},
     },
@@ -280,12 +331,16 @@ def _montar_schema(parametros: dict[str, dict]) -> dict:
     return schema
 
 
-# Lista enviada a API (ordem estavel, para nao invalidar o cache de prompt).
+# Lista enviada a API. Ordem e conteudo estaveis: o MESMO `tools` em toda chamada, com ou sem
+# streaming, para nao invalidar o cache de prompt nem o raciocinio preservado da conversa.
+# `eager_input_streaming` faz a entrada das ferramentas chegar aos poucos no stream; em chamadas
+# sem streaming o campo e ignorado pela API.
 TOOLS: list[dict] = [
     {
         "name": nome,
         "description": spec["descricao"],
         "input_schema": _montar_schema(spec["parametros"]),
+        "eager_input_streaming": True,
     }
     for nome, spec in _ESPECIFICACAO.items()
 ]
@@ -379,6 +434,12 @@ def validar_entrada(nome_ferramenta: str, entrada: Any) -> dict[str, Any]:
     """
     if entrada is None:
         entrada = {}
+    if isinstance(entrada, str):
+        # Entrada que chegou como texto JSON: interpreta (nunca compara JSON como string).
+        try:
+            entrada = json.loads(entrada) if entrada.strip() else {}
+        except ValueError as exc:
+            raise EntradaInvalida("a entrada nao e um JSON valido.") from exc
     if not isinstance(entrada, dict):
         raise EntradaInvalida("a entrada deve ser um objeto JSON.")
 

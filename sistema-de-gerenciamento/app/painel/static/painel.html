@@ -38,6 +38,28 @@
           <li><a href="#/atendimentos" class="menu-item" data-rota="atendimentos">
             <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
             Atendimentos</a></li>
+          <li><a href="#/ativacoes" class="menu-item" data-rota="ativacoes">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M13 2 4.1 13.2a.5.5 0 0 0 .4.8H11l-1 8 8.9-11.2a.5.5 0 0 0-.4-.8H13l1-8z"/></svg>
+            Ativações</a></li>
+          <li><a href="#/dicas" class="menu-item" data-rota="dicas">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z"/></svg>
+            Dicas</a></li>
+          <li><a href="#/usinas" class="menu-item" data-rota="usinas">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM4.2 5.6l1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1zm12.1 12.1 1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1zM18.4 4.2l1.4 1.4-2.1 2.1-1.4-1.4 2.1-2.1zM6.3 16.3l1.4 1.4-2.1 2.1-1.4-1.4 2.1-2.1z"/></svg>
+            Usinas</a></li>
+          <li><a href="#/parceiros" class="menu-item" data-rota="parceiros">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M20 6h-2.2A3 3 0 0 0 12 3.8 3 3 0 0 0 6.2 6H4a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h8V6.5h2V11h8a1 1 0 0 0 1-1V8a2 2 0 0 0-2-2zM9 6a1 1 0 1 1 1-1v1H9zm6 0h-1V5a1 1 0 1 1 1 1zM4 13v7a2 2 0 0 0 2 2h5v-9H4zm9 9h5a2 2 0 0 0 2-2v-7h-7v9z"/></svg>
+            Parceiros</a></li>
+        </ul>
+        <!-- Itens de gestão: o painel.js só mostra para o perfil admin (a API também exige admin). -->
+        <p class="menu-secao" id="menu-secao-admin" hidden>Gestão</p>
+        <ul class="menu-lista" id="menu-admin" hidden>
+          <li><a href="#/auditoria" class="menu-item" data-rota="auditoria">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5l-9-4zm-1 15-4-4 1.4-1.4 2.6 2.6 5.6-5.6L18 9l-7 7z"/></svg>
+            Auditoria</a></li>
+          <li><a href="#/uso-assistente" class="menu-item" data-rota="uso-assistente">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
+            Uso do assistente</a></li>
         </ul>
       </nav>
       <p class="menu-aviso">Dados <strong>fictícios</strong> para demonstração.</p>
@@ -96,8 +118,19 @@
               <label for="filtro-cidade">Cidade</label>
               <input id="filtro-cidade" type="text" maxlength="80" placeholder="Ex.: Belo Horizonte">
             </div>
+            <div class="campo">
+              <label for="filtro-etapa">Etapa da ativação</label>
+              <select id="filtro-etapa">
+                <option value="">Todas</option>
+                <option value="1">1. Cadastro</option>
+                <option value="2">2. Documentos</option>
+                <option value="3">3. Solicitação à CEMIG</option>
+                <option value="4">4. Análise CEMIG</option>
+                <option value="5">5. Energia liberada</option>
+              </select>
+            </div>
             <div class="campo campo-pequeno">
-              <label for="filtro-limite">Mostrar</label>
+              <label for="filtro-limite">Por página</label>
               <select id="filtro-limite">
                 <option value="20">20</option>
                 <option value="50">50</option>
@@ -139,7 +172,7 @@
               </select>
             </div>
             <div class="campo campo-pequeno">
-              <label for="filtro-adesao-limite">Mostrar</label>
+              <label for="filtro-adesao-limite">Por página</label>
               <select id="filtro-adesao-limite">
                 <option value="20">20</option>
                 <option value="50">50</option>
@@ -172,7 +205,7 @@
               </select>
             </div>
             <div class="campo campo-pequeno">
-              <label for="filtro-atendimento-limite">Mostrar</label>
+              <label for="filtro-atendimento-limite">Por página</label>
               <select id="filtro-atendimento-limite">
                 <option value="20">20</option>
                 <option value="50">50</option>
@@ -186,6 +219,152 @@
           <div id="atendimentos-resultado" aria-live="polite"></div>
         </section>
 
+        <!-- ATIVAÇÕES -->
+        <section class="tela" id="tela-ativacoes" data-tela="ativacoes" hidden aria-labelledby="titulo-ativacoes">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-ativacoes" tabindex="-1">Ativações</h1>
+              <p class="tela-descricao">Jornada de ativação (5 etapas, até 90 dias): resumo por etapa e clientes parados.</p>
+            </div>
+            <button type="button" class="botao botao-secundario botao-pequeno" id="botao-atualizar-ativacoes">Atualizar</button>
+          </div>
+          <div id="ativacoes-resumo" aria-live="polite"></div>
+
+          <h2 class="secao-titulo" id="titulo-parados">Clientes parados na mesma etapa</h2>
+          <form class="filtros" id="form-parados" aria-labelledby="titulo-parados">
+            <div class="campo">
+              <label for="filtro-parados-etapa">Etapa</label>
+              <select id="filtro-parados-etapa">
+                <option value="">Todas</option>
+                <option value="1">1. Cadastro</option>
+                <option value="2">2. Documentos</option>
+                <option value="3">3. Solicitação à CEMIG</option>
+                <option value="4">4. Análise CEMIG</option>
+                <option value="5">5. Energia liberada</option>
+              </select>
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-parados-dias">Parados há (dias)</label>
+              <input id="filtro-parados-dias" type="number" min="0" max="3650" step="1" value="30" inputmode="numeric">
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-parados-limite">Mostrar</label>
+              <select id="filtro-parados-limite">
+                <option value="50">50</option>
+                <option value="20">20</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="filtros-acoes">
+              <button type="submit" class="botao botao-primario">Filtrar</button>
+            </div>
+          </form>
+          <div id="parados-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- DICAS -->
+        <section class="tela" id="tela-dicas" data-tela="dicas" hidden aria-labelledby="titulo-dicas">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-dicas" tabindex="-1">Dicas de economia</h1>
+              <p class="tela-descricao">As dicas exibidas no carrossel do app, na mesma ordem.</p>
+            </div>
+          </div>
+          <div id="dicas-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- USINAS -->
+        <section class="tela" id="tela-usinas" data-tela="usinas" hidden aria-labelledby="titulo-usinas">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-usinas" tabindex="-1">Usinas</h1>
+              <p class="tela-descricao">Usinas solares da Bulbe e clientes ativos vinculados a cada uma.</p>
+            </div>
+          </div>
+          <div id="usinas-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- PARCEIROS -->
+        <section class="tela" id="tela-parceiros" data-tela="parceiros" hidden aria-labelledby="titulo-parceiros">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-parceiros" tabindex="-1">Parceiros do Clube Bulbe</h1>
+              <p class="tela-descricao">Empresas que oferecem os cupons das cartas semanais do Clube.</p>
+            </div>
+          </div>
+          <form class="filtros" id="form-parceiros">
+            <div class="campo-checkbox">
+              <input id="filtro-parceiros-inativos" type="checkbox">
+              <label for="filtro-parceiros-inativos">Incluir parceiros inativos</label>
+            </div>
+          </form>
+          <div id="parceiros-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- AUDITORIA (admin) -->
+        <section class="tela" id="tela-auditoria" data-tela="auditoria" hidden aria-labelledby="titulo-auditoria">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-auditoria" tabindex="-1">Auditoria</h1>
+              <p class="tela-descricao">Logins, bloqueios, alertas, fichas abertas e expurgos. Consultar esta tela também fica registrado.</p>
+            </div>
+            <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-expurgo">Expurgar dados antigos</button>
+          </div>
+          <div id="expurgo-resultado" aria-live="polite"></div>
+          <form class="filtros" id="form-auditoria">
+            <div class="campo">
+              <label for="filtro-auditoria-acao">Ação</label>
+              <select id="filtro-auditoria-acao">
+                <option value="">Todas</option>
+                <option value="login_ok">Login com sucesso</option>
+                <option value="login_falha">Login com falha</option>
+                <option value="login_bloqueado">Login bloqueado</option>
+                <option value="alerta_email">Alerta por e-mail</option>
+                <option value="ver_ficha">Abriu ficha</option>
+                <option value="ver_auditoria">Consultou auditoria</option>
+                <option value="expurgo">Expurgo</option>
+              </select>
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-auditoria-funcionario">ID do funcionário</label>
+              <input id="filtro-auditoria-funcionario" type="number" min="1" step="1" inputmode="numeric">
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-auditoria-limite">Por página</label>
+              <select id="filtro-auditoria-limite">
+                <option value="50">50</option>
+                <option value="20">20</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="filtros-acoes">
+              <button type="submit" class="botao botao-primario">Filtrar</button>
+              <button type="reset" class="botao botao-fantasma">Limpar</button>
+            </div>
+          </form>
+          <div id="auditoria-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- USO DO ASSISTENTE (admin) -->
+        <section class="tela" id="tela-uso-assistente" data-tela="uso-assistente" hidden aria-labelledby="titulo-uso-assistente">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-uso-assistente" tabindex="-1">Uso do assistente</h1>
+              <p class="tela-descricao">Perguntas, tokens e custo estimado (US$) do Claude Haiku no período.</p>
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-uso-dias">Período</label>
+              <select id="filtro-uso-dias">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="365">Últimos 365 dias</option>
+              </select>
+            </div>
+          </div>
+          <div id="uso-resultado" aria-live="polite"></div>
+        </section>
+
       </main>
     </div>
 
@@ -197,14 +376,26 @@
           <p class="chat-subtitulo" id="chat-modelo">Pergunte sobre clientes ou sobre o app</p>
         </div>
         <div class="chat-cabecalho-acoes">
-          <button type="button" class="botao-icone" id="botao-chat-limpar" title="Nova conversa" aria-label="Limpar conversa">
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          <button type="button" class="botao-icone" id="botao-chat-conversas" title="Conversas anteriores" aria-label="Conversas anteriores"
+                  aria-controls="chat-conversas" aria-expanded="false">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9L9 12H6a7 7 0 1 1 2.1 5l-1.4 1.4A9 9 0 1 0 13 3zm-1 5v5l4.3 2.5.7-1.2-3.5-2.1V8H12z"/></svg>
+          </button>
+          <button type="button" class="botao-icone" id="botao-chat-limpar" title="Nova conversa" aria-label="Nova conversa">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           </button>
           <button type="button" class="botao-icone" id="botao-chat-fechar" title="Recolher assistente" aria-label="Recolher assistente">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           </button>
         </div>
       </header>
+
+      <section class="chat-conversas" id="chat-conversas" hidden aria-labelledby="chat-conversas-titulo">
+        <div class="chat-conversas-topo">
+          <h3 id="chat-conversas-titulo">Conversas anteriores</h3>
+          <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-conversas-fechar">Fechar</button>
+        </div>
+        <div id="chat-conversas-lista" aria-live="polite"></div>
+      </section>
 
       <div class="chat-mensagens" id="chat-mensagens" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Conversa com o assistente">
         <div class="chat-boas-vindas" id="chat-boas-vindas">
@@ -217,7 +408,7 @@
 
       <div class="chat-digitando" id="chat-digitando" hidden aria-live="polite">
         <span class="pontinhos" aria-hidden="true"><span></span><span></span><span></span></span>
-        Assistente digitando...
+        <span id="chat-digitando-texto">Assistente digitando...</span>
       </div>
 
       <form class="chat-form" id="chat-form">
