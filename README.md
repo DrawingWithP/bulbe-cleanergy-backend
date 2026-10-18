@@ -13,6 +13,8 @@ O repositório tem duas partes independentes:
 
 Cada parte roda separadamente, a partir da própria pasta.
 
+No desenvolvimento do sistema de gerenciamento foi utilizado um agente de IA de programação (Claude Code) como ferramenta de apoio; os detalhes estão no [`README`](sistema-de-gerenciamento/README.md#uso-de-ia-no-desenvolvimento) da pasta.
+
 ## Sobre o projeto
 
 - **Empresa parceira:** Bulbe Energia

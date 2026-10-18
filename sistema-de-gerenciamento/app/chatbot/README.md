@@ -90,6 +90,6 @@ Os erros são `ErroDeNegocio` (de `app/erros.py`) e saem no formato
    CHATBOT_TIMEOUT=60                # opcional, em segundos
    ```
    Ou exporte as variáveis no terminal (PowerShell: `$env:ANTHROPIC_API_KEY = "sk-ant-..."`).
-3. Dependências (instaladas pelo líder via `requirements.txt`): `anthropic`, `python-dotenv` (opcional).
+3. Dependências (instaladas via `requirements.txt`): `anthropic`, `python-dotenv` (opcional).
 
 Sem a chave, o restante da API e do painel continuam funcionando; só o chat responde 503.

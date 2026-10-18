@@ -23,7 +23,7 @@ python -m app.database.seed          # APAGA e recria app/database/bulbe_fictici
 - O caminho padrão é absoluto (`Path(__file__).parent / "bulbe_ficticio.db"`). Para usar outro banco, defina `BULBE_DB_URL`.
 - A senha dos funcionários vem de `PAINEL_SENHA_DEMO` (padrão `bulbe@demo123`).
   Os logins são `admin@bulbe.com.br` (admin), `atendimento@bulbe.com.br` e `ana.souza@bulbe.com.br` (atendimento).
-- O arquivo `.db` **não** vai para o git (o líder cuida do `.gitignore`).
+- O arquivo `.db` **não** vai para o git (está no `.gitignore`).
 - As datas são relativas ao dia atual em UTC (`agora_utc().date()`, a mesma fonte usada nas consultas), então o banco sempre "parece atual". Com a mesma semente e no mesmo dia, o conteúdo sai igual (só o salt dos hashes muda).
 - Nenhuma notificação, atendimento ou `ultimo_login_app` fica antes do `criado_em` do cliente.
 
@@ -80,6 +80,6 @@ Relacionamentos principais: `clientes 1–N faturas / indicacoes / notificacoes 
 ## Consultas (`consultas.py`)
 
 Todas seguem a seção 1.6 de `docs/CONTRATOS.md`. Além delas, há:
-- `listar_faturas_vencidas(limite=20)`, pedida pelo líder: lista as faturas `vencida` de todos os clientes, da mais antiga para a mais recente, com `dias_em_atraso`.
+- `listar_faturas_vencidas(limite=20)`: lista as faturas `vencida` de todos os clientes, da mais antiga para a mais recente, com `dias_em_atraso`.
 - `listar_atendimentos(...)`: cada item traz também `cliente_nome`.
 - `listar_usinas()`: cada item traz também `clientes_ativos`.

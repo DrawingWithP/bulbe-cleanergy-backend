@@ -35,14 +35,14 @@ de erro no formato `{"error": {...}}`), o próprio `app/erros.py`, o `requiremen
 
 | Documento | Conteúdo |
 |---|---|
-| [CONTRATOS.md](CONTRATOS.md) | Contrato entre as pastas (interfaces, rotas, tabelas) — mantido pelo líder |
+| [CONTRATOS.md](CONTRATOS.md) | Contrato entre as pastas (interfaces, rotas, tabelas) definido no início do desenvolvimento |
 | [levantamento-funcionalidades.md](levantamento-funcionalidades.md) | O que o app/site da Bulbe já tem × o que a squad criou, com demandas, US e onde aparece no banco/painel |
 | [arquitetura.md](arquitetura.md) | Camadas existentes e novas, fluxo de uma pergunta ao chatbot passo a passo, diagramas PlantUML |
 | [dicionario-de-dados.md](dicionario-de-dados.md) | Todas as tabelas e campos com tipo, descrição e origem, e diagrama ER |
 | [guia-do-painel.md](guia-do-painel.md) | `.env`, instalação, como rodar, usuários demo, telas e 15 perguntas de exemplo |
 | [seguranca-e-lgpd.md](seguranca-e-lgpd.md) | Dados fictícios, mascaramento, somente leitura, PBKDF2, token HMAC, auditoria, *prompt injection*, próximos passos |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico desta pasta |
-| [NOTAS_PARA_O_LIDER.md](NOTAS_PARA_O_LIDER.md) | Dúvidas e inconsistências encontradas pelo agente de documentação |
+| [NOTAS_PARA_O_LIDER.md](NOTAS_PARA_O_LIDER.md) | Dúvidas e inconsistências encontradas durante a documentação |
 
 ## Começo rápido
 

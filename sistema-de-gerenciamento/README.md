@@ -45,3 +45,9 @@ O banco é criado e populado automaticamente na primeira execução. Para recri�
 ```
 
 Documentação completa em [`docs/README.md`](docs/README.md).
+
+## Uso de IA no desenvolvimento
+
+No desenvolvimento deste sistema foi utilizado um **agente de IA de programação** (Claude Code, da Anthropic) como ferramenta de apoio na escrita do código, da documentação e na revisão. A squad definiu os requisitos, as funcionalidades e as decisões de projeto, conduziu o agente e testou o resultado.
+
+Isso é diferente do **chatbot do painel**, que é uma funcionalidade do próprio sistema: ele usa a API da Anthropic (modelo Claude Haiku 5.5) para responder às perguntas dos funcionários.

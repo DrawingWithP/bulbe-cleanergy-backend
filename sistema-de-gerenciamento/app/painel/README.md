@@ -17,7 +17,7 @@ app/painel/
     └── logo-bulbe.svg
 ```
 
-## Integração (feita pelo líder em `app/main.py`)
+## Integração (em `app/main.py`)
 
 ```python
 from pathlib import Path
