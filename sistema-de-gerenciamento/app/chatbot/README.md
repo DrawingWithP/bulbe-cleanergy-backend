@@ -76,7 +76,7 @@ Detalhes:
 | Outro `anthropic.APIStatusError` | 502 | `CHATBOT_ERRO_API` |
 | `anthropic.APIConnectionError` (inclui timeout) | 503 | `CHATBOT_SEM_CONEXAO` |
 
-Os erros são `ErroDeNegocio` (de `app.services.usina_service`) e saem no formato
+Os erros são `ErroDeNegocio` (de `app/erros.py`) e saem no formato
 `{"error": {"code", "message", "status"}}` pelo handler registrado em `app/main.py`.
 
 ## Como configurar a chave
@@ -90,6 +90,6 @@ Os erros são `ErroDeNegocio` (de `app.services.usina_service`) e saem no format
    CHATBOT_TIMEOUT=60                # opcional, em segundos
    ```
    Ou exporte as variáveis no terminal (PowerShell: `$env:ANTHROPIC_API_KEY = "sk-ant-..."`).
-3. Dependências (instaladas pelo líder via `app/requirements.txt`): `anthropic`, `python-dotenv` (opcional).
+3. Dependências (instaladas pelo líder via `requirements.txt`): `anthropic`, `python-dotenv` (opcional).
 
 Sem a chave, o restante da API e do painel continuam funcionando; só o chat responde 503.

@@ -79,7 +79,7 @@ Relacionamentos principais: `clientes 1–N faturas / indicacoes / notificacoes 
 
 ## Consultas (`consultas.py`)
 
-Todas seguem a seção 1.6 de `docs/chatbot/CONTRATOS.md`. Além delas, há:
+Todas seguem a seção 1.6 de `docs/CONTRATOS.md`. Além delas, há:
 - `listar_faturas_vencidas(limite=20)`, pedida pelo líder: lista as faturas `vencida` de todos os clientes, da mais antiga para a mais recente, com `dias_em_atraso`.
 - `listar_atendimentos(...)`: cada item traz também `cliente_nome`.
 - `listar_usinas()`: cada item traz também `clientes_ativos`.

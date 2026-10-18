@@ -5,19 +5,17 @@
 
 ## 1. Camadas
 
-O back-end já seguia a arquitetura em camadas da disciplina (Aula 09). A entrega do painel acrescenta
-três pacotes novos, cada um com um dono (ver `CONTRATOS.md`).
+O sistema de gerenciamento fica na pasta `sistema-de-gerenciamento/`, **separado** do back-end do app
+(pasta `backend/`, desenvolvido pela squad). Ele é uma aplicação FastAPI própria, com três pacotes, cada um
+com um dono (ver `CONTRATOS.md`). O back-end do app (`backend/app/`: controllers, services, repositories e
+domain de usinas e dicas) não é importado pelo sistema; a futura integração entre os dois será pelo banco de dados.
 
 | Camada / pacote | Situação | Responsabilidade | Arquivos |
 |---|---|---|---|
-| `app/controllers/` | Existente | Apresentação: `APIRouter` das usinas e dicas (`/v1/usinas`, `/v1/dicas`) | `usina_controller.py`, `dica_controller.py` |
-| `app/services/` | Existente | Regras de negócio e `ErroDeNegocio` (`code`, `message`, `status`) | `usina_service.py`, `dica_service.py` |
-| `app/repositories/` | Existente | Persistência **em memória** (dicionários) para usinas e dicas | `usina_repository.py`, `dica_repository.py` |
-| `app/domain/` | Existente | Entidades Pydantic (`Usina`, `Dica` e variações `Create`/`Update`) | `usina.py`, `dica.py` |
 | `app/database/` | **Novo** (agente `db`) | Persistência real em SQLite: modelos ORM, conexão/sessão, seed fictício, consultas **somente leitura** que devolvem JSON, hash de senha | `conexao.py`, `modelos.py`, `seed.py`, `consultas.py`, `seguranca.py` |
 | `app/painel/` | **Novo** (agente `painel`) | Autenticação do funcionário (token HMAC), rotas `/v1/painel/*` e a interface web estática servida em `/painel` | `auth.py`, `controller.py`, `static/index.html` + `login.js` (login), `static/painel.html` + `painel.css` + `painel.js` (app de uma página), `static/logo-bulbe.svg` |
 | `app/chatbot/` | **Novo** (agente `chatbot`) | Integração com o Claude (loop de *tool use*), definição das ferramentas, mascaramento, base de conhecimento e rotas `/v1/painel/chat` | `config.py` (variáveis de ambiente e limites), `base_conhecimento.py`, `prompts.py` (prompt de sistema), `ferramentas.py` (17 ferramentas, validação e mascaramento), `servico.py` (`ChatbotService`, loop de tool use), `controller.py` (rotas) |
-| `app/main.py` | Existente (integrado pelo líder) | Carrega o `.env` antes dos demais imports; cria o `FastAPI` com *lifespan* que chama `inicializar_banco()`; registra um *handler* para cada classe `ErroDeNegocio` (usina e dica) e um *handler* global de `StarletteHTTPException`; inclui os routers de usinas, dicas, painel e chatbot; monta os estáticos em `/painel` (e redireciona `/painel` → `/painel/`) | `main.py` |
+| `app/main.py` + `app/erros.py` | **Novo** (líder) | Carrega o `.env` antes dos demais imports; cria o `FastAPI` com *lifespan* que chama `inicializar_banco()`; registra o *handler* de `ErroDeNegocio` (definido em `app/erros.py`) e um *handler* global de `StarletteHTTPException`; inclui os routers do painel e do chatbot; monta os estáticos em `/painel` (e redireciona `/` e `/painel` → `/painel/`) | `main.py`, `erros.py` |
 
 Regras de dependência entre os pacotes novos:
 
@@ -56,9 +54,6 @@ node "API FastAPI (app/main.py)" {
     component "conexao.py\nengine / SessionLocal" as conexao
     component "modelos.py" as modelos
     component "seed.py\n(dados fictícios)" as seed
-  }
-  package "Camadas existentes" {
-    component "controllers → services →\nrepositories → domain\n(/v1/usinas, /v1/dicas)" as legado
   }
 }
 
@@ -240,9 +235,8 @@ end
 Erros seguem o formato do projeto: `{"error": {"code": "...", "message": "...", "status": 0}}`.
 Como os erros chegam nesse formato:
 
-- **`ErroDeNegocio`** (usado pelo chatbot e pelos CRUDs de usinas e dicas): cada service tem a sua classe e
-  `app/main.py` registra um *handler* para cada uma (`ErroDeNegocioUsina` e `ErroDeNegocioDica`), que monta o
-  `{"error": {...}}`. Por isso o 503 `CHATBOT_INDISPONIVEL` sai com o status certo.
+- **`ErroDeNegocio`** (usado pelo chatbot, definido em `app/erros.py`): `app/main.py` registra um *handler*
+  que monta o `{"error": {...}}`. Por isso o 503 `CHATBOT_INDISPONIVEL` sai com o status certo.
 - **`HTTPException(detail={"error": {...}})`** (usado pelo painel e pela autenticação): um *handler* global de
   `StarletteHTTPException` devolve o `detail` puro, sem o envelope `{"detail": ...}` do FastAPI, mantendo os
   cabeçalhos (ex.: `WWW-Authenticate: Bearer` no 401). Outros `detail` (ex.: 404 de rota inexistente) seguem o

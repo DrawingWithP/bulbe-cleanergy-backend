@@ -50,7 +50,7 @@ As funções de `app/database/consultas.py` devolvem os dados sem máscara porqu
 - `autenticar_funcionario` gasta o mesmo tempo quando o e-mail **não existe** (verifica um hash fictício) e o login
   responde sempre a mesma mensagem genérica (`CREDENCIAIS_INVALIDAS`), para não revelar quais e-mails são válidos.
 - A senha de demonstração vem de `PAINEL_SENHA_DEMO` e não aparece em documentação nem em código versionado.
-  Atende ao requisito **RNF-01** ("usar hash ou salt para criptografar senhas") de `docs/Lista_de_requisitos.md`.
+  Atende ao requisito **RNF-01** ("usar hash ou salt para criptografar senhas") de `backend/docs/Lista_de_requisitos.md`.
 
 ## 5. Token assinado com HMAC e expiração
 

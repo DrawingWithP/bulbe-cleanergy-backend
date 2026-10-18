@@ -35,13 +35,18 @@ cp .env.example .env
 > Para a squad: estes passos só devem ser executados quando o líder liberar (durante o desenvolvimento
 > em paralelo os agentes não instalam dependências nem sobem o servidor).
 
+Todos os comandos são executados dentro da pasta `sistema-de-gerenciamento/`.
+
 ```bash
+# 0. entrar na pasta do sistema
+cd sistema-de-gerenciamento
+
 # 1. (opcional) ambiente virtual
 python -m venv .venv
 # Windows: .venv\Scripts\activate    |   Linux/macOS: source .venv/bin/activate
 
 # 2. dependências (fastapi, uvicorn, pydantic, sqlalchemy, anthropic, python-dotenv)
-pip install -r app/requirements.txt
+pip install -r requirements.txt
 
 # 3. (opcional) recriar o banco fictício do zero
 python -m app.database.seed

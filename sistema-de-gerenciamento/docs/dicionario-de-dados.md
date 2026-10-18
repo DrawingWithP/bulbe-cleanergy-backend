@@ -106,7 +106,7 @@ clientes ||--o{ atendimentos
 ### `usinas` — origem: Bulbe
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `id` | int (PK) | Identificador (mesmo modelo de `app/domain/usina.py`) |
+| `id` | int (PK) | Identificador (mesmo modelo de `backend/app/domain/usina.py`) |
 | `nome` | texto | Nome da fazenda solar |
 | `localizacao` | texto | Cidade e UF, ex.: `Uberlândia, MG` |
 | `capacidade_geracao_kwh` | float | Capacidade de geração em kWh |

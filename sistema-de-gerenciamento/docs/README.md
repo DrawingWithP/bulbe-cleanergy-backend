@@ -23,12 +23,13 @@ encontra o cliente, vê a etapa da ativação, as faturas e o engajamento em seg
 | `app/database/` | `modelos.py` (17 tabelas), `conexao.py`, `seed.py` (64 clientes fictícios, semente 42), `consultas.py` (somente leitura + `registrar_chat`), `seguranca.py` (PBKDF2) |
 | `app/painel/` | `auth.py` (token HMAC de 8 h), `controller.py` (rotas `/v1/painel/*`), `static/` (login `index.html` + `login.js`; app `painel.html` + `painel.css` + `painel.js`) |
 | `app/chatbot/` | `servico.py` (loop de *tool use* com o Claude Haiku 5.5), `ferramentas.py` (17 ferramentas somente leitura + mascaramento de CPF/telefone), `prompts.py`, `base_conhecimento.py`, `config.py`, `controller.py` (rotas `/v1/painel/chat`) |
-| `docs/chatbot/` | Esta documentação |
+| `docs/` | Esta documentação |
 
-Cada pacote tem o seu `README.md`, `CHANGELOG.md` e `NOTAS_PARA_O_LIDER.md`. O líder integrou tudo em
+Cada pacote tem o seu `README.md`, `CHANGELOG.md` e `NOTAS_PARA_O_LIDER.md`. Tudo fica na pasta
+`sistema-de-gerenciamento/`, separada do back-end do app (`backend/`): o sistema tem o próprio
 `app/main.py` (carga do `.env`, routers, montagem de `/painel`, `inicializar_banco()` no *lifespan* e *handlers*
-de erro no formato `{"error": {...}}`), além de `app/requirements.txt` (`sqlalchemy`, `anthropic`, `python-dotenv`),
-`.env.example` e `.gitignore` (`.env`, `*.db`).
+de erro no formato `{"error": {...}}`), o próprio `app/erros.py`, o `requirements.txt` (`sqlalchemy`, `anthropic`,
+`python-dotenv`) e o `.env.example`.
 
 ## Índice da documentação
 
@@ -46,8 +47,9 @@ de erro no formato `{"error": {...}}`), além de `app/requirements.txt` (`sqlalc
 ## Começo rápido
 
 ```bash
+cd sistema-de-gerenciamento
 cp .env.example .env          # preencha ANTHROPIC_API_KEY, PAINEL_SECRET e PAINEL_SENHA_DEMO
-pip install -r app/requirements.txt
+pip install -r requirements.txt
 uvicorn app.main:app --reload
 # abra http://localhost:8000/painel/
 ```

@@ -17,7 +17,7 @@ from app.chatbot import config
 from app.chatbot.ferramentas import TOOLS, executar_ferramenta
 from app.chatbot.prompts import PROMPT_SISTEMA, montar_contexto_dinamico
 from app.database.consultas import registrar_chat
-from app.services.usina_service import ErroDeNegocio
+from app.erros import ErroDeNegocio
 
 try:
     import anthropic

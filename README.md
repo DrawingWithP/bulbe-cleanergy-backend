@@ -2,26 +2,16 @@
 
 > Uma ou duas linhas descrevendo o que o sistema faz e para qual empresa parceira foi desenvolvido.
 
-## Painel de gestão com chatbot (branch `feat/python-adiciona-chatbot`)
+## Estrutura do repositório
 
-Sistema interno para os funcionários da Bulbe: o funcionário faz login em `/painel`, consulta métricas, busca clientes e abre a ficha completa de cada um. Também pode perguntar ao **assistente (Claude Haiku 5.5)** sobre qualquer cliente ou sobre o funcionamento do app. Os dados vêm de um **banco fictício** (SQLite + SQLAlchemy) que junta o que o app da Bulbe já tem (faturas, instalação, indicações, notificações, atendimentos) com as funcionalidades criadas pela squad no front-end: jornada de ativação em 5 etapas, Clube Bulbe com cartas e cupons, simulador sem login, adesão pelo app e dicas.
+O repositório tem duas partes independentes:
 
-| Pasta | O que tem |
+| Pasta | O que é |
 |---|---|
-| `app/database/` | Modelos, conexão, seed fictício determinístico e consultas somente leitura |
-| `app/chatbot/` | Integração com a API da Anthropic (tool use), ferramentas, base de conhecimento e rota `/v1/painel/chat` |
-| `app/painel/` | Autenticação do funcionário, rotas `/v1/painel/*` e a interface web (HTML/CSS/JS puro) |
-| `docs/chatbot/` | Contratos, levantamento de funcionalidades, arquitetura, dicionário de dados, guia e LGPD |
+| [`backend/`](backend/) | Back-end do **app da Bulbe** (FastAPI em camadas: controllers, services, repositories e domain), desenvolvido pela squad. A documentação da API, dos requisitos, das user stories e os diagramas ficam em [`backend/docs/`](backend/docs/). |
+| [`sistema-de-gerenciamento/`](sistema-de-gerenciamento/) | **Sistema de gerenciamento interno**: painel web para os funcionários da Bulbe com um chatbot (Claude Haiku 5.5) que responde perguntas sobre clientes e sobre o funcionamento do app, sobre um banco de dados fictício. Veja o [`README`](sistema-de-gerenciamento/README.md) da pasta. |
 
-Como rodar (quando permitido):
-
-```bash
-pip install -r app/requirements.txt
-cp .env.example .env   # preencha ANTHROPIC_API_KEY e PAINEL_SECRET
-uvicorn app.main:app --reload
-```
-
-Depois abra `http://localhost:8000/painel`. O banco é criado e populado automaticamente na primeira execução. Para recriá-lo, use `python -m app.database.seed`. Detalhes em [`docs/chatbot/README.md`](docs/chatbot/README.md).
+Cada parte roda separadamente, a partir da própria pasta.
 
 ## Sobre o projeto
 

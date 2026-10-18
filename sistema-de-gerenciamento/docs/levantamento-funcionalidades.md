@@ -15,7 +15,7 @@
 | App Store — id `1662527941` | Mesma descrição; nota **4,7** com **352 avaliações** | Líder da squad |
 | Entrevista com a equipe da Bulbe (04/03/2026) | Demandas D-01 a D-06 (`Bulbe-Squad-cleanergy/docs/demandas.md`) | Squad (Projeto I) |
 | Front-end da squad (`final.html`, `README.md`) | Telas e fluxos novos (home aberta, simulador, jornada de ativação, Clube Bulbe, dicas) | Squad (Projeto I) |
-| `docs/Lista_de_endpoints.md`, `docs/user-stories.md` | Contrato da API REST `/v1` que sustenta o front | Squad (Projeto II) |
+| `backend/docs/Lista_de_endpoints.md`, `backend/docs/user-stories.md` | Contrato da API REST `/v1` que sustenta o front | Squad (Projeto II) |
 
 > Os números do site (clientes, cidades, valores investidos) são os divulgados publicamente pela
 > empresa na data da pesquisa e podem mudar. Eles entram na base de conhecimento do chatbot
@@ -62,7 +62,7 @@ Restrições observadas (confirmadas pela entrevista, D-04 e D-05): o app **só 
 
 As User Stories do front (README do Projeto I) ligam-se a essas demandas assim:
 US-01 → D-01, US-02 → D-06, US-03 → D-02, US-04 → D-05, US-05 → D-04, US-06 → D-03
-(mesmo mapa usado em `docs/Lista_de_endpoints.md`).
+(mesmo mapa usado em `backend/docs/Lista_de_endpoints.md`).
 
 ## 4. Comparativo: Bulbe hoje × funcionalidades da squad Cleanergy
 
