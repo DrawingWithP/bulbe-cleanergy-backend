@@ -1,2 +1,12 @@
 teste
 .claude/settings.local.json
+# Variaveis de ambiente e segredos
+.env
+
+# Banco de dados ficticio gerado pelo seed
+*.db
+*.sqlite3
+
+# Cache do Python
+__pycache__/
+*.pyc

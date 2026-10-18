@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Entrar · Painel Bulbe</title>
+  <link rel="icon" href="/painel/logo-bulbe.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/painel/painel.css">
+</head>
+<body class="pagina-login">
+  <main class="login-container">
+    <section class="login-card" aria-labelledby="login-titulo">
+      <img src="/painel/logo-bulbe.svg" alt="Bulbe Energia" class="login-logo" width="132" height="38">
+      <h1 id="login-titulo" class="login-titulo">Painel de Gestão</h1>
+      <p class="login-subtitulo">Acesso restrito a funcionários da Bulbe.</p>
+
+      <div id="login-aviso" class="aviso aviso-alerta" role="status" hidden></div>
+
+      <form id="form-login" class="login-form" novalidate>
+        <div class="campo">
+          <label for="login-email">E-mail corporativo</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" required maxlength="254"
+                 placeholder="nome@bulbe.com.br">
+        </div>
+        <div class="campo">
+          <label for="login-senha">Senha</label>
+          <input id="login-senha" name="senha" type="password" autocomplete="current-password" required maxlength="200">
+        </div>
+        <div id="login-erro" class="aviso aviso-erro" role="alert" hidden></div>
+        <button type="submit" class="botao botao-primario botao-largo" id="login-botao">Entrar</button>
+      </form>
+
+      <p class="login-rodape">
+        Ambiente de demonstração com dados <strong>fictícios</strong>.
+        Usuários: <code>admin@bulbe.com.br</code>, <code>atendimento@bulbe.com.br</code>
+        e <code>ana.souza@bulbe.com.br</code> (senha definida em <code>PAINEL_SENHA_DEMO</code>).
+      </p>
+    </section>
+  </main>
+  <script src="/painel/login.js"></script>
+</body>
+</html>
