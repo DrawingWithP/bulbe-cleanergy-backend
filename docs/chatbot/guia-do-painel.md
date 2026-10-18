@@ -21,7 +21,7 @@ cp .env.example .env
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | Só para o chatbot | — | Chave da API da Anthropic. Sem ela, `POST /v1/painel/chat` responde `503 CHATBOT_INDISPONIVEL` e o restante do painel segue funcionando. |
 | `CHATBOT_MODELO` | Não | `claude-haiku-5-5` | Modelo usado pelo chatbot (Claude Haiku 5.5). |
-| `CHATBOT_ESFORCO` | Não | `low` | Nível de esforço (`output_config.effort`): `low`, `medium`, `high`, `xhigh` ou `max`. Mais esforço = respostas mais cuidadosas, porém mais lentas e caras. |
+| `CHATBOT_ESFORCO` | Não | `high` | Nível de esforço (`output_config.effort`): `low`, `medium`, `high`, `xhigh` ou `max`. Mais esforço = respostas mais cuidadosas, porém mais lentas e caras. |
 | `CHATBOT_TIMEOUT` | Não | `60` | Tempo máximo, em segundos, de cada chamada à API da Anthropic (o SDK ainda tenta de novo até 2 vezes). |
 | `BULBE_DB_URL` | Não | SQLite em `app/database/bulbe_ficticio.db` (caminho absoluto, funciona com espaços e acentos na pasta) | URL do banco no formato SQLAlchemy, para usar outro arquivo ou outro banco. |
 | `PAINEL_SECRET` | Sim (em qualquer ambiente compartilhado) | segredo **público** de desenvolvimento, com aviso no log | Segredo usado para assinar os tokens de login (HMAC-SHA256). Use um texto longo e aleatório, por exemplo gerado com `python -c "import secrets; print(secrets.token_hex(32))"`. Trocar o valor desloga todo mundo. |

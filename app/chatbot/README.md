@@ -86,7 +86,7 @@ Os erros são `ErroDeNegocio` (de `app.services.usina_service`) e saem no format
    ```
    ANTHROPIC_API_KEY=sk-ant-...
    CHATBOT_MODELO=claude-haiku-5-5   # opcional
-   CHATBOT_ESFORCO=low               # opcional: low | medium | high
+   CHATBOT_ESFORCO=high              # opcional: low | medium | high | xhigh | max
    CHATBOT_TIMEOUT=60                # opcional, em segundos
    ```
    Ou exporte as variáveis no terminal (PowerShell: `$env:ANTHROPIC_API_KEY = "sk-ant-..."`).

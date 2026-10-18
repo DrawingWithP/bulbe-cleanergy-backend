@@ -195,7 +195,7 @@ Sem `ANTHROPIC_API_KEY` → responder 503 `{"error": {"code": "CHATBOT_INDISPONI
 
 ### 3.2 Implementação
 - SDK oficial `anthropic` (Python), **loop manual de tool use** com `client.messages.create(...)`.
-- Modelo: env `CHATBOT_MODELO`, default **`claude-haiku-5-5`**. `max_tokens` ~8000. `output_config={"effort": "low"}` configurável por env `CHATBOT_ESFORCO`.
+- Modelo: env `CHATBOT_MODELO`, default **`claude-haiku-5-5`**. `max_tokens` ~8000. `output_config={"effort": "high"}` configurável por env `CHATBOT_ESFORCO`.
   Não usar `budget_tokens`, `temperature`, `top_p`, prefill nem `tool_choice` forçado (dão erro 400 no Haiku 5.5).
 - Tratar `stop_reason`: `end_turn` (fim), `tool_use` (executar e continuar, máx. 8 voltas), `max_tokens`, `refusal` (mensagem amigável). Devolver **todos** os `tool_result` de uma volta numa única mensagem `user`; ferramenta com erro → `is_error: True`.
 - Erros do SDK em cadeia: `anthropic.RateLimitError` → `anthropic.APIStatusError` → `anthropic.APIConnectionError`.

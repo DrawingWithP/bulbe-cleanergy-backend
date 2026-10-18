@@ -19,8 +19,8 @@ except ImportError:  # python-dotenv e opcional
 MODELO_PADRAO: str = "claude-haiku-5-5"
 CHATBOT_MODELO: str = os.getenv("CHATBOT_MODELO", MODELO_PADRAO).strip() or MODELO_PADRAO
 
-# Nivel de esforco (output_config.effort). "low" deixa as respostas rapidas e baratas.
-ESFORCO_PADRAO: str = "low"
+# Nivel de esforco (output_config.effort). "high" prioriza respostas mais cuidadosas (padrao pedido pelo usuario).
+ESFORCO_PADRAO: str = "high"
 CHATBOT_ESFORCO: str = (os.getenv("CHATBOT_ESFORCO", ESFORCO_PADRAO).strip().lower() or ESFORCO_PADRAO)
 
 # Limites do loop de tool use.
