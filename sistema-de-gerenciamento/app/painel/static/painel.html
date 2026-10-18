@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel de Gestão · Bulbe</title>
+  <link rel="icon" href="/painel/logo-bulbe.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/painel/painel.css">
+</head>
+<body class="pagina-painel">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
+  <div class="layout" id="layout">
+
+    <!-- ===================== MENU LATERAL ===================== -->
+    <aside class="menu-lateral" aria-label="Menu principal">
+      <div class="menu-marca">
+        <img src="/painel/logo-bulbe.svg" alt="Bulbe Energia" width="100" height="29">
+        <span class="menu-marca-texto">Painel de Gestão</span>
+      </div>
+      <nav>
+        <ul class="menu-lista">
+          <li><a href="#/visao-geral" class="menu-item" data-rota="visao-geral">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M4 13h6V4H4v9zm0 7h6v-5H4v5zm8 0h8v-9h-8v9zm0-16v5h8V4h-8z"/></svg>
+            Visão geral</a></li>
+          <li><a href="#/clientes" class="menu-item" data-rota="clientes">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.7 0-6 1.3-6 3.5V19h7v-2.5c0-1 .4-2 1.2-2.8A9 9 0 0 0 8 13zm8 0c-3 0-7 1.5-7 4v2h14v-2c0-2.5-4-4-7-4z"/></svg>
+            Clientes</a></li>
+          <li><a href="#/adesoes" class="menu-item" data-rota="adesoes">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2.2 9L7 14.2l1.4-1.4 2.4 2.4 4.8-4.8 1.4 1.4-6.2 6.2z"/></svg>
+            Adesões</a></li>
+          <li><a href="#/atendimentos" class="menu-item" data-rota="atendimentos">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            Atendimentos</a></li>
+        </ul>
+      </nav>
+      <p class="menu-aviso">Dados <strong>fictícios</strong> para demonstração.</p>
+    </aside>
+
+    <!-- ===================== ÁREA PRINCIPAL ===================== -->
+    <div class="area-principal">
+      <header class="barra-topo">
+        <div class="barra-topo-titulo" id="barra-titulo">Painel</div>
+        <div class="barra-topo-acoes">
+          <span class="funcionario-info" id="funcionario-info" aria-live="polite"></span>
+          <button type="button" class="botao botao-secundario botao-pequeno" id="botao-chat-alternar"
+                  aria-controls="painel-chat" aria-expanded="true">Assistente</button>
+          <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-sair">Sair</button>
+        </div>
+      </header>
+
+      <main id="conteudo" class="conteudo" tabindex="-1">
+
+        <!-- VISÃO GERAL -->
+        <section class="tela" id="tela-visao-geral" data-tela="visao-geral" hidden aria-labelledby="titulo-visao-geral">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-visao-geral" tabindex="-1">Visão geral</h1>
+              <p class="tela-descricao">Indicadores da base de clientes, ativações, faturas, indicações e Clube Bulbe.</p>
+            </div>
+            <button type="button" class="botao botao-secundario botao-pequeno" id="botao-atualizar-metricas">Atualizar</button>
+          </div>
+          <div id="visao-geral-conteudo" aria-live="polite"></div>
+        </section>
+
+        <!-- CLIENTES -->
+        <section class="tela" id="tela-clientes" data-tela="clientes" hidden aria-labelledby="titulo-clientes">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-clientes" tabindex="-1">Clientes</h1>
+              <p class="tela-descricao">Busque por nome, e-mail, CPF, número de instalação ou código de indicação.</p>
+            </div>
+          </div>
+
+          <form class="filtros" id="form-clientes" role="search">
+            <div class="campo campo-grande">
+              <label for="filtro-termo">Buscar</label>
+              <input id="filtro-termo" type="search" maxlength="100" placeholder="Ex.: Marcos, MARCOS50, 12345678900" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="filtro-status">Status</label>
+              <select id="filtro-status">
+                <option value="">Todos</option>
+                <option value="ativo">Ativo</option>
+                <option value="em_ativacao">Em ativação</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="filtro-cidade">Cidade</label>
+              <input id="filtro-cidade" type="text" maxlength="80" placeholder="Ex.: Belo Horizonte">
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-limite">Mostrar</label>
+              <select id="filtro-limite">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="filtros-acoes">
+              <button type="submit" class="botao botao-primario">Buscar</button>
+              <button type="reset" class="botao botao-fantasma">Limpar</button>
+            </div>
+          </form>
+
+          <div id="clientes-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- FICHA DO CLIENTE -->
+        <section class="tela" id="tela-ficha" data-tela="ficha" hidden aria-labelledby="titulo-ficha">
+          <a href="#/clientes" class="link-voltar">&larr; Voltar para clientes</a>
+          <div id="ficha-conteudo" aria-live="polite"></div>
+        </section>
+
+        <!-- ADESÕES -->
+        <section class="tela" id="tela-adesoes" data-tela="adesoes" hidden aria-labelledby="titulo-adesoes">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-adesoes" tabindex="-1">Adesões</h1>
+              <p class="tela-descricao">Pedidos de assinatura feitos pelo app, site ou WhatsApp.</p>
+            </div>
+          </div>
+          <form class="filtros" id="form-adesoes">
+            <div class="campo">
+              <label for="filtro-adesao-situacao">Situação</label>
+              <select id="filtro-adesao-situacao">
+                <option value="">Todas</option>
+                <option value="rascunho">Rascunho</option>
+                <option value="enviada">Enviada</option>
+                <option value="aprovada">Aprovada</option>
+                <option value="recusada">Recusada</option>
+              </select>
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-adesao-limite">Mostrar</label>
+              <select id="filtro-adesao-limite">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="filtros-acoes">
+              <button type="submit" class="botao botao-primario">Filtrar</button>
+            </div>
+          </form>
+          <div id="adesoes-resultado" aria-live="polite"></div>
+        </section>
+
+        <!-- ATENDIMENTOS -->
+        <section class="tela" id="tela-atendimentos" data-tela="atendimentos" hidden aria-labelledby="titulo-atendimentos">
+          <div class="tela-cabecalho">
+            <div>
+              <h1 class="tela-titulo" id="titulo-atendimentos" tabindex="-1">Atendimentos</h1>
+              <p class="tela-descricao">Chamados abertos pelos clientes em todos os canais.</p>
+            </div>
+          </div>
+          <form class="filtros" id="form-atendimentos">
+            <div class="campo">
+              <label for="filtro-atendimento-status">Status</label>
+              <select id="filtro-atendimento-status">
+                <option value="">Todos</option>
+                <option value="aberto">Aberto</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="resolvido">Resolvido</option>
+              </select>
+            </div>
+            <div class="campo campo-pequeno">
+              <label for="filtro-atendimento-limite">Mostrar</label>
+              <select id="filtro-atendimento-limite">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="filtros-acoes">
+              <button type="submit" class="botao botao-primario">Filtrar</button>
+            </div>
+          </form>
+          <div id="atendimentos-resultado" aria-live="polite"></div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- ===================== PAINEL DE CHAT ===================== -->
+    <aside class="painel-chat" id="painel-chat" aria-labelledby="chat-titulo">
+      <header class="chat-cabecalho">
+        <div class="chat-cabecalho-texto">
+          <h2 id="chat-titulo" class="chat-titulo">Assistente Bulbe</h2>
+          <p class="chat-subtitulo" id="chat-modelo">Pergunte sobre clientes ou sobre o app</p>
+        </div>
+        <div class="chat-cabecalho-acoes">
+          <button type="button" class="botao-icone" id="botao-chat-limpar" title="Nova conversa" aria-label="Limpar conversa">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </button>
+          <button type="button" class="botao-icone" id="botao-chat-fechar" title="Recolher assistente" aria-label="Recolher assistente">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-mensagens" id="chat-mensagens" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Conversa com o assistente">
+        <div class="chat-boas-vindas" id="chat-boas-vindas">
+          <p>Olá! Sou o assistente interno da Bulbe. Consulto os dados (fictícios) de clientes, faturas, ativações, indicações e Clube Bulbe, e explico como o app funciona.</p>
+          <p class="chat-nota">Somente leitura: não altero nenhum dado.</p>
+        </div>
+      </div>
+
+      <div class="chat-sugestoes" id="chat-sugestoes" aria-label="Sugestões de perguntas" hidden></div>
+
+      <div class="chat-digitando" id="chat-digitando" hidden aria-live="polite">
+        <span class="pontinhos" aria-hidden="true"><span></span><span></span><span></span></span>
+        Assistente digitando...
+      </div>
+
+      <form class="chat-form" id="chat-form">
+        <label for="chat-entrada" class="visualmente-oculto">Sua pergunta</label>
+        <textarea id="chat-entrada" rows="2" maxlength="2000" placeholder="Pergunte algo... (Enter envia, Shift+Enter quebra linha)"></textarea>
+        <div class="chat-form-rodape">
+          <span class="chat-contador" id="chat-contador" aria-live="off">0/2000</span>
+          <button type="submit" class="botao botao-primario botao-pequeno" id="chat-enviar">Enviar</button>
+        </div>
+      </form>
+    </aside>
+
+    <button type="button" class="chat-flutuante" id="botao-chat-abrir" aria-controls="painel-chat" hidden>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+      Assistente
+    </button>
+  </div>
+
+  <script src="/painel/painel.js"></script>
+</body>
+</html>

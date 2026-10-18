@@ -2,6 +2,19 @@
 
 > Uma ou duas linhas descrevendo o que o sistema faz e para qual empresa parceira foi desenvolvido.
 
+## Estrutura do repositório
+
+O repositório tem duas partes independentes:
+
+| Pasta | O que é |
+|---|---|
+| [`backend/`](backend/) | Back-end do **app da Bulbe** (FastAPI em camadas: controllers, services, repositories e domain), desenvolvido pela squad. A documentação da API, dos requisitos, das user stories e os diagramas ficam em [`backend/docs/`](backend/docs/). |
+| [`sistema-de-gerenciamento/`](sistema-de-gerenciamento/) | **Sistema de gerenciamento interno**: painel web para os funcionários da Bulbe com um chatbot (Claude Haiku 5.5) que responde perguntas sobre clientes e sobre o funcionamento do app, sobre um banco de dados fictício. Veja o [`README`](sistema-de-gerenciamento/README.md) da pasta. |
+
+Cada parte roda separadamente, a partir da própria pasta.
+
+No desenvolvimento do sistema de gerenciamento foi utilizado um agente de IA de programação (Claude Code) como ferramenta de apoio; os detalhes estão no [`README`](sistema-de-gerenciamento/README.md#uso-de-ia-no-desenvolvimento) da pasta.
+
 ## Sobre o projeto
 
 - **Empresa parceira:** Bulbe Energia
