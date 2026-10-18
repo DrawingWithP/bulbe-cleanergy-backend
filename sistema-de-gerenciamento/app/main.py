@@ -1,6 +1,8 @@
 """
 Ponto de entrada do Sistema de Gerenciamento (painel interno + chatbot).
 """
+import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -25,18 +27,36 @@ from app.painel.controller import router as painel_router
 
 PASTA_ESTATICA_PAINEL = Path(__file__).parent / "painel" / "static"
 
+logger = logging.getLogger(__name__)
+
+
+def _expurgar_dados_antigos() -> None:
+    """Aplica a retencao de dados (LGPD) configurada no .env; uma falha aqui nao impede o servidor de subir."""
+    try:
+        from app.database.consultas import expurgar_dados_antigos
+
+        removidos = expurgar_dados_antigos(
+            dias_chat=int(os.getenv("CHAT_RETENCAO_DIAS", "180")),
+            dias_auditoria=int(os.getenv("AUDITORIA_RETENCAO_DIAS", "730")),
+        )
+        if any(removidos.values()):
+            logger.info("Expurgo de dados antigos: %s", removidos)
+    except Exception:  # noqa: BLE001
+        logger.exception("Nao foi possivel aplicar a retencao de dados ao subir o servidor.")
+
 
 @asynccontextmanager
 async def ciclo_de_vida(app: FastAPI):
-    """Cria as tabelas e popula o banco ficticio na primeira execucao."""
+    """Cria as tabelas, popula o banco ficticio na primeira execucao e aplica a retencao de dados."""
     inicializar_banco()
+    _expurgar_dados_antigos()
     yield
 
 
 app = FastAPI(
     title="Bulbe Energia, Sistema de Gerenciamento",
     description="Painel de gestao interno com chatbot (Claude Haiku) sobre um banco de dados ficticio.",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=ciclo_de_vida,
 )
 

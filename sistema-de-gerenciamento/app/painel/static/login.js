@@ -37,6 +37,21 @@
     return padrao;
   }
 
+  /** "Muitas tentativas. Tente de novo em N minutos." a partir do Retry-After (segundos ou data HTTP). */
+  function mensagemBloqueio(retryAfter) {
+    var segundos = NaN;
+    if (retryAfter) {
+      segundos = /^\d+$/.test(retryAfter.trim())
+        ? Number(retryAfter.trim())
+        : (Date.parse(retryAfter) - Date.now()) / 1000;
+    }
+    if (!isFinite(segundos) || segundos <= 0) {
+      return 'Muitas tentativas. Tente de novo em alguns minutos.';
+    }
+    var minutos = Math.max(1, Math.ceil(segundos / 60));
+    return 'Muitas tentativas. Tente de novo em ' + minutos + (minutos === 1 ? ' minuto.' : ' minutos.');
+  }
+
   // Aviso quando o usuário volta por sessão expirada ou logout.
   var params = new URLSearchParams(window.location.search);
   if (params.get('sessao') === 'expirada') {
@@ -76,6 +91,13 @@
       var dados = null;
       try { dados = await resposta.json(); } catch (e) { dados = null; }
 
+      if (resposta.status === 429) {
+        // Bloqueio por excesso de tentativas (LOGIN_BLOQUEADO): o Retry-After vem em segundos.
+        mostrarErro(mensagemBloqueio(resposta.headers.get('Retry-After')));
+        campoSenha.value = '';
+        campoSenha.focus();
+        return;
+      }
       if (!resposta.ok || !dados || !dados.token) {
         var padrao = resposta.status === 401 ? 'E-mail ou senha incorretos.'
           : resposta.status === 422 ? 'Dados de login inválidos.'

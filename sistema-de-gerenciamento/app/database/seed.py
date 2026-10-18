@@ -6,6 +6,8 @@ verificadores validos mas foram gerados ao acaso, telefones/instalacoes/protocol
 O seed e deterministico (random.Random(semente), sem Faker) e todas as datas sao relativas
 ao dia atual em UTC (agora_utc().date()), para o banco sempre "parecer atual".
 Nenhum registro de um cliente (notificacao, atendimento, login) fica antes do criado_em dele.
+v2: bonus do Clube nas faturas (bonus_clube), ~120 registros de auditoria_acessos com IPs ficticios
+(todos com pelo menos 2 dias) e nenhuma conversa de chat (o chat comeca vazio).
 
 Recriar o banco (apaga e popula de novo):
     python -m app.database.seed
@@ -23,6 +25,7 @@ from sqlalchemy.orm import Session
 from app.database.modelos import (
     Adesao,
     Atendimento,
+    AuditoriaAcesso,
     Ativacao,
     AtivacaoEvento,
     Carta,
@@ -56,11 +59,13 @@ TARIFA_KWH = 0.98  # R$/kWh ficticio, ja com tributos
 
 # Volumes
 QTD_ATIVOS = 40
+QTD_ATIVADOS_RECENTES = 3  # entre os 40 ativos: energia liberada nos ultimos 30 dias (etapa 5 do funil)
 QTD_EM_ATIVACAO = 15  # + Marcos Andrade = 16
 QTD_CANCELADOS_POS_ATIVACAO = 5
 QTD_CANCELADOS_NA_ATIVACAO = 3
 QTD_INADIMPLENTES = 5
 QTD_SIMULACOES = 200
+BONUS_CLUBE = 50.0  # bonus especial do Clube Bulbe (5 semanas seguidas), aplicado na fatura seguinte
 
 # ---------------------------------------------------------------------------
 # Tabelas de apoio ficticias
@@ -162,6 +167,19 @@ FUNCIONARIOS = [
     ("Ana Souza", "ana.souza@bulbe.com.br", "atendimento"),
 ]
 
+# Auditoria de acessos do painel (v2). IPs ficticios: rede interna 10.20.x.x e faixas
+# reservadas para documentacao (RFC 5737: 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24).
+IPS_ESCRITORIO = ["10.20.1.15", "10.20.1.22", "10.20.1.37", "10.20.2.8", "10.20.2.41"]
+IPS_EXTERNOS = ["198.51.100.23", "198.51.100.87", "203.0.113.45", "192.0.2.61", "192.0.2.140"]
+IP_ATAQUE = "203.0.113.190"
+EMAILS_INEXISTENTES = [
+    "admin@bulbe.com", "suporte@bulbe.com.br", "paula.menezes@bulbe.com.br", "financeiro@bulbe.com.br",
+]
+QTD_LOGINS_AUDITORIA = 42
+QTD_FALHAS_DIGITACAO = 8
+QTD_FALHAS_EMAIL_INEXISTENTE = 5
+QTD_VER_AUDITORIA = 4
+
 TITULOS_ETAPA = {
     1: "Cadastro realizado",
     2: "Documentação sendo analisada",
@@ -222,6 +240,7 @@ class _PlanoCliente:
     inadimplente: bool = False
     personagem: bool = False
     creditos: list[_Credito] = field(default_factory=list)
+    creditos_clube: list[date] = field(default_factory=list)  # dia em que a carta especial foi aberta
     faturas: list[Fatura] = field(default_factory=list)
     protocolo: str = ""
 
@@ -262,6 +281,7 @@ class _GeradorFicticio:
         self.usinas: list[Usina] = []
         self.parceiros: dict[str, Parceiro] = {}
         self.planos: list[_PlanoCliente] = []
+        self.funcionarios: list[Funcionario] = []
 
     # ------------------------------------------------------------- utilitarios
     def _uuid(self) -> str:
@@ -350,14 +370,16 @@ class _GeradorFicticio:
     def criar_funcionarios(self) -> None:
         senha = os.getenv("PAINEL_SENHA_DEMO", "bulbe@demo123")
         for i, (nome, email, perfil) in enumerate(FUNCIONARIOS):
-            self.s.add(Funcionario(
+            funcionario = Funcionario(
                 nome=nome,
                 email=email,
                 senha_hash=gerar_hash_senha(senha),
                 perfil=perfil,
                 ativo=True,
                 criado_em=self._momento(self.hoje - timedelta(days=210 - i * 30)),
-            ))
+            )
+            self.s.add(funcionario)
+            self.funcionarios.append(funcionario)
 
     def criar_usinas(self) -> None:
         for nome, localizacao, capacidade, status, dias in USINAS:
@@ -447,14 +469,21 @@ class _GeradorFicticio:
 
     def criar_clientes(self) -> None:
         # --- ativos -------------------------------------------------------
-        for _ in range(QTD_ATIVOS):
-            if self.rng.random() < 0.7:
+        for i in range(QTD_ATIVOS):
+            recente = i < QTD_ATIVADOS_RECENTES
+            if recente:
+                idade = self.rng.randint(50, 100)
+            elif self.rng.random() < 0.7:
                 idade = self.rng.randint(460, 900)
             else:
                 idade = self.rng.randint(150, 459)
             criado = self.hoje - timedelta(days=idade)
             cliente, ddd = self._novo_cliente("ativo", criado)
-            total = self.rng.randint(45, 88)
+            if recente:
+                # energia liberada entre 1 e 29 dias atras (alimenta "ativados nos ultimos 30 dias")
+                total = self.rng.randint(max(45, idade - 29), min(88, idade - 1))
+            else:
+                total = self.rng.randint(45, 88)
             plano = _PlanoCliente(
                 cliente=cliente, criado_dia=criado, status="ativo", ddd=ddd, etapa=5,
                 dias_etapas=self._dias_etapas_completas(total),
@@ -471,7 +500,12 @@ class _GeradorFicticio:
                         cliente, self._momento(self.hoje - timedelta(days=dias_login), 7, 23))
             self.planos.append(plano)
 
-        for plano in self.rng.sample([p for p in self.planos if p.status == "ativo"], QTD_INADIMPLENTES):
+        # inadimplentes so entre quem ja tem faturas (energia liberada ha mais de 90 dias)
+        com_faturas = [
+            p for p in self.planos
+            if p.status == "ativo" and p.liberacao_dia is not None and (self.hoje - p.liberacao_dia).days > 90
+        ]
+        for plano in self.rng.sample(com_faturas, QTD_INADIMPLENTES):
             plano.inadimplente = True
 
         # --- Marcos Andrade (persona do front: em ativacao, etapa 2) ---------
@@ -506,8 +540,9 @@ class _GeradorFicticio:
         ))
 
         # --- em ativacao (etapas 1 a 4, sem faturas) ----------------------
-        for _ in range(QTD_EM_ATIVACAO):
-            dias = self.rng.randint(2, 85)
+        for i in range(QTD_EM_ATIVACAO):
+            # o primeiro passou do prazo de 90 dias (ex.: CEMIG demorando), para o painel ter um "atrasado"
+            dias = self.rng.randint(95, 120) if i == 0 else self.rng.randint(2, 85)
             criado = self.hoje - timedelta(days=dias)
             cliente, ddd = self._novo_cliente("em_ativacao", criado)
             etapa = self._etapa_por_tempo(dias)
@@ -743,7 +778,13 @@ class _GeradorFicticio:
                     else:
                         restantes.append(credito)
                 pendentes = restantes
-                valor_total = round(valor_sem - desconto - bonus, 2)
+
+                # bonus especial do Clube: R$ 50 na primeira fatura emitida depois da abertura da carta
+                creditos_clube = [d for d in plano.creditos_clube if d < emissao]
+                plano.creditos_clube = [d for d in plano.creditos_clube if d >= emissao]
+                disponivel = round(valor_sem - desconto - bonus, 2)
+                bonus_clube = round(min(BONUS_CLUBE * len(creditos_clube), max(0.0, disponivel)), 2)
+                valor_total = round(max(0.0, disponivel - bonus_clube), 2)
 
                 ultimas = posicao >= len(meses) - 2
                 if vencimento < self.hoje:
@@ -766,7 +807,7 @@ class _GeradorFicticio:
                 fatura = Fatura(
                     cliente_id=plano.cliente.id, mes_referencia=referencia, consumo_kwh=float(consumo),
                     valor_sem_bulbe=valor_sem, desconto=desconto, bonus_indicacao=bonus,
-                    valor_total=valor_total, vencimento=vencimento, situacao=situacao, pago_em=pago_em,
+                    bonus_clube=bonus_clube, valor_total=valor_total, vencimento=vencimento, situacao=situacao, pago_em=pago_em,
                 )
                 self.s.add(fatura)
                 plano.faturas.append(fatura)
@@ -784,7 +825,7 @@ class _GeradorFicticio:
                                     datetime.combine(vencimento + timedelta(days=2), time(10, 0)))
                 elif posicao == len(meses) - 1:
                     self._notificar(plano, "vencimento", "Fatura disponível",
-                                    f"Sua fatura de {rotulo} está disponível no app. Economia de R$ {desconto + bonus:.2f}.",
+                                    f"Sua fatura de {rotulo} está disponível no app. Economia de R$ {desconto + bonus + bonus_clube:.2f}.",
                                     datetime.combine(emissao, time(8, 0)))
         self.s.flush()
 
@@ -886,6 +927,7 @@ class _GeradorFicticio:
                                       situacao="aberta", disponivel_em=disponivel_em, aberta_em=aberta_em)
                         self.s.add(carta)
                         carta.cupom = self._cupom_especial(cli, carta, aberta_em)
+                        plano.creditos_clube.append(aberta_em.date())
                     else:
                         carta = Carta(id=self._uuid(), cliente_id=cli.id, semana=semana, tipo="especial",
                                       situacao="expirada", disponivel_em=disponivel_em)
@@ -1087,6 +1129,97 @@ class _GeradorFicticio:
                                  amigos_indicados=amigos, economia_total=economia, criado_em=criado))
         self.s.flush()
 
+    # ------------------------------------------------------------- auditoria (v2)
+    def criar_auditoria(self) -> None:
+        """
+        ~120 registros plausiveis de auditoria_acessos nos ultimos 90 dias: logins (ok e com erro de
+        digitacao), fichas de clientes vistas, consultas a auditoria pelo admin, tentativas com e-mails
+        inexistentes, uma rajada de falhas contra o admin (alerta por e-mail + bloqueio) e um expurgo.
+        Tudo fica com pelo menos 1 dia de idade, para nao interferir na janela de bloqueio de login.
+        """
+        registros: list[AuditoriaAcesso] = []
+        pesos = [2 if f.perfil == "admin" else 3 for f in self.funcionarios]
+        admin = next(f for f in self.funcionarios if f.perfil == "admin")
+
+        def dia_aleatorio() -> datetime:
+            return self._momento(self.hoje - timedelta(days=self.rng.randint(2, 90)), 8, 19)
+
+        def ip_do_funcionario() -> str:
+            return self.rng.choice(IPS_ESCRITORIO if self.rng.random() < 0.8 else IPS_EXTERNOS)
+
+        def registrar(acao: str, momento: datetime, funcionario: Optional[Funcionario] = None,
+                      email: Optional[str] = None, ip: Optional[str] = None,
+                      recurso_tipo: Optional[str] = None, recurso_id: Optional[str] = None,
+                      detalhe: Optional[str] = None) -> None:
+            registros.append(AuditoriaAcesso(
+                funcionario_id=funcionario.id if funcionario else None,
+                email_informado=email if email is not None else (funcionario.email if funcionario else None),
+                acao=acao, recurso_tipo=recurso_tipo, recurso_id=recurso_id, ip=ip, detalhe=detalhe,
+                criado_em=min(momento, self.agora - timedelta(days=1)),
+            ))
+
+        def ver_fichas(funcionario: Funcionario, inicio: datetime, ip: str) -> None:
+            momento = inicio
+            for _ in range(self.rng.choice([0, 1, 1, 1, 2])):
+                momento += timedelta(minutes=self.rng.randint(3, 40))
+                clientes = [p.cliente for p in self.planos if p.cliente.criado_em < momento]
+                if clientes:
+                    cliente = self.rng.choice(clientes)
+                    registrar("ver_ficha", momento, funcionario, ip=ip, recurso_tipo="cliente", recurso_id=cliente.id)
+
+        # logins bem-sucedidos, cada um seguido de 0 a 2 fichas vistas
+        for _ in range(QTD_LOGINS_AUDITORIA):
+            funcionario = self.rng.choices(self.funcionarios, weights=pesos, k=1)[0]
+            momento, ip = dia_aleatorio(), ip_do_funcionario()
+            registrar("login_ok", momento, funcionario, ip=ip)
+            ver_fichas(funcionario, momento, ip)
+
+        # erros de digitacao da senha, seguidos do login certo
+        for _ in range(QTD_FALHAS_DIGITACAO):
+            funcionario = self.rng.choices(self.funcionarios, weights=pesos, k=1)[0]
+            momento, ip = dia_aleatorio(), ip_do_funcionario()
+            registrar("login_falha", momento, funcionario, ip=ip, detalhe="Senha incorreta.")
+            momento += timedelta(seconds=self.rng.randint(20, 120))
+            registrar("login_ok", momento, funcionario, ip=ip)
+            ver_fichas(funcionario, momento, ip)
+
+        # e-mails que nao existem (funcionario_id nulo)
+        for _ in range(QTD_FALHAS_EMAIL_INEXISTENTE):
+            registrar("login_falha", dia_aleatorio(), email=self.rng.choice(EMAILS_INEXISTENTES),
+                      ip=self.rng.choice(IPS_EXTERNOS + IPS_ESCRITORIO), detalhe="E-mail não cadastrado.")
+
+        # admin consultando a auditoria
+        for _ in range(QTD_VER_AUDITORIA):
+            momento, ip = dia_aleatorio(), self.rng.choice(IPS_ESCRITORIO)
+            registrar("login_ok", momento, admin, ip=ip)
+            filtro = self.rng.choice([None, "acao=login_falha", "acao=ver_ficha", f"funcionario_id={admin.id}"])
+            registrar("ver_auditoria", momento + timedelta(minutes=self.rng.randint(1, 10)), admin, ip=ip,
+                      detalhe=f"Filtros: {filtro}." if filtro else None)
+
+        # rajada de senhas erradas contra o admin: alerta na 4a falha e bloqueio depois da 5a
+        momento = self._momento(self.hoje - timedelta(days=self.rng.randint(30, 50)), 2, 5)
+        for numero in range(1, 6):
+            momento += timedelta(seconds=self.rng.randint(15, 50))
+            registrar("login_falha", momento, admin, ip=IP_ATAQUE, detalhe="Senha incorreta.")
+            if numero == 4:
+                registrar("alerta_email", momento + timedelta(seconds=2), admin, ip=IP_ATAQUE,
+                          detalhe="Alerta de 4 falhas de login em 15 minutos enviado ao e-mail de segurança.")
+        for _ in range(2):
+            momento += timedelta(seconds=self.rng.randint(15, 50))
+            registrar("login_bloqueado", momento, admin, ip=IP_ATAQUE,
+                      detalhe="Login bloqueado: 5 falhas em 15 minutos.")
+
+        # um expurgo de retencao rodado pelo admin (nada antigo o bastante para apagar)
+        momento, ip = self._momento(self.hoje - timedelta(days=self.rng.randint(10, 25)), 9, 17), IPS_ESCRITORIO[0]
+        registrar("login_ok", momento, admin, ip=ip)
+        registrar("expurgo", momento + timedelta(minutes=2), admin, ip=ip,
+                  detalhe="Retenção: chat 180 dias, auditoria 730 dias. Apagados: chat_historico=0, "
+                          "chat_conversas=0, chat_mensagens=0, auditoria=0.")
+
+        registros.sort(key=lambda r: r.criado_em)
+        self.s.add_all(registros)
+        self.s.flush()
+
     # ------------------------------------------------------------- orquestracao
     def executar(self) -> None:
         self.criar_funcionarios()
@@ -1097,12 +1230,14 @@ class _GeradorFicticio:
         self.criar_clientes()
         self.criar_ativacoes()
         self.criar_indicacoes()
+        self.criar_clube()  # antes das faturas: a carta especial aberta vira bonus_clube na fatura seguinte
         self.criar_faturas()
         self.criar_adesoes()
-        self.criar_clube()
         self.criar_promocoes()
         self.criar_atendimentos()
         self.criar_simulacoes()
+        self.criar_auditoria()
+        # chat_conversas / chat_mensagens / chat_historico comecam vazios (o chat comeca do zero)
 
 
 def popular_banco(sessao: Session, semente: int = SEMENTE_PADRAO) -> None:

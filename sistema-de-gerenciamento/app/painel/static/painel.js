@@ -1,9 +1,13 @@
 /* ============================================================
    PAINEL DE GESTÃO BULBE — aplicação de uma página
    - Autenticação: token Bearer guardado no sessionStorage (401 -> volta ao login).
-   - Rotas por hash: #/visao-geral, #/clientes, #/cliente/<id>, #/adesoes, #/atendimentos.
-   - Chat lateral com o assistente (POST /v1/painel/chat), histórico só em memória.
-   SEGURANÇA: todo dado vindo da API passa por esc() antes de entrar no HTML.
+   - Rotas por hash: #/visao-geral, #/clientes, #/cliente/<id>, #/adesoes, #/atendimentos,
+     #/ativacoes, #/dicas, #/usinas, #/parceiros e, só para admin, #/auditoria e #/uso-assistente.
+   - Listas paginadas no servidor ({data, pagina, por_pagina, total, total_paginas}).
+   - Chat lateral com streaming (POST /v1/painel/chat/stream lido com fetch + ReadableStream,
+     eventos SSE inicio/texto/ferramenta/fim/erro), conversas guardadas no servidor
+     (conversa_id) e fallback para POST /v1/painel/chat se o stream falhar antes de começar.
+   SEGURANÇA: todo dado vindo da API passa por esc() (ou textContent) antes de entrar no HTML.
    ============================================================ */
 (function () {
   'use strict';
@@ -14,10 +18,22 @@
   var CHAVE_TOKEN = 'bulbe_painel_token';
   var CHAVE_FUNCIONARIO = 'bulbe_painel_funcionario';
   var CHAVE_CHAT_ABERTO = 'bulbe_painel_chat_aberto';
+  var CHAVE_CONVERSA = 'bulbe_painel_conversa_id';
   var MAX_HISTORICO = 20;
   var MAX_MENSAGEM = 2000;
   var TEMPO_LIMITE_PADRAO = 30000;
   var TEMPO_LIMITE_CHAT = 120000;
+  var TEMPO_INATIVIDADE_STREAM = 90000;
+  var ROTAS_ADMIN = ['auditoria', 'uso-assistente'];
+
+  var ACOES_AUDITORIA = {
+    login_ok: 'Login com sucesso', login_falha: 'Login com falha', login_bloqueado: 'Login bloqueado',
+    alerta_email: 'Alerta por e-mail', ver_ficha: 'Abriu ficha', ver_auditoria: 'Consultou auditoria', expurgo: 'Expurgo'
+  };
+  var TONS_AUDITORIA = {
+    login_ok: 'ok', login_falha: 'alerta', login_bloqueado: 'erro', alerta_email: 'erro',
+    ver_ficha: 'info', ver_auditoria: 'neutro', expurgo: 'neutro'
+  };
 
   var NOMES_ETAPAS = ['Cadastro', 'Documentos', 'Solicitação à CEMIG', 'Análise CEMIG', 'Energia liberada'];
   var MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -53,12 +69,11 @@
   var estado = {
     saindo: false,
     funcionario: null,
-    clientesCarregados: false,
-    adesoesCarregadas: false,
-    atendimentosCarregados: false,
+    carregadas: {},          // telas já carregadas uma vez (não recarrega ao voltar pelo menu)
+    paginas: {},             // página atual de cada lista paginada
     seqFicha: 0,
     fichaAtual: null,
-    chat: { historico: [], enviando: false, aberto: true }
+    chat: { historico: [], enviando: false, aberto: true, conversaId: null, conversasAbertas: false }
   };
 
   /* ------------------------------------------------------------
@@ -83,8 +98,18 @@
   function ehNumero(v) {
     return v !== null && v !== undefined && v !== '' && !isNaN(Number(v));
   }
+  var formatoDecimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
+
   function moeda(v) { return ehNumero(v) ? formatoMoeda.format(Number(v)) : '—'; }
   function numero(v) { return ehNumero(v) ? formatoNumero.format(Number(v)) : '—'; }
+  function decimal(v) { return ehNumero(v) ? formatoDecimal.format(Number(v)) : '—'; }
+  /** Custo em dólar: valores pequenos (frações de centavo) ganham mais casas decimais. */
+  function dolar(v) {
+    if (!ehNumero(v)) return '—';
+    var n = Number(v);
+    var casas = n !== 0 && Math.abs(n) < 0.01 ? 4 : 2;
+    return 'US$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  }
   function ou(v, padrao) { return (v === null || v === undefined || v === '') ? (padrao === undefined ? '—' : padrao) : v; }
 
   /** Converte string ISO em Date. Datas puras (AAAA-MM-DD) ficam no fuso local; datetimes sem fuso são UTC. */
@@ -165,6 +190,7 @@
   }
 
   function lerSessao(chave) { try { return sessionStorage.getItem(chave); } catch (e) { return null; } }
+  function gravarSessao(chave, valor) { try { sessionStorage.setItem(chave, valor); } catch (e) { /* ignora */ } }
   function removerSessao(chave) { try { sessionStorage.removeItem(chave); } catch (e) { /* ignora */ } }
   function lerPreferencia(chave) { try { return localStorage.getItem(chave); } catch (e) { return null; } }
   function gravarPreferencia(chave, valor) { try { localStorage.setItem(chave, valor); } catch (e) { /* ignora */ } }
@@ -177,6 +203,7 @@
     estado.saindo = true;
     removerSessao(CHAVE_TOKEN);
     removerSessao(CHAVE_FUNCIONARIO);
+    removerSessao(CHAVE_CONVERSA);
     window.location.replace('/painel/index.html?sessao=' + encodeURIComponent(motivo || 'encerrada'));
   }
 
@@ -266,8 +293,32 @@
     'clientes': 'Clientes',
     'ficha': 'Ficha do cliente',
     'adesoes': 'Adesões',
-    'atendimentos': 'Atendimentos'
+    'atendimentos': 'Atendimentos',
+    'ativacoes': 'Ativações',
+    'dicas': 'Dicas',
+    'usinas': 'Usinas',
+    'parceiros': 'Parceiros',
+    'auditoria': 'Auditoria',
+    'uso-assistente': 'Uso do assistente'
   };
+
+  /** Tela -> {titulo (id do h1), carregar, sempre (recarrega toda vez que a tela é aberta)}. */
+  var TELAS = {
+    'visao-geral': { titulo: 'titulo-visao-geral', carregar: function () { carregarVisaoGeral(); }, sempre: true },
+    'clientes': { titulo: 'titulo-clientes', carregar: function () { carregarLista('clientes'); } },
+    'adesoes': { titulo: 'titulo-adesoes', carregar: function () { carregarLista('adesoes'); } },
+    'atendimentos': { titulo: 'titulo-atendimentos', carregar: function () { carregarLista('atendimentos'); } },
+    'ativacoes': { titulo: 'titulo-ativacoes', carregar: function () { carregarResumoAtivacoes(); carregarParados(); } },
+    'dicas': { titulo: 'titulo-dicas', carregar: function () { carregarDicas(); } },
+    'usinas': { titulo: 'titulo-usinas', carregar: function () { carregarUsinas(); } },
+    'parceiros': { titulo: 'titulo-parceiros', carregar: function () { carregarParceiros(); } },
+    'auditoria': { titulo: 'titulo-auditoria', carregar: function () { carregarLista('auditoria'); }, sempre: true },
+    'uso-assistente': { titulo: 'titulo-uso-assistente', carregar: function () { carregarUsoAssistente(); }, sempre: true }
+  };
+
+  function ehAdmin() {
+    return !!(estado.funcionario && estado.funcionario.perfil === 'admin');
+  }
 
   function lerRota() {
     var hash = window.location.hash || '';
@@ -295,21 +346,27 @@
     document.title = TITULOS[rota.tela] + ' · Painel Bulbe';
     window.scrollTo(0, 0);
 
-    if (rota.tela === 'visao-geral') {
-      carregarVisaoGeral();
-      focarTitulo('titulo-visao-geral');
-    } else if (rota.tela === 'clientes') {
-      if (!estado.clientesCarregados) carregarClientes();
-      focarTitulo('titulo-clientes');
-    } else if (rota.tela === 'ficha') {
+    if (rota.tela === 'ficha') {
       carregarFicha(rota.id);
-    } else if (rota.tela === 'adesoes') {
-      if (!estado.adesoesCarregadas) carregarAdesoes();
-      focarTitulo('titulo-adesoes');
-    } else if (rota.tela === 'atendimentos') {
-      if (!estado.atendimentosCarregados) carregarAtendimentos();
-      focarTitulo('titulo-atendimentos');
+      return;
     }
+    var tela = TELAS[rota.tela];
+    if (ROTAS_ADMIN.indexOf(rota.tela) !== -1 && estado.funcionario && !ehAdmin()) {
+      // A API também recusa (403); aqui só evitamos a chamada e explicamos.
+      var alvo = $(rota.tela === 'auditoria' ? 'auditoria-resultado' : 'uso-resultado');
+      alvo.innerHTML = '<div class="aviso aviso-alerta" role="alert">Esta tela é restrita a administradores.</div>';
+    } else if (tela.sempre || !estado.carregadas[rota.tela]) {
+      estado.carregadas[rota.tela] = true;
+      tela.carregar();
+    }
+    focarTitulo(tela.titulo);
+  }
+
+  /** Mostra os itens de gestão do menu só para o perfil admin. */
+  function aplicarPerfilNoMenu() {
+    var admin = ehAdmin();
+    $('menu-admin').hidden = !admin;
+    $('menu-secao-admin').hidden = !admin;
   }
 
   function focarTitulo(id) {
@@ -380,7 +437,8 @@
       cartaoMetrica('Indicações', numero(ind.total),
         numero(ind.aderiu) + ' aderiram · ' + numero(ind.pendente) + ' pendentes', 'verde') +
       cartaoMetrica('Clube Bulbe', numero(clube.clientes_com_sequencia),
-        'clientes em sequência · ' + numero(clube.cupons_ativos) + ' cupons ativos · ' + numero(clube.cupons_usados) + ' usados', 'amarela') +
+        'clientes em sequência · ' + numero(clube.cupons_ativos) + ' cupons ativos · ' + numero(clube.cupons_usados) + ' usados' +
+        (ehNumero(clube.bonus_pagos) ? ' · ' + moeda(clube.bonus_pagos) + ' em bônus pagos' : ''), 'amarela') +
       cartaoMetrica('Adesões aguardando', numero(ades.enviada),
         numero(ades.aprovada) + ' aprovadas · ' + numero(ades.recusada) + ' recusadas · ' + numero(ades.rascunho) + ' rascunhos', 'amarela') +
       cartaoMetrica('Simulações (30 dias)', numero(m.simulacoes_30_dias), 'Simulador do app e do site') +
@@ -388,10 +446,15 @@
         numero(app.logins_ultimos_30_dias) + ' logins nos últimos 30 dias') +
       '</div>';
 
+    // Na v2 a "etapa 5" da métrica são os clientes ATIVADOS nos últimos 30 dias (ativacao_etapa5_descricao).
     var itensEtapa = NOMES_ETAPAS.map(function (nome, i) {
       var n = i + 1;
       var valor = porEtapa[String(n)] !== undefined ? porEtapa[String(n)] : porEtapa[n];
-      return { rotulo: n + '. ' + nome, valor: valor || 0, tom: n === 5 ? 'verde' : (n >= 3 ? 'amarelo' : 'azul') };
+      return {
+        rotulo: n === 5 ? 'Ativados (30 dias)' : n + '. ' + nome,
+        valor: valor || 0,
+        tom: n === 5 ? 'verde' : (n >= 3 ? 'amarelo' : 'azul')
+      };
     });
     var itensStatus = [
       { rotulo: 'Ativos', valor: cli.ativo, tom: 'verde' },
@@ -407,8 +470,9 @@
 
     html += '<div class="grade grade-2">' +
       '<section class="cartao" aria-labelledby="t-ativacao-etapa">' +
-        '<h2 class="cartao-titulo" id="t-ativacao-etapa">Ativação por etapa <span class="texto-suave">clientes em cada etapa da jornada (até 90 dias)</span></h2>' +
+        '<h2 class="cartao-titulo" id="t-ativacao-etapa">Ativação por etapa <span class="texto-suave">em ativação por etapa · ativados nos últimos 30 dias</span></h2>' +
         htmlBarras(itensEtapa) +
+        '<p class="cartao-rodape"><a href="#/ativacoes">Ver resumo das ativações e clientes parados</a></p>' +
       '</section>' +
       '<section class="cartao" aria-labelledby="t-status-clientes">' +
         '<h2 class="cartao-titulo" id="t-status-clientes">Clientes por status</h2>' +
@@ -449,29 +513,128 @@
   }
 
   /* ------------------------------------------------------------
-     CLIENTES
+     LISTAS PAGINADAS (Clientes, Adesões, Atendimentos, Auditoria)
      ------------------------------------------------------------ */
-  async function carregarClientes() {
-    var alvo = $('clientes-resultado');
+  var LISTAS = {
+    clientes: {
+      alvo: 'clientes-resultado', url: '/v1/painel/clientes', carregando: 'Buscando clientes...',
+      unidade: ['cliente', 'clientes'], dica: 'Clique na linha para abrir a ficha.',
+      filtros: function () {
+        return {
+          termo: $('filtro-termo').value, status: $('filtro-status').value, cidade: $('filtro-cidade').value,
+          etapa: $('filtro-etapa').value, por_pagina: $('filtro-limite').value
+        };
+      },
+      render: function (lista) { return renderTabelaClientes(lista); }
+    },
+    adesoes: {
+      alvo: 'adesoes-resultado', url: '/v1/painel/adesoes', carregando: 'Carregando adesões...',
+      unidade: ['adesão', 'adesões'],
+      filtros: function () {
+        return { situacao: $('filtro-adesao-situacao').value, por_pagina: $('filtro-adesao-limite').value };
+      },
+      render: function (lista) { return renderTabelaAdesoes(lista); }
+    },
+    atendimentos: {
+      alvo: 'atendimentos-resultado', url: '/v1/painel/atendimentos', carregando: 'Carregando atendimentos...',
+      unidade: ['atendimento', 'atendimentos'],
+      filtros: function () {
+        return { status: $('filtro-atendimento-status').value, por_pagina: $('filtro-atendimento-limite').value };
+      },
+      render: function (lista) { return renderTabelaAtendimentos(lista); }
+    },
+    auditoria: {
+      alvo: 'auditoria-resultado', url: '/v1/painel/auditoria', carregando: 'Carregando auditoria...',
+      unidade: ['registro', 'registros'],
+      filtros: function () {
+        return {
+          acao: $('filtro-auditoria-acao').value, funcionario_id: $('filtro-auditoria-funcionario').value,
+          por_pagina: $('filtro-auditoria-limite').value
+        };
+      },
+      render: function (lista) { return renderTabelaAuditoria(lista); }
+    }
+  };
+
+  /** Aceita o formato paginado da v2 e, por compatibilidade, uma lista simples (v1). */
+  function normalizarPagina(r) {
+    if (Array.isArray(r)) return { data: r, pagina: 1, por_pagina: r.length, total: r.length, total_paginas: 1 };
+    r = r || {};
+    var dados = Array.isArray(r.data) ? r.data : [];
+    var total = ehNumero(r.total) ? Number(r.total) : dados.length;
+    var totalPaginas = ehNumero(r.total_paginas) ? Number(r.total_paginas) : 1;
+    return {
+      data: dados,
+      pagina: Math.max(1, ehNumero(r.pagina) ? Number(r.pagina) : 1),
+      por_pagina: ehNumero(r.por_pagina) ? Number(r.por_pagina) : dados.length,
+      total: total,
+      total_paginas: Math.max(totalPaginas, 1)
+    };
+  }
+
+  function htmlPaginacao(nome, p) {
+    var anterior = p.pagina > 1;
+    var proxima = p.pagina < p.total_paginas;
+    return '<nav class="paginacao" aria-label="' + esc('Paginação de ' + TITULOS[nome].toLowerCase()) + '">' +
+      '<button type="button" class="botao botao-fantasma botao-pequeno" data-paginar="' + esc(nome) + '" data-pagina="' + esc(p.pagina - 1) + '"' +
+        (anterior ? '' : ' disabled') + '>&larr; Anterior</button>' +
+      '<span class="paginacao-info">Página <strong>' + esc(numero(p.pagina)) + '</strong> de <strong>' + esc(numero(p.total_paginas)) + '</strong></span>' +
+      '<button type="button" class="botao botao-fantasma botao-pequeno" data-paginar="' + esc(nome) + '" data-pagina="' + esc(p.pagina + 1) + '"' +
+        (proxima ? '' : ' disabled') + '>Próxima &rarr;</button>' +
+      '</nav>';
+  }
+
+  /** Carrega uma lista paginada. pagina omitida = volta para a 1 (filtros novos). */
+  async function carregarLista(nome, pagina, focarResumo) {
+    var cfg = LISTAS[nome];
+    var alvo = $(cfg.alvo);
+    var paginaPedida = Math.max(1, Number(pagina) || 1);
+    estado.paginas[nome] = paginaPedida;
+    var seq = (cfg.seq = (cfg.seq || 0) + 1);
     alvo.setAttribute('aria-busy', 'true');
-    alvo.innerHTML = htmlCarregando('Buscando clientes...');
-    var query = montarQuery({
-      termo: $('filtro-termo').value,
-      status: $('filtro-status').value,
-      cidade: $('filtro-cidade').value,
-      limite: $('filtro-limite').value
-    });
+    alvo.innerHTML = htmlCarregando(cfg.carregando);
+    var params = cfg.filtros();
+    params.pagina = paginaPedida;
     try {
-      var lista = await api('/v1/painel/clientes' + query);
-      estado.clientesCarregados = true;
-      alvo.innerHTML = renderTabelaClientes(Array.isArray(lista) ? lista : []);
+      var p = normalizarPagina(await api(cfg.url + montarQuery(params)));
+      if (seq !== cfg.seq) return; // resposta de um pedido antigo
+      // Página além do fim (ex.: filtro mudou o total): volta para a última existente.
+      if (!p.data.length && p.total > 0 && paginaPedida > p.total_paginas) {
+        carregarLista(nome, p.total_paginas, focarResumo);
+        return;
+      }
+      if (!p.data.length) {
+        alvo.innerHTML = htmlVazio('Nenhum registro encontrado com esses filtros.');
+      } else {
+        var inicio = (p.pagina - 1) * p.por_pagina + 1;
+        var fim = inicio + p.data.length - 1;
+        alvo.innerHTML = '<p class="tabela-resumo" id="resumo-' + esc(nome) + '" tabindex="-1">' +
+          esc(numero(p.total) + ' ' + (p.total === 1 ? cfg.unidade[0] : cfg.unidade[1]) +
+            ' · mostrando ' + numero(inicio) + '–' + numero(fim) + ' · página ' + numero(p.pagina) + ' de ' + numero(p.total_paginas) + '.') +
+          (cfg.dica ? ' ' + esc(cfg.dica) : '') + '</p>' +
+          cfg.render(p.data) +
+          (p.total_paginas > 1 ? htmlPaginacao(nome, p) : '');
+        if (focarResumo) {
+          var resumo = $('resumo-' + nome);
+          if (resumo) resumo.focus();
+        }
+      }
     } catch (erro) {
-      if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
+      if (seq !== cfg.seq) return;
+      estado.carregadas[nome] = false; // tenta de novo ao voltar para a tela
+      if (erro.status !== 401) {
+        alvo.innerHTML = erro.status === 403
+          ? '<div class="aviso aviso-alerta" role="alert">' + esc(erro.message || 'Acesso restrito a administradores.') + '</div>'
+          : htmlErro(erro);
+      }
     } finally {
-      alvo.removeAttribute('aria-busy');
+      if (seq === cfg.seq) alvo.removeAttribute('aria-busy');
     }
   }
 
+  /* ------------------------------------------------------------
+     CLIENTES
+     ------------------------------------------------------------ */
   function renderTabelaClientes(lista) {
     if (!lista.length) return htmlVazio('Nenhum cliente encontrado com esses filtros.');
     var linhas = lista.map(function (c) {
@@ -486,8 +649,7 @@
         '<td class="col-nowrap">' + esc(data(c.criado_em)) + '</td>' +
         '</tr>';
     }).join('');
-    return '<p class="tabela-resumo">' + esc(lista.length) + ' cliente(s). Clique na linha para abrir a ficha.</p>' +
-      '<div class="tabela-rolagem"><table class="tabela">' +
+    return '<div class="tabela-rolagem"><table class="tabela">' +
       '<caption class="visualmente-oculto">Resultado da busca de clientes</caption>' +
       '<thead><tr><th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col">CPF</th><th scope="col">Cidade</th>' +
       '<th scope="col">Status</th><th scope="col" class="col-numero">Etapa</th><th scope="col">Cliente desde</th></tr></thead>' +
@@ -667,6 +829,7 @@
       destaque('Economia total', moeda(e.economia_total), 'verde') +
       destaque('Desconto acumulado', moeda(e.economia_total_desconto)) +
       destaque('Bônus de indicação', moeda(e.bonus_indicacao_total)) +
+      destaque('Bônus do Clube', moeda(ehNumero(e.bonus_clube_total) ? e.bonus_clube_total : 0)) +
       destaque('Meses faturados', numero(e.meses_faturados)) +
       destaque('Faturas vencidas', numero(e.faturas_vencidas), Number(e.faturas_vencidas) > 0 ? 'amarelo' : '') +
       destaque('Valor em aberto', moeda(e.valor_em_aberto), Number(e.valor_em_aberto) > 0 ? 'amarelo' : '') +
@@ -682,6 +845,7 @@
         '<td class="col-numero">' + esc(moeda(f.valor_sem_bulbe)) + '</td>' +
         '<td class="col-numero">' + esc(moeda(f.desconto)) + '</td>' +
         '<td class="col-numero">' + esc(moeda(f.bonus_indicacao)) + '</td>' +
+        '<td class="col-numero">' + esc(moeda(ehNumero(f.bonus_clube) ? f.bonus_clube : 0)) + '</td>' +
         '<td class="col-numero"><strong>' + esc(moeda(f.valor_total)) + '</strong></td>' +
         '<td class="col-nowrap">' + esc(data(f.vencimento)) + '</td>' +
         '<td>' + selo(f.situacao) + '</td>' +
@@ -692,7 +856,8 @@
       '<caption class="visualmente-oculto">Faturas do cliente</caption>' +
       '<thead><tr><th scope="col">Mês</th><th scope="col" class="col-numero">Consumo (kWh)</th>' +
       '<th scope="col" class="col-numero">Sem Bulbe</th><th scope="col" class="col-numero">Desconto</th>' +
-      '<th scope="col" class="col-numero">Bônus</th><th scope="col" class="col-numero">Total</th>' +
+      '<th scope="col" class="col-numero">Bônus indicação</th><th scope="col" class="col-numero">Bônus Clube</th>' +
+      '<th scope="col" class="col-numero">Total</th>' +
       '<th scope="col">Vencimento</th><th scope="col">Situação</th><th scope="col">Pago em</th></tr></thead>' +
       '<tbody>' + linhas + '</tbody></table></div>';
   }
@@ -774,22 +939,6 @@
   /* ------------------------------------------------------------
      ADESÕES
      ------------------------------------------------------------ */
-  async function carregarAdesoes() {
-    var alvo = $('adesoes-resultado');
-    alvo.setAttribute('aria-busy', 'true');
-    alvo.innerHTML = htmlCarregando('Carregando adesões...');
-    var query = montarQuery({ situacao: $('filtro-adesao-situacao').value, limite: $('filtro-adesao-limite').value });
-    try {
-      var lista = await api('/v1/painel/adesoes' + query);
-      estado.adesoesCarregadas = true;
-      alvo.innerHTML = renderTabelaAdesoes(Array.isArray(lista) ? lista : []);
-    } catch (erro) {
-      if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
-    } finally {
-      alvo.removeAttribute('aria-busy');
-    }
-  }
-
   function renderTabelaAdesoes(lista) {
     if (!lista.length) return htmlVazio('Nenhuma adesão encontrada.');
     var linhas = lista.map(function (a) {
@@ -808,8 +957,7 @@
         '<td>' + clienteLink + '</td>' +
         '</tr>';
     }).join('');
-    return '<p class="tabela-resumo">' + esc(lista.length) + ' adesão(ões).</p>' +
-      '<div class="tabela-rolagem"><table class="tabela">' +
+    return '<div class="tabela-rolagem"><table class="tabela">' +
       '<caption class="visualmente-oculto">Adesões</caption>' +
       '<thead><tr><th scope="col">Nome</th><th scope="col">Telefone</th><th scope="col">Cidade</th>' +
       '<th scope="col" class="col-numero">Conta atual</th><th scope="col" class="col-numero">Economia/mês</th>' +
@@ -820,22 +968,6 @@
   /* ------------------------------------------------------------
      ATENDIMENTOS
      ------------------------------------------------------------ */
-  async function carregarAtendimentos() {
-    var alvo = $('atendimentos-resultado');
-    alvo.setAttribute('aria-busy', 'true');
-    alvo.innerHTML = htmlCarregando('Carregando atendimentos...');
-    var query = montarQuery({ status: $('filtro-atendimento-status').value, limite: $('filtro-atendimento-limite').value });
-    try {
-      var lista = await api('/v1/painel/atendimentos' + query);
-      estado.atendimentosCarregados = true;
-      alvo.innerHTML = renderTabelaAtendimentos(Array.isArray(lista) ? lista : []);
-    } catch (erro) {
-      if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
-    } finally {
-      alvo.removeAttribute('aria-busy');
-    }
-  }
-
   function renderTabelaAtendimentos(lista) {
     if (!lista.length) return htmlVazio('Nenhum atendimento encontrado.');
     var linhas = lista.map(function (a) {
@@ -853,12 +985,295 @@
         '<td class="col-nowrap">' + esc(a.resolvido_em ? dataHora(a.resolvido_em) : '—') + '</td>' +
         '</tr>';
     }).join('');
-    return '<p class="tabela-resumo">' + esc(lista.length) + ' atendimento(s).</p>' +
-      '<div class="tabela-rolagem"><table class="tabela">' +
+    return '<div class="tabela-rolagem"><table class="tabela">' +
       '<caption class="visualmente-oculto">Atendimentos</caption>' +
       '<thead><tr><th scope="col">Aberto em</th><th scope="col">Cliente</th><th scope="col">Canal</th>' +
       '<th scope="col">Assunto</th><th scope="col">Status</th><th scope="col">Resolvido em</th></tr></thead>' +
       '<tbody>' + linhas + '</tbody></table></div>';
+  }
+
+  /* ------------------------------------------------------------
+     TELAS SIMPLES: carregamento com estado de "carregando" e erro
+     ------------------------------------------------------------ */
+  async function carregarEm(idAlvo, mensagem, buscar, renderizar, nomeTela) {
+    var alvo = $(idAlvo);
+    alvo.setAttribute('aria-busy', 'true');
+    alvo.innerHTML = htmlCarregando(mensagem);
+    try {
+      var dados = await buscar();
+      alvo.innerHTML = renderizar(dados);
+      aplicarLarguras(alvo);
+    } catch (erro) {
+      if (nomeTela) estado.carregadas[nomeTela] = false;
+      if (erro.status !== 401) {
+        alvo.innerHTML = erro.status === 403
+          ? '<div class="aviso aviso-alerta" role="alert">' + esc(erro.message || 'Acesso restrito a administradores.') + '</div>'
+          : htmlErro(erro);
+      }
+    } finally {
+      alvo.removeAttribute('aria-busy');
+    }
+  }
+
+  /* ------------------------------------------------------------
+     ATIVAÇÕES (resumo + clientes parados)
+     ------------------------------------------------------------ */
+  function carregarResumoAtivacoes() {
+    return carregarEm('ativacoes-resumo', 'Carregando resumo das ativações...',
+      function () { return api('/v1/painel/ativacoes/resumo'); }, renderResumoAtivacoes, 'ativacoes');
+  }
+
+  function valorPorChave(objeto, n) {
+    if (!objeto) return undefined;
+    return objeto[String(n)] !== undefined ? objeto[String(n)] : objeto[n];
+  }
+
+  function renderResumoAtivacoes(r) {
+    r = r || {};
+    var cartoes = '<div class="grade grade-metricas">' +
+      cartaoMetrica('Em ativação', numero(r.em_ativacao), 'clientes na jornada de 5 etapas') +
+      cartaoMetrica('Atrasados', numero(r.atrasados_90_dias), 'passaram dos 90 dias do cadastro', Number(r.atrasados_90_dias) > 0 ? 'vermelha' : '') +
+      cartaoMetrica('Ativados (30 dias)', numero(r.ativados_30_dias), 'energia liberada nos últimos 30 dias', 'verde') +
+      cartaoMetrica('Tempo médio de ativação', ehNumero(r.tempo_medio_ativacao_dias) ? decimal(r.tempo_medio_ativacao_dias) + ' dias' : '—',
+        'do cadastro até a energia liberada', 'amarela') +
+      '</div>';
+    var etapas = [];
+    for (var n = 1; n <= 5; n++) {
+      var valor = valorPorChave(r.por_etapa, n);
+      if (valor === undefined && n === 5) continue; // o resumo traz as etapas 1 a 4
+      var dias = valorPorChave(r.dias_medios_na_etapa, n);
+      etapas.push({
+        rotulo: n + '. ' + NOMES_ETAPAS[n - 1],
+        sub: ehNumero(dias) ? decimal(dias) + ' dias em média' : '',
+        valor: valor || 0,
+        tom: n >= 3 ? 'amarelo' : 'azul'
+      });
+    }
+    return cartoes + '<section class="cartao" aria-labelledby="t-resumo-etapas">' +
+      '<h2 class="cartao-titulo" id="t-resumo-etapas">Clientes por etapa <span class="texto-suave">com o tempo médio parado na etapa</span></h2>' +
+      htmlBarras(etapas) + '</section>';
+  }
+
+  function carregarParados() {
+    var dias = $('filtro-parados-dias').value;
+    var query = montarQuery({
+      etapa: $('filtro-parados-etapa').value,
+      dias_minimos: ehNumero(dias) ? Math.max(0, Math.min(3650, Math.floor(Number(dias)))) : 30,
+      limite: $('filtro-parados-limite').value
+    });
+    return carregarEm('parados-resultado', 'Buscando clientes parados...',
+      function () { return api('/v1/painel/clientes/parados' + query); }, renderParados, 'ativacoes');
+  }
+
+  function renderParados(lista) {
+    lista = Array.isArray(lista) ? lista : [];
+    if (!lista.length) return htmlVazio('Nenhum cliente parado com esses filtros.');
+    var linhas = lista.map(function (c) {
+      var href = hashCliente(c.cliente_id);
+      var etapa = ehNumero(c.etapa_atual) ? c.etapa_atual + '. ' + ou(c.nome_etapa, NOMES_ETAPAS[Number(c.etapa_atual) - 1] || '') : '—';
+      return '<tr class="linha-clicavel" data-href="' + esc(href) + '">' +
+        '<td><a class="link-linha" href="' + esc(href) + '">' + esc(ou(c.nome)) + '</a></td>' +
+        '<td>' + esc(ou(c.cidade)) + '</td>' +
+        '<td>' + esc(etapa) + '</td>' +
+        '<td class="col-numero"><strong>' + esc(numero(c.dias_na_etapa)) + '</strong></td>' +
+        '<td class="col-numero">' + esc(numero(c.dias_desde_cadastro)) + '</td>' +
+        '<td class="col-nowrap">' + esc(data(c.previsao_conclusao)) + '</td>' +
+        '<td>' + (c.atrasado ? '<span class="selo selo-erro">Atrasado</span>' : '<span class="selo selo-ok">No prazo</span>') + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<p class="tabela-resumo">' + esc(numero(lista.length)) + ' cliente(s), do mais parado ao menos parado. Clique na linha para abrir a ficha.</p>' +
+      '<div class="tabela-rolagem"><table class="tabela">' +
+      '<caption class="visualmente-oculto">Clientes parados na mesma etapa da ativação</caption>' +
+      '<thead><tr><th scope="col">Nome</th><th scope="col">Cidade</th><th scope="col">Etapa atual</th>' +
+      '<th scope="col" class="col-numero">Dias na etapa</th><th scope="col" class="col-numero">Dias desde o cadastro</th>' +
+      '<th scope="col">Previsão</th><th scope="col">Prazo de 90 dias</th></tr></thead>' +
+      '<tbody>' + linhas + '</tbody></table></div>';
+  }
+
+  /* ------------------------------------------------------------
+     DICAS, USINAS E PARCEIROS
+     ------------------------------------------------------------ */
+  function carregarDicas() {
+    return carregarEm('dicas-resultado', 'Carregando dicas...', function () { return api('/v1/painel/dicas'); }, renderDicas, 'dicas');
+  }
+
+  function renderDicas(lista) {
+    lista = Array.isArray(lista) ? lista : [];
+    if (!lista.length) return htmlVazio('Nenhuma dica cadastrada.');
+    return '<div class="grade grade-3">' + lista.map(function (d, i) {
+      var id = 't-dica-' + i;
+      return '<section class="cartao cartao-dica" aria-labelledby="' + id + '">' +
+        '<h2 class="cartao-titulo" id="' + id + '">' + esc(ou(d.titulo)) + '</h2>' +
+        (d.descricao ? '<p class="dica-texto">' + esc(d.descricao) + '</p>' : '') +
+        '<div class="destaques">' +
+          destaque('Economia por mês', moeda(d.economia_mensal), 'verde') +
+          destaque('Economia por ano', moeda(d.economia_anual), 'verde') +
+        '</div></section>';
+    }).join('') + '</div>';
+  }
+
+  function carregarUsinas() {
+    return carregarEm('usinas-resultado', 'Carregando usinas...', function () { return api('/v1/painel/usinas'); }, renderTabelaUsinas, 'usinas');
+  }
+
+  function renderTabelaUsinas(lista) {
+    lista = Array.isArray(lista) ? lista : [];
+    if (!lista.length) return htmlVazio('Nenhuma usina cadastrada.');
+    var linhas = lista.map(function (u) {
+      return '<tr>' +
+        '<td><strong>' + esc(ou(u.nome)) + '</strong></td>' +
+        '<td>' + esc(ou(u.localizacao)) + '</td>' +
+        '<td class="col-numero">' + esc(numero(u.capacidade_geracao_kwh)) + ' kWh</td>' +
+        '<td class="col-numero">' + esc(numero(u.clientes_ativos)) + '</td>' +
+        '<td>' + selo(u.status) + '</td>' +
+        '<td class="col-nowrap">' + esc(data(u.data_ativacao)) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<div class="tabela-rolagem"><table class="tabela">' +
+      '<caption class="visualmente-oculto">Usinas da Bulbe</caption>' +
+      '<thead><tr><th scope="col">Usina</th><th scope="col">Localização</th><th scope="col" class="col-numero">Capacidade</th>' +
+      '<th scope="col" class="col-numero">Clientes ativos</th><th scope="col">Status</th><th scope="col">Ativa desde</th></tr></thead>' +
+      '<tbody>' + linhas + '</tbody></table></div>';
+  }
+
+  function carregarParceiros() {
+    var incluirInativos = $('filtro-parceiros-inativos').checked;
+    return carregarEm('parceiros-resultado', 'Carregando parceiros...',
+      function () { return api('/v1/painel/parceiros' + (incluirInativos ? '?apenas_ativos=false' : '')); },
+      renderTabelaParceiros, 'parceiros');
+  }
+
+  function renderTabelaParceiros(lista) {
+    lista = Array.isArray(lista) ? lista : [];
+    if (!lista.length) return htmlVazio('Nenhum parceiro encontrado.');
+    var linhas = lista.map(function (p) {
+      return '<tr>' +
+        '<td><strong>' + esc(ou(p.nome)) + '</strong></td>' +
+        '<td>' + esc(ou(p.categoria)) + '</td>' +
+        '<td>' + (p.ativo === false ? '<span class="selo selo-erro">Inativo</span>' : '<span class="selo selo-ok">Ativo</span>') + '</td>' +
+        '<td class="col-nowrap">' + esc(data(p.criado_em)) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<div class="tabela-rolagem"><table class="tabela">' +
+      '<caption class="visualmente-oculto">Parceiros do Clube Bulbe</caption>' +
+      '<thead><tr><th scope="col">Parceiro</th><th scope="col">Categoria</th><th scope="col">Situação</th><th scope="col">Parceiro desde</th></tr></thead>' +
+      '<tbody>' + linhas + '</tbody></table></div>';
+  }
+
+  /* ------------------------------------------------------------
+     AUDITORIA E EXPURGO (admin)
+     ------------------------------------------------------------ */
+  function renderTabelaAuditoria(lista) {
+    var linhas = lista.map(function (a) {
+      var acao = a.acao || '';
+      var tom = Object.prototype.hasOwnProperty.call(TONS_AUDITORIA, acao) ? TONS_AUDITORIA[acao] : 'neutro';
+      var nomeAcao = Object.prototype.hasOwnProperty.call(ACOES_AUDITORIA, acao) ? ACOES_AUDITORIA[acao] : rotulo(acao);
+      var quem = a.funcionario_nome
+        ? esc(a.funcionario_nome) + (a.funcionario_id ? ' <span class="texto-suave">#' + esc(a.funcionario_id) + '</span>' : '')
+        : (a.funcionario_id ? '#' + esc(a.funcionario_id) : '<span class="texto-suave">—</span>');
+      var recurso = '—';
+      if (a.recurso_tipo === 'cliente' && a.recurso_id) {
+        recurso = '<a class="link-linha" href="' + esc(hashCliente(a.recurso_id)) + '">Cliente <code>' + esc(a.recurso_id) + '</code></a>';
+      } else if (a.recurso_tipo || a.recurso_id) {
+        recurso = esc([a.recurso_tipo, a.recurso_id].filter(Boolean).join(' '));
+      }
+      return '<tr>' +
+        '<td class="col-nowrap">' + esc(dataHora(a.criado_em)) + '</td>' +
+        '<td><span class="selo selo-' + tom + '">' + esc(nomeAcao) + '</span></td>' +
+        '<td>' + quem + '</td>' +
+        '<td>' + esc(ou(a.email_informado)) + '</td>' +
+        '<td>' + recurso + '</td>' +
+        '<td class="col-nowrap">' + esc(ou(a.ip)) + '</td>' +
+        '<td class="col-detalhe">' + esc(ou(a.detalhe)) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<div class="tabela-rolagem"><table class="tabela">' +
+      '<caption class="visualmente-oculto">Registros de auditoria</caption>' +
+      '<thead><tr><th scope="col">Quando</th><th scope="col">Ação</th><th scope="col">Funcionário</th>' +
+      '<th scope="col">E-mail informado</th><th scope="col">Recurso</th><th scope="col">IP</th><th scope="col">Detalhe</th></tr></thead>' +
+      '<tbody>' + linhas + '</tbody></table></div>';
+  }
+
+  async function executarExpurgo() {
+    var botao = $('botao-expurgo');
+    var alvo = $('expurgo-resultado');
+    var ok = window.confirm('Apagar agora as conversas do assistente e os registros de auditoria mais antigos que o prazo de ' +
+      'retenção configurado no servidor? Esta ação não pode ser desfeita.');
+    if (!ok) return;
+    botao.disabled = true;
+    alvo.innerHTML = htmlCarregando('Expurgando dados antigos...');
+    try {
+      var r = await api('/v1/painel/admin/expurgo', { metodo: 'POST' }) || {};
+      alvo.innerHTML = '<div class="aviso aviso-info" role="status">Expurgo concluído: ' +
+        esc(numero(r.chat_historico || 0)) + ' registro(s) do histórico do chat, ' +
+        esc(numero(r.chat_conversas || 0)) + ' conversa(s), ' +
+        esc(numero(r.chat_mensagens || 0)) + ' mensagem(ns) e ' +
+        esc(numero(r.auditoria || 0)) + ' registro(s) de auditoria removidos' +
+        (ehNumero(r.dias_chat) ? ' (retenção: ' + esc(numero(r.dias_chat)) + ' dias para o chat e ' + esc(numero(r.dias_auditoria)) + ' para a auditoria)' : '') +
+        '.</div>';
+      carregarLista('auditoria', 1);
+    } catch (erro) {
+      if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
+    } finally {
+      botao.disabled = false;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     USO DO ASSISTENTE (admin)
+     ------------------------------------------------------------ */
+  function carregarUsoAssistente() {
+    var dias = $('filtro-uso-dias').value || '30';
+    return carregarEm('uso-resultado', 'Carregando uso do assistente...',
+      function () { return api('/v1/painel/uso-chatbot' + montarQuery({ dias: dias })); }, renderUsoAssistente, 'uso-assistente');
+  }
+
+  function renderUsoAssistente(u) {
+    u = u || {};
+    var duracao = ehNumero(u.duracao_media_ms) ? decimal(Number(u.duracao_media_ms) / 1000) + ' s' : '—';
+    var html = '<div class="grade grade-metricas">' +
+      cartaoMetrica('Perguntas', numero(u.perguntas), numero(u.conversas) + ' conversas · ' + numero(u.funcionarios_ativos) + ' funcionário(s)') +
+      cartaoMetrica('Custo estimado', dolar(u.custo_estimado_usd), 'no período de ' + numero(u.periodo_dias) + ' dias', 'amarela') +
+      cartaoMetrica('Custo médio por pergunta', dolar(u.custo_medio_por_pergunta_usd), 'estimativa pelos preços configurados', 'amarela') +
+      cartaoMetrica('Tempo médio de resposta', duracao, 'do envio da pergunta ao fim da resposta') +
+      cartaoMetrica('Tokens de entrada', numero(u.input_tokens), numero(u.cache_read_tokens) + ' lidos do cache', 'verde') +
+      cartaoMetrica('Tokens de saída', numero(u.output_tokens), 'texto gerado pelo modelo', 'verde') +
+      '</div>';
+
+    var porFuncionario = Array.isArray(u.por_funcionario) ? u.por_funcionario : [];
+    var tabelaFuncionarios = porFuncionario.length
+      ? '<div class="tabela-rolagem"><table class="tabela"><caption class="visualmente-oculto">Uso por funcionário</caption>' +
+        '<thead><tr><th scope="col">Funcionário</th><th scope="col" class="col-numero">Perguntas</th><th scope="col" class="col-numero">Custo estimado</th></tr></thead><tbody>' +
+        porFuncionario.map(function (f) {
+          return '<tr><td>' + esc(ou(f.nome)) + (f.funcionario_id ? ' <span class="texto-suave">#' + esc(f.funcionario_id) + '</span>' : '') + '</td>' +
+            '<td class="col-numero">' + esc(numero(f.perguntas)) + '</td>' +
+            '<td class="col-numero">' + esc(dolar(f.custo_estimado_usd)) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : htmlVazio('Nenhuma pergunta no período.');
+
+    var ferramentas = (Array.isArray(u.ferramentas_mais_usadas) ? u.ferramentas_mais_usadas : []).map(function (f) {
+      return { rotulo: String(ou(f.nome, '')), valor: f.usos, tom: 'azul' };
+    });
+
+    var porDia = Array.isArray(u.por_dia) ? u.por_dia : [];
+    var tabelaDias = porDia.length
+      ? '<div class="tabela-rolagem tabela-rolagem-limitada"><table class="tabela"><caption class="visualmente-oculto">Uso por dia</caption>' +
+        '<thead><tr><th scope="col">Dia</th><th scope="col" class="col-numero">Perguntas</th><th scope="col" class="col-numero">Custo estimado</th></tr></thead><tbody>' +
+        porDia.map(function (d) {
+          return '<tr><td class="col-nowrap">' + esc(data(d.data)) + '</td>' +
+            '<td class="col-numero">' + esc(numero(d.perguntas)) + '</td>' +
+            '<td class="col-numero">' + esc(dolar(d.custo_estimado_usd)) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : htmlVazio('Nenhuma pergunta no período.');
+
+    return html +
+      '<div class="grade grade-2">' +
+        '<section class="cartao" aria-labelledby="t-uso-func"><h2 class="cartao-titulo" id="t-uso-func">Por funcionário</h2>' + tabelaFuncionarios + '</section>' +
+        '<section class="cartao" aria-labelledby="t-uso-ferr"><h2 class="cartao-titulo" id="t-uso-ferr">Ferramentas mais usadas <span class="texto-suave">consultas ao banco feitas pelo assistente</span></h2>' +
+          (ferramentas.length ? htmlBarras(ferramentas) : htmlVazio('Nenhuma ferramenta usada no período.')) + '</section>' +
+      '</div>' +
+      '<section class="cartao" aria-labelledby="t-uso-dia"><h2 class="cartao-titulo" id="t-uso-dia">Por dia</h2>' + tabelaDias + '</section>' +
+      '<p class="texto-suave">O custo é uma estimativa calculada pelo servidor a partir dos tokens de cada resposta e dos preços configurados; a fatura oficial é a do console da Anthropic.</p>';
   }
 
   /* ------------------------------------------------------------
@@ -904,40 +1319,75 @@
     caixa.scrollTop = caixa.scrollHeight;
   }
 
-  function adicionarMensagem(papel, texto, ferramentas, modelo) {
+  /** Rola até o fim só se o usuário já estava perto do fim (não atrapalha quem subiu para reler). */
+  function rolarChatSeNoFim() {
     var caixa = $('chat-mensagens');
+    if (caixa.scrollHeight - caixa.scrollTop - caixa.clientHeight < 120) caixa.scrollTop = caixa.scrollHeight;
+  }
+
+  /** Cria o elemento de uma mensagem (ainda fora da tela). */
+  function criarMensagem(papel) {
     var msg = document.createElement('div');
     msg.className = 'msg msg-' + papel;
-
-    var balao = document.createElement('div');
-    balao.className = 'msg-balao';
-    if (papel === 'assistente') {
-      balao.innerHTML = formatarResposta(texto); // formatarResposta escapa o conteúdo
-    } else {
-      balao.textContent = texto;
-    }
     var rotuloLeitor = document.createElement('span');
     rotuloLeitor.className = 'visualmente-oculto';
     rotuloLeitor.textContent = papel === 'assistente' ? 'Assistente: ' : 'Você: ';
+    var balao = document.createElement('div');
+    balao.className = 'msg-balao';
     msg.appendChild(rotuloLeitor);
     msg.appendChild(balao);
+    return { msg: msg, balao: balao };
+  }
 
-    if (papel === 'assistente' && Array.isArray(ferramentas) && ferramentas.length) {
-      var rodape = document.createElement('div');
+  /**
+   * Rodapé discreto da resposta: ferramentas consultadas e custo estimado.
+   * Tudo via textContent (nomes de ferramentas e modelo vêm da API).
+   */
+  function preencherRodape(msg, ferramentas, modelo, uso, emAndamento) {
+    var rodape = msg.querySelector('.msg-ferramentas');
+    if (!rodape) {
+      rodape = document.createElement('div');
       rodape.className = 'msg-ferramentas';
+    }
+    rodape.textContent = '';
+    var lista = Array.isArray(ferramentas) ? ferramentas : [];
+    if (lista.length) {
       var legenda = document.createElement('span');
-      legenda.textContent = 'Consultou:';
+      legenda.textContent = emAndamento ? 'Consultando:' : 'Consultou:';
       rodape.appendChild(legenda);
-      ferramentas.forEach(function (nome) {
+      lista.forEach(function (nome) {
         var code = document.createElement('code');
         code.textContent = String(nome);
         rodape.appendChild(code);
       });
-      if (modelo) rodape.title = 'Modelo: ' + modelo;
-      msg.appendChild(rodape);
     }
-    caixa.appendChild(msg);
+    if (uso && ehNumero(uso.custo_estimado_usd)) {
+      var custo = document.createElement('span');
+      custo.className = 'msg-custo';
+      custo.textContent = 'custo ≈ ' + dolar(uso.custo_estimado_usd);
+      custo.title = numero(uso.input_tokens || 0) + ' tokens de entrada · ' + numero(uso.output_tokens || 0) + ' de saída · ' +
+        numero(uso.cache_read_tokens || 0) + ' lidos do cache';
+      rodape.appendChild(custo);
+    }
+    rodape.title = modelo ? 'Modelo: ' + modelo : '';
+    if (rodape.childNodes.length) {
+      if (!rodape.parentNode) msg.appendChild(rodape);
+    } else if (rodape.parentNode) {
+      rodape.remove();
+    }
+  }
+
+  function adicionarMensagem(papel, texto, ferramentas, modelo, uso) {
+    var m = criarMensagem(papel);
+    if (papel === 'assistente') {
+      m.balao.innerHTML = formatarResposta(texto); // formatarResposta escapa o conteúdo
+      preencherRodape(m.msg, ferramentas, modelo, uso, false);
+    } else {
+      m.balao.textContent = texto;
+    }
+    $('chat-mensagens').appendChild(m.msg);
     rolarChatParaFim();
+    return m;
   }
 
   function adicionarAvisoChat(texto, tipo) {
@@ -985,13 +1435,211 @@
     }
   }
 
+  function indicador(texto) {
+    $('chat-digitando-texto').textContent = texto;
+  }
+
   function definirEnviando(enviando) {
     estado.chat.enviando = enviando;
+    if (enviando) indicador('Assistente pensando...');
     $('chat-digitando').hidden = !enviando;
     $('chat-enviar').disabled = enviando;
+    $('botao-chat-limpar').disabled = enviando;
+    $('botao-chat-conversas').disabled = enviando;
     $('chat-mensagens').setAttribute('aria-busy', enviando ? 'true' : 'false');
     $('chat-sugestoes').querySelectorAll('button').forEach(function (b) { b.disabled = enviando; });
+    $('chat-conversas-lista').querySelectorAll('button').forEach(function (b) { b.disabled = enviando; });
     if (enviando) rolarChatParaFim();
+  }
+
+  /** Guarda o conversa_id (memória + sessionStorage, para reabrir a conversa ao recarregar a página). */
+  function definirConversa(id) {
+    estado.chat.conversaId = id ? String(id) : null;
+    if (estado.chat.conversaId) gravarSessao(CHAVE_CONVERSA, estado.chat.conversaId);
+    else removerSessao(CHAVE_CONVERSA);
+    $('chat-conversas-lista').querySelectorAll('[data-conversa]').forEach(function (b) {
+      if (b.getAttribute('data-conversa') === estado.chat.conversaId) b.setAttribute('aria-current', 'true');
+      else b.removeAttribute('aria-current');
+    });
+  }
+
+  /** Resposta do assistente sendo montada aos poucos (streaming). */
+  function novaRespostaEmAndamento() {
+    var r = { msg: null, balao: null, texto: '', ferramentas: [], agendado: false };
+    r.garantir = function () {
+      if (r.msg) return;
+      var m = criarMensagem('assistente');
+      r.msg = m.msg;
+      r.balao = m.balao;
+      r.msg.classList.add('msg-transmitindo');
+      r.msg.setAttribute('aria-busy', 'true'); // leitores de tela anunciam só quando terminar
+      $('chat-mensagens').appendChild(r.msg);
+      rolarChatParaFim();
+    };
+    r.desenhar = function () {
+      if (r.balao) r.balao.innerHTML = formatarResposta(r.texto); // escapa antes de formatar
+      rolarChatSeNoFim();
+    };
+    r.adicionarTexto = function (delta) {
+      r.garantir();
+      r.texto += delta;
+      if (r.agendado) return;
+      r.agendado = true;
+      window.requestAnimationFrame(function () { r.agendado = false; r.desenhar(); });
+    };
+    r.adicionarFerramenta = function (nome) {
+      var texto = String(nome || '').trim();
+      if (!texto) return;
+      r.garantir();
+      if (r.ferramentas.indexOf(texto) === -1) r.ferramentas.push(texto);
+      if (!r.texto) r.balao.innerHTML = '<p class="msg-consultando">Consultando os dados...</p>';
+      preencherRodape(r.msg, r.ferramentas, null, null, true);
+      rolarChatSeNoFim();
+    };
+    r.finalizar = function (texto, ferramentas, modelo, uso) {
+      r.garantir();
+      if (typeof texto === 'string' && texto) r.texto = texto;
+      r.desenhar();
+      preencherRodape(r.msg, Array.isArray(ferramentas) ? ferramentas : r.ferramentas, modelo, uso, false);
+      r.msg.classList.remove('msg-transmitindo');
+      r.msg.setAttribute('aria-busy', 'false');
+    };
+    r.interromper = function () {
+      if (!r.msg) return;
+      if (!r.texto) { r.msg.remove(); r.msg = null; return; }
+      r.desenhar();
+      preencherRodape(r.msg, r.ferramentas, null, null, false);
+      r.msg.classList.remove('msg-transmitindo');
+      r.msg.classList.add('msg-interrompida');
+      r.msg.setAttribute('aria-busy', 'false');
+    };
+    return r;
+  }
+
+  /** Lê um corpo text/event-stream: eventos "data: <json>" separados por linha em branco. */
+  async function lerEventosSSE(corpo, aoEvento, aoReceber) {
+    var leitor = corpo.getReader();
+    var decodificador = new TextDecoder('utf-8');
+    var buffer = '';
+    var separador = /\r\n\r\n|\n\n|\r\r/;
+    function processarBloco(bloco) {
+      var dados = [];
+      bloco.split(/\r\n|\r|\n/).forEach(function (linha) {
+        if (linha.indexOf('data:') === 0) dados.push(linha.slice(5).replace(/^ /, ''));
+      });
+      if (!dados.length) return; // comentário (": ping") ou campo sem dados
+      var evento;
+      try { evento = JSON.parse(dados.join('\n')); } catch (e) { return; }
+      if (evento && typeof evento === 'object') aoEvento(evento);
+    }
+    for (;;) {
+      var parte = await leitor.read();
+      if (parte.done) break;
+      aoReceber();
+      buffer += decodificador.decode(parte.value, { stream: true });
+      var achou;
+      while ((achou = separador.exec(buffer))) {
+        processarBloco(buffer.slice(0, achou.index));
+        buffer = buffer.slice(achou.index + achou[0].length);
+      }
+    }
+    buffer += decodificador.decode();
+    if (buffer.trim()) processarBloco(buffer);
+  }
+
+  /**
+   * Conversa pelo stream (POST /v1/painel/chat/stream). Devolve {final} ou {fallback: true}
+   * quando o stream falha antes de começar (rota inexistente, rede, resposta que não é SSE).
+   * Erros definitivos (401, erro padronizado da API, evento "erro") viram ErroApi.
+   */
+  async function conversarComStream(corpo, resposta) {
+    if (!window.ReadableStream || !window.TextDecoder || !window.AbortController) return { fallback: true };
+    var controle = new AbortController();
+    var temporizador = null;
+    function reiniciarTempo() {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(function () { controle.abort(); }, TEMPO_INATIVIDADE_STREAM);
+    }
+    var headers = { 'Accept': 'text/event-stream', 'Content-Type': 'application/json' };
+    var token = lerSessao(CHAVE_TOKEN);
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    reiniciarTempo();
+    var r;
+    try {
+      r = await fetch('/v1/painel/chat/stream', {
+        method: 'POST', headers: headers, body: JSON.stringify(corpo),
+        signal: controle.signal, cache: 'no-store', credentials: 'same-origin'
+      });
+    } catch (e) {
+      clearTimeout(temporizador);
+      return { fallback: true };
+    }
+    if (r.status === 401) {
+      clearTimeout(temporizador);
+      sair('expirada');
+      throw new ErroApi('NAO_AUTENTICADO', 'Sessão expirada. Redirecionando para o login...', 401);
+    }
+    var tipo = (r.headers.get('content-type') || '').toLowerCase();
+    if (!r.ok || tipo.indexOf('text/event-stream') === -1 || !r.body) {
+      clearTimeout(temporizador);
+      var dados = null;
+      try { dados = await r.json(); } catch (e) { dados = null; }
+      var padronizado = dados && ((dados.error && dados.error.code) || (dados.detail && dados.detail.error && dados.detail.error.code));
+      if (!r.ok && padronizado) {
+        var info = extrairErro(dados, r.status);
+        throw new ErroApi(info.code, info.message, r.status);
+      }
+      return { fallback: true };
+    }
+
+    var iniciou = false;
+    var final = null;
+    var erroEvento = null;
+    try {
+      await lerEventosSSE(r.body, function (ev) {
+        if (ev.tipo === 'inicio') {
+          iniciou = true;
+          if (ev.conversa_id) definirConversa(ev.conversa_id);
+        } else if (ev.tipo === 'texto') {
+          iniciou = true;
+          if (typeof ev.delta === 'string' && ev.delta) {
+            resposta.adicionarTexto(ev.delta);
+            indicador('Assistente escrevendo...');
+          }
+        } else if (ev.tipo === 'ferramenta') {
+          iniciou = true;
+          resposta.adicionarFerramenta(ev.nome);
+          indicador('Consultando ' + String(ev.nome || 'os dados') + '...');
+        } else if (ev.tipo === 'fim') {
+          final = ev;
+        } else if (ev.tipo === 'erro') {
+          erroEvento = ev.error || {};
+        }
+      }, reiniciarTempo);
+    } catch (e) {
+      // Conexão caiu ou ficou sem dados por muito tempo.
+      if (!iniciou && !final && !erroEvento) return { fallback: true };
+    } finally {
+      clearTimeout(temporizador);
+    }
+    if (final) return { final: final };
+    if (erroEvento) {
+      throw new ErroApi(erroEvento.code || 'ERRO', erroEvento.message || 'Erro ao gerar a resposta.', Number(erroEvento.status) || 0);
+    }
+    if (!iniciou) return { fallback: true };
+    throw new ErroApi('STREAM_INTERROMPIDO', 'a conexão caiu antes do fim da resposta', 0);
+  }
+
+  /** Fallback sem streaming: POST /v1/painel/chat (mesmo corpo). */
+  async function conversarSemStream(corpo) {
+    var r = await api('/v1/painel/chat', { metodo: 'POST', corpo: corpo, tempoLimite: TEMPO_LIMITE_CHAT }) || {};
+    return {
+      final: {
+        resposta: typeof r.resposta === 'string' ? r.resposta : '',
+        ferramentas_usadas: r.ferramentas_usadas, modelo: r.modelo, conversa_id: r.conversa_id, uso: r.uso
+      }
+    };
   }
 
   async function enviarPergunta(textoBruto) {
@@ -1000,53 +1648,150 @@
     if (texto.length > MAX_MENSAGEM) texto = texto.slice(0, MAX_MENSAGEM);
 
     var entrada = $('chat-entrada');
-    var historicoEnviado = estado.chat.historico.slice(-MAX_HISTORICO);
+    // Com conversa_id o servidor usa o histórico dele; o histórico em texto só vale para servidores sem conversas (v1).
+    var corpo = { mensagem: texto, historico: estado.chat.historico.slice(-MAX_HISTORICO) };
+    if (estado.chat.conversaId) corpo.conversa_id = estado.chat.conversaId;
 
     abrirChat(false);
+    alternarConversas(false);
     adicionarMensagem('funcionario', texto);
     entrada.value = '';
     atualizarContador();
     mostrarSugestoes(false);
     definirEnviando(true);
 
+    var resposta = novaRespostaEmAndamento();
     try {
-      var r = await api('/v1/painel/chat', {
-        metodo: 'POST',
-        corpo: { mensagem: texto, historico: historicoEnviado },
-        tempoLimite: TEMPO_LIMITE_CHAT
-      });
-      var resposta = r && typeof r.resposta === 'string' ? r.resposta : '';
-      adicionarMensagem('assistente', resposta, r && r.ferramentas_usadas, r && r.modelo);
+      var resultado = await conversarComStream(corpo, resposta);
+      if (resultado.fallback) {
+        indicador('Assistente pensando...');
+        resultado = await conversarSemStream(corpo);
+      }
+      var fim = resultado.final || {};
+      var textoFinal = typeof fim.resposta === 'string' && fim.resposta ? fim.resposta : resposta.texto;
+      resposta.finalizar(textoFinal, fim.ferramentas_usadas, fim.modelo, fim.uso);
+      if (fim.conversa_id) definirConversa(fim.conversa_id);
       estado.chat.historico.push({ papel: 'funcionario', texto: texto });
-      estado.chat.historico.push({ papel: 'assistente', texto: resposta });
+      estado.chat.historico.push({ papel: 'assistente', texto: textoFinal });
       if (estado.chat.historico.length > MAX_HISTORICO) {
         estado.chat.historico = estado.chat.historico.slice(-MAX_HISTORICO);
       }
-      if (r && r.modelo) $('chat-modelo').textContent = 'Modelo: ' + r.modelo + ' · somente leitura';
+      if (fim.modelo) $('chat-modelo').textContent = 'Modelo: ' + fim.modelo + ' · somente leitura';
     } catch (erro) {
+      resposta.interromper();
       if (erro.status === 401) return;
       if (erro.status === 503 || erro.code === 'CHATBOT_INDISPONIVEL') {
         adicionarAvisoChat('O assistente está indisponível: a chave da IA não foi configurada. ' +
           'Peça ao responsável técnico para configurar ANTHROPIC_API_KEY no servidor e reiniciar a API.', 'alerta');
       } else if (erro.status === 429) {
         adicionarAvisoChat('Muitas perguntas em sequência. Aguarde alguns segundos e tente de novo.', 'alerta');
+      } else if (erro.status === 404 && estado.chat.conversaId) {
+        definirConversa(null);
+        estado.chat.historico = [];
+        adicionarAvisoChat('A conversa não foi encontrada (pode ter sido apagada pela retenção de dados). ' +
+          'Envie a pergunta de novo para começar uma nova conversa.', 'alerta');
+      } else if (erro.code === 'STREAM_INTERROMPIDO') {
+        adicionarAvisoChat('A resposta foi interrompida: ' + erro.message + '. Tente perguntar de novo.', 'alerta');
       } else {
         adicionarAvisoChat('Não foi possível obter a resposta: ' + (erro.message || 'erro inesperado') + '.');
       }
       if (!entrada.value) { entrada.value = texto; atualizarContador(); } // devolve a pergunta para reenviar
     } finally {
-      definirEnviando(false);
-      if (!mediaTelaMenor.matches || estado.chat.aberto) entrada.focus();
+      if (!estado.saindo) {
+        definirEnviando(false);
+        if (!mediaTelaMenor.matches || estado.chat.aberto) entrada.focus();
+      }
     }
   }
 
-  function limparConversa() {
+  function limparMensagensDaTela() {
+    $('chat-mensagens').querySelectorAll('.msg').forEach(function (m) { m.remove(); });
+  }
+
+  /** "Nova conversa": esquece o conversa_id (a próxima pergunta cria outra conversa no servidor). */
+  function novaConversa() {
     if (estado.chat.enviando) return;
+    definirConversa(null);
     estado.chat.historico = [];
-    var caixa = $('chat-mensagens');
-    caixa.querySelectorAll('.msg').forEach(function (m) { m.remove(); });
+    limparMensagensDaTela();
+    alternarConversas(false);
     mostrarSugestoes(true);
     $('chat-entrada').focus();
+  }
+
+  /* ---------- Conversas anteriores ---------- */
+  function alternarConversas(abrir) {
+    var painel = $('chat-conversas');
+    var aberto = abrir === undefined ? painel.hidden : !!abrir;
+    if (aberto === !painel.hidden) return;
+    painel.hidden = !aberto;
+    estado.chat.conversasAbertas = aberto;
+    $('botao-chat-conversas').setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    if (aberto) carregarConversas();
+  }
+
+  async function carregarConversas() {
+    var alvo = $('chat-conversas-lista');
+    alvo.setAttribute('aria-busy', 'true');
+    alvo.innerHTML = htmlCarregando('Carregando conversas...');
+    try {
+      var r = await api('/v1/painel/chat/conversas');
+      var lista = r && Array.isArray(r.conversas) ? r.conversas : [];
+      if (!lista.length) {
+        alvo.innerHTML = htmlVazio('Nenhuma conversa anterior.');
+        return;
+      }
+      alvo.innerHTML = '<ul class="lista-conversas">' + lista.map(function (c) {
+        var atual = estado.chat.conversaId && String(c.id) === estado.chat.conversaId;
+        return '<li><button type="button" class="conversa-item" data-conversa="' + esc(c.id) + '"' + (atual ? ' aria-current="true"' : '') + '>' +
+          '<span class="conversa-titulo">' + esc(ou(c.titulo, 'Conversa sem título')) + '</span>' +
+          '<span class="texto-suave">' + esc(dataHora(c.atualizado_em)) + ' · ' + esc(numero(c.total_mensagens)) + ' mensagem(ns)</span>' +
+          '</button></li>';
+      }).join('') + '</ul>';
+      var primeiro = alvo.querySelector('button');
+      if (primeiro && estado.chat.conversasAbertas) primeiro.focus();
+    } catch (erro) {
+      if (erro.status === 401) return;
+      alvo.innerHTML = erro.status === 404
+        ? htmlVazio('O histórico de conversas ainda não está disponível neste servidor.')
+        : htmlErro(erro);
+    } finally {
+      alvo.removeAttribute('aria-busy');
+    }
+  }
+
+  /** Reabre uma conversa do servidor (GET /v1/painel/chat/conversas/{id}). */
+  async function abrirConversa(id, silencioso) {
+    if (!id || estado.chat.enviando) return;
+    try {
+      var c = await api('/v1/painel/chat/conversas/' + encodeURIComponent(id)) || {};
+      var mensagens = Array.isArray(c.mensagens) ? c.mensagens : [];
+      limparMensagensDaTela();
+      definirConversa(c.id || id);
+      estado.chat.historico = [];
+      mensagens.forEach(function (m) {
+        var papel = m.papel === 'assistente' ? 'assistente' : 'funcionario';
+        var texto = typeof m.texto === 'string' ? m.texto : '';
+        if (!texto) return;
+        adicionarMensagem(papel, texto);
+        estado.chat.historico.push({ papel: papel, texto: texto });
+      });
+      estado.chat.historico = estado.chat.historico.slice(-MAX_HISTORICO);
+      mostrarSugestoes(!mensagens.length);
+      alternarConversas(false);
+      if (!silencioso) {
+        abrirChat(false);
+        $('chat-entrada').focus();
+      }
+    } catch (erro) {
+      if (erro.status === 401) return;
+      if (erro.status === 404) {
+        if (estado.chat.conversaId === String(id)) definirConversa(null);
+        if (!silencioso) adicionarAvisoChat('Conversa não encontrada (pode ter sido apagada pela retenção de dados).', 'alerta');
+      } else if (!silencioso) {
+        adicionarAvisoChat('Não foi possível abrir a conversa: ' + (erro.message || 'erro inesperado') + '.');
+      }
+    }
   }
 
   function aplicarEstadoChat() {
@@ -1096,18 +1841,44 @@
     $('botao-sair').addEventListener('click', function () { sair('encerrada'); });
     $('botao-atualizar-metricas').addEventListener('click', carregarVisaoGeral);
 
-    $('form-clientes').addEventListener('submit', function (e) { e.preventDefault(); carregarClientes(); });
-    $('form-clientes').addEventListener('reset', function () { window.setTimeout(carregarClientes, 0); });
-    $('form-adesoes').addEventListener('submit', function (e) { e.preventDefault(); carregarAdesoes(); });
-    $('filtro-adesao-situacao').addEventListener('change', carregarAdesoes);
-    $('form-atendimentos').addEventListener('submit', function (e) { e.preventDefault(); carregarAtendimentos(); });
-    $('filtro-atendimento-status').addEventListener('change', carregarAtendimentos);
-    $('filtro-status').addEventListener('change', carregarClientes);
+    // Listas paginadas: filtros novos voltam para a página 1.
+    function aoFiltrar(nome) {
+      return function (e) { if (e && e.type === 'submit') e.preventDefault(); carregarLista(nome); };
+    }
+    $('form-clientes').addEventListener('submit', aoFiltrar('clientes'));
+    $('form-clientes').addEventListener('reset', function () { window.setTimeout(function () { carregarLista('clientes'); }, 0); });
+    $('filtro-status').addEventListener('change', aoFiltrar('clientes'));
+    $('filtro-etapa').addEventListener('change', aoFiltrar('clientes'));
+    $('filtro-limite').addEventListener('change', aoFiltrar('clientes'));
+    $('form-adesoes').addEventListener('submit', aoFiltrar('adesoes'));
+    $('filtro-adesao-situacao').addEventListener('change', aoFiltrar('adesoes'));
+    $('filtro-adesao-limite').addEventListener('change', aoFiltrar('adesoes'));
+    $('form-atendimentos').addEventListener('submit', aoFiltrar('atendimentos'));
+    $('filtro-atendimento-status').addEventListener('change', aoFiltrar('atendimentos'));
+    $('filtro-atendimento-limite').addEventListener('change', aoFiltrar('atendimentos'));
+    $('form-auditoria').addEventListener('submit', aoFiltrar('auditoria'));
+    $('form-auditoria').addEventListener('reset', function () { window.setTimeout(function () { carregarLista('auditoria'); }, 0); });
+    $('filtro-auditoria-acao').addEventListener('change', aoFiltrar('auditoria'));
+    $('filtro-auditoria-limite').addEventListener('change', aoFiltrar('auditoria'));
+    $('botao-expurgo').addEventListener('click', executarExpurgo);
+
+    // Ativações, parceiros e uso do assistente
+    $('botao-atualizar-ativacoes').addEventListener('click', function () { carregarResumoAtivacoes(); carregarParados(); });
+    $('form-parados').addEventListener('submit', function (e) { e.preventDefault(); carregarParados(); });
+    $('filtro-parados-etapa').addEventListener('change', carregarParados);
+    $('form-parceiros').addEventListener('submit', function (e) { e.preventDefault(); carregarParceiros(); });
+    $('filtro-parceiros-inativos').addEventListener('change', carregarParceiros);
+    $('filtro-uso-dias').addEventListener('change', carregarUsoAssistente);
 
     // Linhas clicáveis (o link dentro da linha continua sendo o caminho acessível por teclado).
     $('conteudo').addEventListener('click', function (e) {
       var acao = e.target.closest('[data-acao="perguntar-cliente"]');
       if (acao) { perguntarSobreCliente(); return; }
+      var paginar = e.target.closest('button[data-paginar]');
+      if (paginar) {
+        if (!paginar.disabled) carregarLista(paginar.getAttribute('data-paginar'), Number(paginar.getAttribute('data-pagina')) || 1, true);
+        return;
+      }
       if (e.target.closest('a, button, input, select, textarea')) return;
       var linha = e.target.closest('tr.linha-clicavel[data-href]');
       if (linha) window.location.hash = linha.getAttribute('data-href');
@@ -1125,14 +1896,29 @@
       }
     });
     $('chat-entrada').addEventListener('input', atualizarContador);
-    $('botao-chat-limpar').addEventListener('click', limparConversa);
+    $('botao-chat-limpar').addEventListener('click', novaConversa);
+    $('botao-chat-conversas').addEventListener('click', function () { alternarConversas(); });
+    $('botao-conversas-fechar').addEventListener('click', function () {
+      alternarConversas(false);
+      $('botao-chat-conversas').focus();
+    });
+    $('chat-conversas-lista').addEventListener('click', function (e) {
+      var item = e.target.closest('button[data-conversa]');
+      if (item && !item.disabled) abrirConversa(item.getAttribute('data-conversa'), false);
+    });
     $('botao-chat-fechar').addEventListener('click', fecharChat);
     $('botao-chat-abrir').addEventListener('click', function () { abrirChat(true); });
     $('botao-chat-alternar').addEventListener('click', function () {
       if (estado.chat.aberto) fecharChat(); else abrirChat(true);
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && estado.chat.aberto && mediaTelaMenor.matches) fecharChat();
+      if (e.key !== 'Escape') return;
+      if (estado.chat.conversasAbertas) {
+        alternarConversas(false);
+        $('botao-chat-conversas').focus();
+      } else if (estado.chat.aberto && mediaTelaMenor.matches) {
+        fecharChat();
+      }
     });
     var aoMudarTela = function () {
       // Em telas menores o chat é uma gaveta: começa recolhido para não cobrir o conteúdo.
@@ -1153,20 +1939,31 @@
     }
     try {
       var salvo = JSON.parse(lerSessao(CHAVE_FUNCIONARIO) || 'null');
-      if (salvo) mostrarFuncionario(salvo);
+      if (salvo && typeof salvo === 'object') {
+        // Só para montar o menu sem esperar o /me; quem decide o acesso é a API (exigir_admin).
+        estado.funcionario = salvo;
+        mostrarFuncionario(salvo);
+      }
     } catch (e) { /* ignora */ }
 
     ligarEventos();
     atualizarContador();
+    aplicarPerfilNoMenu();
     navegar();
 
     try {
+      var perfilAntes = estado.funcionario && estado.funcionario.perfil;
       estado.funcionario = await api('/v1/painel/me');
       mostrarFuncionario(estado.funcionario);
+      aplicarPerfilNoMenu();
+      if (perfilAntes !== estado.funcionario.perfil && ROTAS_ADMIN.indexOf(lerRota().tela) !== -1) navegar();
     } catch (e) {
       /* 401 já redireciona; outros erros aparecem nas telas */
     }
     carregarSugestoes();
+    // Recarregou a página no meio de uma conversa: reabre a conversa guardada no servidor.
+    var conversaSalva = lerSessao(CHAVE_CONVERSA);
+    if (conversaSalva) abrirConversa(conversaSalva, true);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);

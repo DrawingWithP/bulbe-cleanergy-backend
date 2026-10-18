@@ -11,7 +11,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import URL, create_engine, event, func, select
+from sqlalchemy import URL, create_engine, event, func, inspect, select
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 try:  # python-dotenv e opcional: se existir, le o .env antes de ler BULBE_DB_URL
@@ -85,9 +85,42 @@ def _apagar_tabelas() -> None:
             conexao.exec_driver_sql("PRAGMA foreign_keys=ON")
 
 
+def _adicionar_colunas_faltantes() -> None:
+    """
+    Rede de seguranca para um banco criado pela v1: o create_all nao altera tabelas que ja existem,
+    entao as colunas novas da v2 (ex.: faturas.bonus_clube, chat_historico.modelo) seriam esquecidas e
+    as consultas quebrariam. Aqui cada coluna faltante e adicionada com ALTER TABLE ... ADD COLUMN
+    (com o default escalar do modelo, sem a FK). O caminho recomendado continua sendo recriar o banco.
+    """
+    inspetor = inspect(engine)
+    existentes = set(inspetor.get_table_names())
+    with engine.begin() as conexao:
+        for tabela in Base.metadata.sorted_tables:
+            if tabela.name not in existentes:
+                continue
+            colunas_atuais = {coluna["name"] for coluna in inspetor.get_columns(tabela.name)}
+            for coluna in tabela.columns:
+                if coluna.name in colunas_atuais:
+                    continue
+                padrao = ""
+                if coluna.default is not None and getattr(coluna.default, "is_scalar", False):
+                    valor = coluna.default.arg
+                    padrao = f" DEFAULT {valor!r}" if isinstance(valor, (int, float, str)) else ""
+                if not padrao and not coluna.nullable:
+                    logger.warning("Coluna %s.%s ausente e sem default; recrie o banco.", tabela.name, coluna.name)
+                    continue
+                tipo = coluna.type.compile(dialect=engine.dialect)
+                conexao.exec_driver_sql(f'ALTER TABLE "{tabela.name}" ADD COLUMN "{coluna.name}" {tipo}{padrao}')
+                logger.warning(
+                    "Coluna %s.%s adicionada a um banco antigo. Recomenda-se recriar: python -m app.database.seed",
+                    tabela.name, coluna.name,
+                )
+
+
 def inicializar_banco(recriar: bool = False) -> None:
     """
     Cria as tabelas que ainda nao existem. Se recriar=True, apaga tudo antes.
+    Num banco antigo (v1), as colunas novas da v2 sao adicionadas por _adicionar_colunas_faltantes().
 
     O seed so roda com recriar=True ou quando o banco esta realmente vazio
     (clientes E funcionarios E usinas E parceiros sem nenhuma linha). Num estado parcial
@@ -101,6 +134,8 @@ def inicializar_banco(recriar: bool = False) -> None:
     if recriar:
         _apagar_tabelas()
     Base.metadata.create_all(bind=engine)
+    if not recriar:
+        _adicionar_colunas_faltantes()
 
     with obter_sessao() as sessao:
         contagens = {
