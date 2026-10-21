@@ -6,7 +6,7 @@ from datetime import date
 from enum import Enum
 from pydantic import BaseModel, Field
 
-class StatusAdesao(str,enum):
+class StatusAdesao(str,Enum):
     rascunho = "rascunho"
     enviada = "enviada"
     aprovada = "aprovada"
