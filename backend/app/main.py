@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.controllers.usina_controller import router as usina_router
 from app.controllers.dica_controller import router as dica_router
 from app.controllers.simulacao_controller import router as simulacao_router
+from app.controllers.indicacao_controller import router as indicacao_router
 
 from app.services.usina_service import ErroDeNegocio
 from app.services.dica_service import ErroDeNegocio
@@ -44,6 +45,7 @@ def tratar_erro_de_negocio(request: Request, exc: ErroDeNegocio) -> JSONResponse
         },
     )
 app.include_router(simulacao_router)
+app.include_router(indicacao_router)
 @app.exception_handler(ErroDeNegocio)
 def tratar_erro_de_negocio(request: Request, exc: ErroDeNegocio) -> JSONResponse:
     return JSONResponse(
