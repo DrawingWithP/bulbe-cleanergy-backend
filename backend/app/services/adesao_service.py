@@ -29,6 +29,15 @@ class AdesaoService:
             )
         return adesao
     def criar(self, dados: AdesaoCreate) -> Adesao:
+        listaAdesao = self._repository.listar()
+
+        for item in listaAdesao:
+            if item.cpf == dados.cpf:
+                raise ErroDeNegocio(
+                    code="CPF_INVALIDO",
+                    message=f"Adesao com cpf {item.cpf} ja existe.",
+                    status=409,
+                )
         return self._repository.criar(dados)
     def atualizar(self, adesao_id: int, dados: AdesaoUpdate) -> Adesao:
         adesao_atualizada = self._repository.atualizar(adesao_id, dados)
