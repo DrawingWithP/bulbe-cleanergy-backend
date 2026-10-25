@@ -3,3 +3,12 @@ Se o seu ambiente virtual não estiver abrindo devido a limitação do sistema, 
 Esse comando é temporário, sendo necessário a execução novamente caso feche o VScode (ou o terminal)
 Caso queira a alteração permanente (não recomendado), use:
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+Ativação do venv e da API:
+python -m venv venv
+venv\Scripts\activate (Para linux: source venv/bin/activate)
+pip install -r requirements.txt
+
+Ativar API: uvicorn app.main:app --reload 
+
+http://localhost:8000/docs
