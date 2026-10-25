@@ -27,6 +27,11 @@ def test_consultar_adesao_por_id(service, dados_adesao):
 
     assert service.buscar_por_id(1) == adesao
 
-
-
+def test_atualizar_dados_adesao(service, dados_adesao):
+    adesao = service.criar(dados_adesao)
     
+    dadosAtualizados = dados_adesao
+    dadosAtualizados.telefone = "988888888"
+    service.atualizar(1,dadosAtualizados)
+
+    assert service.buscar_por_id(1).telefone == "988888888"
