@@ -1,8 +1,9 @@
 """
 Camada de Apresentacao, AdesaoController (APIRouter).
 """
-from fastapi import APIRouter, status
-
+from fastapi import APIRouter, status, Depends
+from app.core.dependencies import obter_usuario_atual
+from app.domain.usuario import Usuario
 from app.domain.adesao import Adesao, AdesaoCreate, AdesaoUpdate
 from app.services.adesao_service import adesao_service
 
@@ -24,11 +25,11 @@ def criar_adesao(dados: AdesaoCreate) -> Adesao:
     return adesao_service.criar(dados)
 
 @router.put("/{adesao_id}", response_model=Adesao)
-def atualizar_Adesao(adesao_id: int, dados: AdesaoUpdate) -> Adesao:
+def atualizar_Adesao(adesao_id: int, dados: AdesaoUpdate, usuario: Usuario = Depends(obter_usuario_atual)) -> Adesao:
     """Atualiza os dados de uma adesao existente."""
     return adesao_service.atualizar(adesao_id, dados)
 
 @router.delete("/{adesao_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remover_adesao(adesao_id: int) -> None:
+def remover_adesao(adesao_id: int, usuario: Usuario = Depends(obter_usuario_atual)) -> None:
     """Remove uma adesao."""
     adesao_service.remover(adesao_id)

@@ -1,6 +1,8 @@
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Response, Depends, status
+from app.core.dependencies import obter_usuario_atual
+from app.domain.usuario import Usuario
 
 from app.domain.indicacao import Indicacao, IndicacaoCreate
 from app.services.indicacao_service import (
@@ -57,7 +59,7 @@ def consultar_indicacoes_cliente(cliente_id: int):
     "/v1/indicacoes/{indicacao_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def excluir_indicacao(indicacao_id: int):
+def excluir_indicacao(indicacao_id: int, usuario: Usuario = Depends(obter_usuario_atual)):
     try:
         indicacao_service.excluir(indicacao_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
