@@ -2,7 +2,9 @@
 Camada de Apresentação, ClienteController (APIRouter).
 Endpoints de gerenciamento e perfil de Clientes (US-05, US-31 e US-34).
 """
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Depends, status
+from app.core.dependencies import obter_usuario_atual
+from app.domain.usuario import Usuario
 
 from app.domain.cliente import (
     Cliente,
@@ -57,7 +59,7 @@ def buscar_cliente(cliente_id: str) -> Cliente:
     response_model=Cliente,
     summary="Atualizar dados cadastrais do cliente (US-34)",
 )
-def atualizar_cliente(cliente_id: str, dados: ClienteUpdate) -> Cliente:
+def atualizar_cliente(cliente_id: str, dados: ClienteUpdate, usuario: Usuario = Depends(obter_usuario_atual)) -> Cliente:
     """Atualiza informações de perfil ou endereço do cliente."""
     return cliente_service.atualizar(cliente_id, dados)
 
@@ -67,6 +69,6 @@ def atualizar_cliente(cliente_id: str, dados: ClienteUpdate) -> Cliente:
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remover cliente",
 )
-def remover_cliente(cliente_id: str) -> None:
+def remover_cliente(cliente_id: str,  usuario: Usuario = Depends(obter_usuario_atual)) -> None:
     """Remove um cliente do sistema."""
     cliente_service.remover(cliente_id)
