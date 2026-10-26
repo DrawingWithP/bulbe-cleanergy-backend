@@ -12,6 +12,8 @@ from app.controllers.primeiro_acesso_controller import router as primeiro_acesso
 from app.controllers.cliente_controller import router as cliente_router
 from app.controllers.ativacao_controller import router as ativacao_router
 from app.controllers.parceiro_controller import router as parceiro_router
+from app.controllers.cupom_controller import router as cupom_router
+from app.controllers.carta_controller import router as carta_router
 
 from app.services.usina_service import ErroDeNegocio
 from app.services.dica_service import ErroDeNegocio as DicaErroDeNegocio
@@ -21,6 +23,8 @@ from app.services.primeiro_acesso_service import ErroDeNegocio as PrimeiroAcesso
 from app.services.cliente_service import ErroDeNegocio as ClienteErroDeNegocio
 from app.services.ativacao_service import ErroDeNegocio as AtivacaoErroDeNegocio
 from app.services.parceiro_service import ErroDeNegocio as ParceiroErroDeNegocio
+from app.services.cupom_service import ErroDeNegocio as CupomErroDeNegocio
+from app.services.carta_service import ErroDeNegocio as CartaErroDeNegocio
 
 app = FastAPI(
     title="Bulbe Energia, API",
@@ -37,6 +41,8 @@ app.include_router(primeiro_acesso_router)
 app.include_router(cliente_router)
 app.include_router(ativacao_router)
 app.include_router(parceiro_router)
+app.include_router(cupom_router)
+app.include_router(carta_router)
 
 
 def _formatar_erro(exc) -> JSONResponse:
@@ -89,6 +95,16 @@ def tratar_erro_ativacao(request: Request, exc: AtivacaoErroDeNegocio) -> JSONRe
 
 @app.exception_handler(ParceiroErroDeNegocio)
 def tratar_erro_parceiro(request: Request, exc: ParceiroErroDeNegocio) -> JSONResponse:
+    return _formatar_erro(exc)
+
+
+@app.exception_handler(CupomErroDeNegocio)
+def tratar_erro_cupom(request: Request, exc: CupomErroDeNegocio) -> JSONResponse:
+    return _formatar_erro(exc)
+
+
+@app.exception_handler(CartaErroDeNegocio)
+def tratar_erro_carta(request: Request, exc: CartaErroDeNegocio) -> JSONResponse:
     return _formatar_erro(exc)
 
 
