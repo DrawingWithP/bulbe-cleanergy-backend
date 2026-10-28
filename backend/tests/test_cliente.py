@@ -200,3 +200,15 @@ def test_remover_cliente_inexistente(service: ClienteService):
     with pytest.raises(ErroDeNegocio) as erro:
         service.remover("id-inexistente")
     assert erro.value.status == 404
+
+
+def test_atualizar_nome_distribuidora_e_instalacao(service: ClienteService):
+    """US-34: Os demais campos cadastrais também podem ser alterados."""
+    atualizado = service.atualizar(
+        CLIENTE_ID_PADRAO,
+        ClienteUpdate(nome="Marcos A. Andrade", distribuidora="Energisa", numero_instalacao="9998887776"),
+    )
+    assert atualizado.nome == "Marcos A. Andrade"
+    assert atualizado.distribuidora == "Energisa"
+    assert atualizado.numero_instalacao == "9998887776"
+    assert atualizado.telefone == "(31) 98888-1234"
