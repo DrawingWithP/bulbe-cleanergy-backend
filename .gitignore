@@ -22,3 +22,6 @@ venv/
 
 # Cache do pytest
 .pytest_cache/
+
+# Relatorio de cobertura do pytest-cov
+.coverage
