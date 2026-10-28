@@ -70,3 +70,56 @@ def test_descartar_cupom_sucesso(service: CupomService):
     service.descartar(CUPOM_ID_PADRAO)
     with pytest.raises(ErroDeNegocio):
         service.buscar_por_id(CUPOM_ID_PADRAO)
+
+
+@pytest.mark.parametrize("page, limit", [(0, 10), (1, 0), (1, 101)])
+def test_listar_cupons_paginacao_invalida(service: CupomService, page: int, limit: int):
+    with pytest.raises(ErroDeNegocio) as erro:
+        service.listar_por_cliente(CLIENTE_ID_PADRAO, page=page, limit=limit)
+    assert erro.value.status == 400
+    assert erro.value.code == "PARAMETROS_INVALIDOS"
+
+
+def test_listar_cupons_filtrando_por_situacao(service: CupomService):
+    """US-03: O filtro por situação devolve só os cupons naquela situação."""
+    assert service.listar_por_cliente(CLIENTE_ID_PADRAO, situacao=SituacaoCupom.ativo).total == 1
+    assert service.listar_por_cliente(CLIENTE_ID_PADRAO, situacao=SituacaoCupom.salvo).total == 0
+
+
+@pytest.mark.parametrize(
+    "situacao",
+    [SituacaoCupom.ativo, SituacaoCupom.expirado, SituacaoCupom.descartado],
+)
+def test_atualizar_situacao_nao_permitida(service: CupomService, situacao: SituacaoCupom):
+    """US-23: Só é possível mudar para 'salvo' ou 'usado'."""
+    with pytest.raises(ErroDeNegocio) as erro:
+        service.atualizar_situacao(CUPOM_ID_PADRAO, CupomUpdate(situacao=situacao))
+    assert erro.value.status == 400
+    assert erro.value.code == "SITUACAO_INVALIDA"
+
+
+def test_cupom_usado_nao_volta_para_salvo(service: CupomService):
+    """US-23: Um cupom já usado não pode ter a situação alterada."""
+    service.atualizar_situacao(CUPOM_ID_PADRAO, CupomUpdate(situacao=SituacaoCupom.usado))
+    with pytest.raises(ErroDeNegocio) as erro:
+        service.atualizar_situacao(CUPOM_ID_PADRAO, CupomUpdate(situacao=SituacaoCupom.salvo))
+    assert erro.value.status == 409
+    assert erro.value.code == "CUPOM_JA_UTILIZADO"
+
+
+def test_atualizar_situacao_cupom_inexistente(service: CupomService):
+    with pytest.raises(ErroDeNegocio) as erro:
+        service.atualizar_situacao("cupom-falso", CupomUpdate(situacao=SituacaoCupom.salvo))
+    assert erro.value.status == 404
+
+
+def test_cupom_descartado_some_da_listagem(service: CupomService):
+    """O descarte é lógico: o cupom continua guardado, mas não aparece mais para o cliente."""
+    service.descartar(CUPOM_ID_PADRAO)
+    assert service.listar_por_cliente(CLIENTE_ID_PADRAO).total == 0
+
+
+def test_descartar_cupom_inexistente(service: CupomService):
+    with pytest.raises(ErroDeNegocio) as erro:
+        service.descartar("cupom-falso")
+    assert erro.value.status == 404
