@@ -58,7 +58,8 @@ def test_token_expirado_e_rejeitado():
 
 def test_token_assinado_com_outra_chave_e_rejeitado():
     """Um token forjado com outra chave secreta não passa na validação da assinatura."""
-    token_forjado = jwt.encode({"sub": "invasor@email.com"}, "outra-chave", algorithm=ALGORITHM)
+    outra_chave = "outra-chave-secreta-com-pelo-menos-32-bytes"
+    token_forjado = jwt.encode({"sub": "invasor@email.com"}, outra_chave, algorithm=ALGORITHM)
     with pytest.raises(jwt.InvalidSignatureError):
         decodificar_token(token_forjado)
 
