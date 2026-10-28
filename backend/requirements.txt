@@ -1,6 +1,7 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2.6
+pydantic[email]
 PyJWT>=2.8
 bcrypt>=4.1
 python-multipart>=0.0.9
