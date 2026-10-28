@@ -7,6 +7,7 @@ import pytest
 from app.domain.primeiro_acesso import (
     CanalVerificacao,
     ConfirmacaoRequest,
+    SituacaoVerificacao,
     VerificacaoRequest,
 )
 from app.repositories.primeiro_acesso_repository import PrimeiroAcessoRepository
@@ -129,3 +130,90 @@ def test_confirmar_verificacao_inexistente(service: PrimeiroAcessoService):
         service.confirmar_codigo(ConfirmacaoRequest(verificacao_id="id-inexistente", codigo="123456"))
     assert erro.value.status == 404
     assert erro.value.code == "RECURSO_NAO_ENCONTRADO"
+
+
+def test_canal_padrao_e_whatsapp(service: PrimeiroAcessoService):
+    resposta = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    assert resposta.canal == "whatsapp"
+
+
+def test_codigo_gerado_tem_6_digitos_e_expira_em_15_minutos(
+    service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository
+):
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    salva = repository.buscar_verificacao_por_id(verif.verificacao_id)
+
+    assert salva.codigo.isdigit() and len(salva.codigo) == 6
+    assert salva.expira_em - salva.criado_em == timedelta(minutes=15)
+    assert salva.situacao == SituacaoVerificacao.pendente
+
+
+def test_destino_mascarado_com_telefone_incompleto(
+    service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository
+):
+    """Telefone com menos de 10 dígitos é totalmente mascarado."""
+    repository.adicionar_cliente_mock(
+        {"id": "cliente-x", "cpf": "55566677788", "telefone": "1234", "acesso_habilitado": False}
+    )
+    resposta = service.solicitar_verificacao(VerificacaoRequest(cpf="55566677788"))
+    assert resposta.destino_mascarado == "(**) *****-****"
+
+
+def test_cada_solicitacao_gera_uma_verificacao_nova(service: PrimeiroAcessoService):
+    primeira = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    segunda = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    assert primeira.verificacao_id != segunda.verificacao_id
+
+
+def test_confirmar_codigo_habilita_acesso_do_cliente(
+    service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository
+):
+    """US-10: Depois da confirmação, o cliente fica com acesso habilitado."""
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="98765432100"))
+    codigo = repository.buscar_verificacao_por_id(verif.verificacao_id).codigo
+
+    service.confirmar_codigo(ConfirmacaoRequest(verificacao_id=verif.verificacao_id, codigo=codigo))
+
+    assert repository.buscar_cliente_por_cpf("98765432100")["acesso_habilitado"] is True
+    assert repository.buscar_cliente_por_cpf("12345678900")["acesso_habilitado"] is False
+
+
+def test_confirmar_codigo_aceita_espacos_em_volta(
+    service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository
+):
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    codigo = repository.buscar_verificacao_por_id(verif.verificacao_id).codigo
+
+    confirmacao = service.confirmar_codigo(
+        ConfirmacaoRequest(verificacao_id=verif.verificacao_id, codigo=f" {codigo} ")
+    )
+    assert confirmacao.acesso_habilitado is True
+
+
+def test_codigo_expirado_marca_verificacao_como_expirada(
+    service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository
+):
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    salva = repository.buscar_verificacao_por_id(verif.verificacao_id)
+    salva.expira_em = datetime.now(timezone.utc) - timedelta(seconds=1)
+
+    with pytest.raises(ErroDeNegocio):
+        service.confirmar_codigo(ConfirmacaoRequest(verificacao_id=salva.id, codigo=salva.codigo))
+
+    assert repository.buscar_verificacao_por_id(salva.id).situacao == SituacaoVerificacao.expirada
+
+
+def test_codigo_correto_funciona_depois_de_tentativas_erradas(
+    service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository
+):
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    salva = repository.buscar_verificacao_por_id(verif.verificacao_id)
+
+    for _ in range(3):
+        with pytest.raises(ErroDeNegocio):
+            service.confirmar_codigo(ConfirmacaoRequest(verificacao_id=salva.id, codigo="000000"))
+
+    assert salva.tentativas == 3
+    assert service.confirmar_codigo(
+        ConfirmacaoRequest(verificacao_id=salva.id, codigo=salva.codigo)
+    ).acesso_habilitado is True
