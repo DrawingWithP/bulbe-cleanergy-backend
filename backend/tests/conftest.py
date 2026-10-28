@@ -8,14 +8,46 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.repositories.adesao_repository import adesao_repository
+from app.repositories.ativacao_repository import ativacao_repository
+from app.repositories.carta_repository import carta_repository
+from app.repositories.cliente_repository import cliente_repository
+from app.repositories.cupom_repository import cupom_repository
+from app.repositories.dica_repository import dica_repository
+from app.repositories.indicacao_repository import indicacao_repository
+from app.repositories.parceiro_repository import parceiro_repository
+from app.repositories.primeiro_acesso_repository import primeiro_acesso_repository
+from app.repositories.simulacao_repository import simulacao_repository
+from app.repositories.usina_repository import usina_repository
+from app.repositories.usuario_repository import usuario_repository
+from app.services.carta_service import carta_service
+
+REPOSITORIOS_GLOBAIS = [
+    adesao_repository,
+    ativacao_repository,
+    carta_repository,
+    cliente_repository,
+    cupom_repository,
+    dica_repository,
+    indicacao_repository,
+    parceiro_repository,
+    primeiro_acesso_repository,
+    simulacao_repository,
+    usina_repository,
+    usuario_repository,
+]
+
 
 @pytest.fixture(autouse=True)
 def limpar_repositorios():
     """
-    Roda antes de CADA teste. Zera os repositorios em memoria para que
-    um teste nunca dependa do que outro teste deixou para tras.
+    Roda antes de CADA teste. Zera os repositorios em memoria (e o estado
+    guardado no CartaService) para que um teste nunca dependa do que outro
+    teste deixou para tras. Os repositorios que tem dados mock voltam
+    ao estado inicial.
     """
-    adesao_repository.__init__()
+    for repositorio in REPOSITORIOS_GLOBAIS:
+        repositorio.__init__()
+    carta_service.__init__(carta_repository)
     yield
 
 @pytest.fixture
@@ -45,4 +77,3 @@ def usina_valida() -> dict:
         "localizacao": "Uberlandia, MG",
         "capacidade_geracao_kwh": 5000,
     }
-
