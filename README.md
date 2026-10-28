@@ -85,10 +85,16 @@ A aplicação sobe por padrão em `http://localhost:[porta]`.
 
 ## Como rodar os testes
 
+A partir da pasta `backend/`, com o ambiente virtual ativo e as dependências instaladas:
+
 ```bash
-[comando de teste unitário]
-[comando de teste de integração]
+pytest                                     # toda a suíte (unitários + API)
+pytest tests/test_cliente.py               # só os testes unitários de um módulo
+pytest tests/test_cliente_api.py           # só os testes de API de um módulo
+pytest --cov=app --cov-report=term-missing # com relatório de cobertura
 ```
+
+A estratégia de testes, o catálogo com o que cada teste faz e os próximos passos estão em [`backend/docs/testes/`](backend/docs/testes/README.md).
 
 ## Documentação da API
 
