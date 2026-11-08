@@ -15,9 +15,8 @@ from app.domain.carta import (
 )
 from app.domain.cupom import Cupom, ParceiroResumoCupom, SituacaoCupom
 from app.repositories.carta_repository import CartaRepository, carta_repository
-from app.repositories.cliente_repository import cliente_repository
-from app.repositories.cupom_repository import cupom_repository
-from app.repositories.parceiro_repository import parceiro_repository
+from app.repositories.cliente_repository import ClienteRepository, cliente_repository
+from app.repositories.cupom_repository import CupomRepository, cupom_repository
 
 
 class ErroDeNegocio(Exception):
@@ -29,13 +28,24 @@ class ErroDeNegocio(Exception):
 
 
 class CartaService:
-    def __init__(self, repository: CartaRepository) -> None:
+    def __init__(
+        self,
+        repository: CartaRepository,
+        clientes: ClienteRepository = cliente_repository,
+        cupons: CupomRepository = cupom_repository,
+    ) -> None:
         self._repository = repository
-        self._sequencias: dict[str, int] = {"8f1c2a6e-4b7d-4c1a-9f52-3d6a1b0c7e11": 3}
+        self._clientes = clientes
+        self._cupons = cupons
+
+    def _sequencia(self, cliente_id: str, padrao: int = 0) -> int:
+        """Semanas seguidas de ofensiva, guardadas pelo repositório (sobrevivem ao reinício)."""
+        sequencia = self._repository.obter_sequencia(cliente_id)
+        return padrao if sequencia is None else sequencia
 
     def obter_situacao_clube(self, cliente_id: str) -> ClubeSituacaoResponse:
         """US-18: Retorna a situação do cliente no Clube Bulbe (ofensiva e status da próxima carta)."""
-        if not cliente_repository.buscar_por_id(cliente_id):
+        if not self._clientes.buscar_por_id(cliente_id):
             raise ErroDeNegocio(
                 code="RECURSO_NAO_ENCONTRADO",
                 message=f"Cliente com id '{cliente_id}' não foi encontrado.",
@@ -43,7 +53,7 @@ class CartaService:
             )
 
         carta_disp = self._repository.buscar_disponivel_cliente(cliente_id)
-        sequencia = self._sequencias.get(cliente_id, 0)
+        sequencia = self._sequencia(cliente_id)
         agora = datetime.now(timezone.utc)
 
         proxima_info = None
@@ -79,7 +89,7 @@ class CartaService:
         situacao: SituacaoCarta | None = None,
     ) -> CartaListaPaginada:
         """US-19: Lista o histórico de cartas semanais do cliente."""
-        if not cliente_repository.buscar_por_id(cliente_id):
+        if not self._clientes.buscar_por_id(cliente_id):
             raise ErroDeNegocio(
                 code="RECURSO_NAO_ENCONTRADO",
                 message=f"Cliente com id '{cliente_id}' não foi encontrado.",
@@ -106,9 +116,9 @@ class CartaService:
 
         # Idempotência: se já aberta, recupera o mesmo cupom gerado
         if carta.situacao == SituacaoCarta.aberta and carta.cupom_id:
-            cupom_existente = cupom_repository.buscar_por_id(carta.cupom_id)
+            cupom_existente = self._cupons.buscar_por_id(carta.cupom_id)
             if cupom_existente:
-                sequencia_atual = self._sequencias.get(carta.cliente_id, 3)
+                sequencia_atual = self._sequencia(carta.cliente_id, padrao=3)
                 proxima_em = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
                 return AberturaCartaResponse(
                     carta_id=carta.id,
@@ -152,7 +162,7 @@ class CartaService:
             dias_restantes=14,
             criado_em=agora.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
-        cupom_repository.salvar(novo_cupom)
+        self._cupons.salvar(novo_cupom)
 
         # Atualiza a carta
         carta.situacao = SituacaoCarta.aberta
@@ -161,8 +171,8 @@ class CartaService:
         self._repository.atualizar(carta)
 
         # Incrementa sequência de ofensiva
-        nova_sequencia = self._sequencias.get(carta.cliente_id, 0) + 1
-        self._sequencias[carta.cliente_id] = nova_sequencia
+        nova_sequencia = self._sequencia(carta.cliente_id) + 1
+        self._repository.salvar_sequencia(carta.cliente_id, nova_sequencia)
 
         # Agenda a próxima carta para 7 dias depois
         proxima_data = agora + timedelta(days=7)

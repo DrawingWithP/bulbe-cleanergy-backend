@@ -1,11 +1,29 @@
 """
 Camada de Persistencia, DicaRepository.
+
+Contrato (Protocol) + InMemoryDicaRepository (testes unitarios)
++ SqlDicaRepository (API, dica_repository).
 """
 from datetime import date
+from typing import Protocol
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.db.database import SessionLocal
+from app.db.models import DicaModel
 from app.domain.dica import Dica, DicaCreate, DicaUpdate
 
 
-class DicaRepository:
+class DicaRepository(Protocol):
+    def listar(self) -> list[Dica]: ...
+    def buscar_por_id(self, dica_id: int) -> Dica | None: ...
+    def criar(self, dados: DicaCreate) -> Dica: ...
+    def atualizar(self, dica_id: int, dados: DicaUpdate) -> Dica | None: ...
+    def remover(self, dica_id: int) -> bool: ...
+
+
+class InMemoryDicaRepository:
     def __init__(self) -> None:
         self._dicas: dict[int, Dica] = {}
         self._proximo_id: int = 1
@@ -43,4 +61,47 @@ class DicaRepository:
         return False
 
 
-dica_repository = DicaRepository()
+class SqlDicaRepository:
+    def __init__(self, session_factory: sessionmaker[Session]) -> None:
+        self._session_factory = session_factory
+
+    def listar(self) -> list[Dica]:
+        with self._session_factory() as session:
+            modelos = session.scalars(select(DicaModel).order_by(DicaModel.id)).all()
+            return [Dica.model_validate(m) for m in modelos]
+
+    def buscar_por_id(self, dica_id: int) -> Dica | None:
+        with self._session_factory() as session:
+            modelo = session.get(DicaModel, dica_id)
+            return Dica.model_validate(modelo) if modelo else None
+
+    def criar(self, dados: DicaCreate) -> Dica:
+        with self._session_factory() as session:
+            modelo = DicaModel(**dados.model_dump(mode="json"), data_ativacao=date.today())
+            session.add(modelo)
+            session.commit()
+            session.refresh(modelo)
+            return Dica.model_validate(modelo)
+
+    def atualizar(self, dica_id: int, dados: DicaUpdate) -> Dica | None:
+        with self._session_factory() as session:
+            modelo = session.get(DicaModel, dica_id)
+            if modelo is None:
+                return None
+            for campo, valor in dados.model_dump(mode="json", exclude_unset=True).items():
+                setattr(modelo, campo, valor)
+            session.commit()
+            session.refresh(modelo)
+            return Dica.model_validate(modelo)
+
+    def remover(self, dica_id: int) -> bool:
+        with self._session_factory() as session:
+            modelo = session.get(DicaModel, dica_id)
+            if modelo is None:
+                return False
+            session.delete(modelo)
+            session.commit()
+            return True
+
+
+dica_repository: DicaRepository = SqlDicaRepository(SessionLocal)

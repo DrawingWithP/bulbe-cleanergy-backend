@@ -3,12 +3,12 @@ from unittest.mock import Mock
 import pytest
 
 from app.domain.adesao import StatusAdesao, AdesaoCreate, AdesaoUpdate
-from app.repositories.adesao_repository import AdesaoRepository
+from app.repositories.adesao_repository import InMemoryAdesaoRepository
 from app.services.adesao_service import ErroDeNegocio, AdesaoService
 
 @pytest.fixture
 def service() -> AdesaoService:
-    return AdesaoService(AdesaoRepository())
+    return AdesaoService(InMemoryAdesaoRepository())
 
 
 @pytest.fixture

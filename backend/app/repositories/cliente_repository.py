@@ -1,11 +1,42 @@
 """
 Camada de Persistência, ClienteRepository.
+
+Contrato (Protocol) + InMemoryClienteRepository (testes unitarios)
++ SqlClienteRepository (API, cliente_repository).
 """
 import re
+from typing import Protocol
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.db.database import SessionLocal
+from app.db.models import ClienteModel
 from app.domain.cliente import Cliente, Endereco, StatusCliente
 
+CAMPOS_ENDERECO = ("cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf")
 
-class ClienteRepository:
+
+class ClienteRepository(Protocol):
+    def listar(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        status_filtro: StatusCliente | None = None,
+    ) -> tuple[list[Cliente], int]: ...
+    def buscar_por_id(self, cliente_id: str) -> Cliente | None: ...
+    def buscar_por_cpf(self, cpf: str) -> Cliente | None: ...
+    def buscar_por_email(self, email: str) -> Cliente | None: ...
+    def criar(self, cliente: Cliente) -> Cliente: ...
+    def atualizar(self, cliente: Cliente) -> Cliente: ...
+    def remover(self, cliente_id: str) -> bool: ...
+
+
+def _normalizar_cpf(cpf: str) -> str:
+    return re.sub(r"\D", "", cpf)
+
+
+class InMemoryClienteRepository:
     def __init__(self) -> None:
         self._clientes: dict[str, Cliente] = {}
         self._inicializar_dados_mock()
@@ -35,7 +66,7 @@ class ClienteRepository:
         self._clientes[cliente_padrao.id] = cliente_padrao
 
     def _normalizar_cpf(self, cpf: str) -> str:
-        return re.sub(r"\D", "", cpf)
+        return _normalizar_cpf(cpf)
 
     def listar(
         self,
@@ -83,4 +114,101 @@ class ClienteRepository:
         return False
 
 
-cliente_repository = ClienteRepository()
+class SqlClienteRepository:
+    """O endereco e um objeto no Dominio e colunas na tabela clientes."""
+
+    def __init__(self, session_factory: sessionmaker[Session]) -> None:
+        self._session_factory = session_factory
+
+    @staticmethod
+    def _para_dominio(modelo: ClienteModel) -> Cliente:
+        return Cliente(
+            id=modelo.id,
+            nome=modelo.nome,
+            email=modelo.email,
+            cpf=modelo.cpf,
+            telefone=modelo.telefone,
+            endereco=Endereco(**{campo: getattr(modelo, campo) for campo in CAMPOS_ENDERECO}),
+            distribuidora=modelo.distribuidora,
+            numero_instalacao=modelo.numero_instalacao,
+            status=modelo.status,
+            acesso_habilitado=modelo.acesso_habilitado,
+            criado_em=modelo.criado_em,
+        )
+
+    @staticmethod
+    def _copiar_para_modelo(cliente: Cliente, modelo: ClienteModel) -> None:
+        dados = cliente.model_dump(mode="json", exclude={"endereco"})
+        dados.update(cliente.endereco.model_dump(mode="json"))
+        for campo, valor in dados.items():
+            setattr(modelo, campo, valor)
+
+    def listar(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        status_filtro: StatusCliente | None = None,
+    ) -> tuple[list[Cliente], int]:
+        with self._session_factory() as session:
+            consulta = select(ClienteModel)
+            if status_filtro:
+                consulta = consulta.where(ClienteModel.status == status_filtro.value)
+            total = session.scalar(select(func.count()).select_from(consulta.subquery()))
+            modelos = session.scalars(
+                consulta.order_by(ClienteModel.criado_em, ClienteModel.id)
+                .offset((page - 1) * limit)
+                .limit(limit)
+            ).all()
+            return [self._para_dominio(m) for m in modelos], total or 0
+
+    def buscar_por_id(self, cliente_id: str) -> Cliente | None:
+        with self._session_factory() as session:
+            modelo = session.get(ClienteModel, cliente_id)
+            return self._para_dominio(modelo) if modelo else None
+
+    def buscar_por_cpf(self, cpf: str) -> Cliente | None:
+        with self._session_factory() as session:
+            modelo = session.scalars(
+                select(ClienteModel).where(ClienteModel.cpf == _normalizar_cpf(cpf))
+            ).first()
+            return self._para_dominio(modelo) if modelo else None
+
+    def buscar_por_email(self, email: str) -> Cliente | None:
+        with self._session_factory() as session:
+            modelo = session.scalars(
+                select(ClienteModel).where(func.lower(ClienteModel.email) == email.strip().lower())
+            ).first()
+            return self._para_dominio(modelo) if modelo else None
+
+    def criar(self, cliente: Cliente) -> Cliente:
+        with self._session_factory() as session:
+            modelo = ClienteModel()
+            self._copiar_para_modelo(cliente, modelo)
+            session.add(modelo)
+            session.commit()
+            session.refresh(modelo)
+            return self._para_dominio(modelo)
+
+    def atualizar(self, cliente: Cliente) -> Cliente:
+        with self._session_factory() as session:
+            modelo = session.get(ClienteModel, cliente.id)
+            if modelo is None:
+                modelo = ClienteModel()
+                session.add(modelo)
+            self._copiar_para_modelo(cliente, modelo)
+            session.commit()
+            session.refresh(modelo)
+            return self._para_dominio(modelo)
+
+    def remover(self, cliente_id: str) -> bool:
+        """Remove o cliente; o banco apaga ativacao, cartas e cupons dele (ON DELETE CASCADE)."""
+        with self._session_factory() as session:
+            modelo = session.get(ClienteModel, cliente_id)
+            if modelo is None:
+                return False
+            session.delete(modelo)
+            session.commit()
+            return True
+
+
+cliente_repository: ClienteRepository = SqlClienteRepository(SessionLocal)

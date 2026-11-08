@@ -3,17 +3,17 @@ Testes unitários para o módulo de Parceiros (US-02, US-24, US-25, US-26 e US-3
 """
 import pytest
 from app.domain.parceiro import ParceiroCreate, ParceiroUpdate
-from app.repositories.parceiro_repository import ParceiroRepository
+from app.repositories.parceiro_repository import InMemoryParceiroRepository
 from app.services.parceiro_service import ErroDeNegocio, ParceiroService
 
 
 @pytest.fixture
-def repository() -> ParceiroRepository:
-    return ParceiroRepository()
+def repository() -> InMemoryParceiroRepository:
+    return InMemoryParceiroRepository()
 
 
 @pytest.fixture
-def service(repository: ParceiroRepository) -> ParceiroService:
+def service(repository: InMemoryParceiroRepository) -> ParceiroService:
     return ParceiroService(repository)
 
 

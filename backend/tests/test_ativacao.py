@@ -3,18 +3,19 @@ Testes unitários para o módulo de Ativação CEMIG (US-11 e US-12).
 """
 import pytest
 from app.domain.ativacao import AtivacaoUpdateRequest, SituacaoEtapa
-from app.repositories.ativacao_repository import AtivacaoRepository
+from app.repositories.ativacao_repository import InMemoryAtivacaoRepository
+from app.repositories.cliente_repository import InMemoryClienteRepository
 from app.services.ativacao_service import AtivacaoService, ErroDeNegocio
 
 
 @pytest.fixture
-def repository() -> AtivacaoRepository:
-    return AtivacaoRepository()
+def repository() -> InMemoryAtivacaoRepository:
+    return InMemoryAtivacaoRepository()
 
 
 @pytest.fixture
-def service(repository: AtivacaoRepository) -> AtivacaoService:
-    return AtivacaoService(repository)
+def service(repository: InMemoryAtivacaoRepository) -> AtivacaoService:
+    return AtivacaoService(repository, clientes=InMemoryClienteRepository())
 
 
 CLIENTE_ID_PADRAO = "8f1c2a6e-4b7d-4c1a-9f52-3d6a1b0c7e11"

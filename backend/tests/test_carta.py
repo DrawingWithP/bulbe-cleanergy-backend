@@ -4,18 +4,24 @@ Testes unitários para o Clube Bulbe, Cartas e Cupons (US-18, US-19, US-20 e US-
 import pytest
 
 from app.domain.carta import SituacaoCarta
-from app.repositories.carta_repository import CartaRepository
+from app.repositories.carta_repository import InMemoryCartaRepository
+from app.repositories.cliente_repository import InMemoryClienteRepository
+from app.repositories.cupom_repository import InMemoryCupomRepository
 from app.services.carta_service import CartaService, ErroDeNegocio
 
 
 @pytest.fixture
-def repository() -> CartaRepository:
-    return CartaRepository()
+def repository() -> InMemoryCartaRepository:
+    return InMemoryCartaRepository()
 
 
 @pytest.fixture
-def service(repository: CartaRepository) -> CartaService:
-    return CartaService(repository)
+def service(repository: InMemoryCartaRepository) -> CartaService:
+    return CartaService(
+        repository,
+        clientes=InMemoryClienteRepository(),
+        cupons=InMemoryCupomRepository(),
+    )
 
 
 CLIENTE_ID_PADRAO = "8f1c2a6e-4b7d-4c1a-9f52-3d6a1b0c7e11"

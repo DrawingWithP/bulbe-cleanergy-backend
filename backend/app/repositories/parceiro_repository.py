@@ -1,10 +1,35 @@
 """
 Camada de Persistência, ParceiroRepository.
+
+Contrato (Protocol) + InMemoryParceiroRepository (testes unitarios)
++ SqlParceiroRepository (API, parceiro_repository).
 """
+from typing import Protocol
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.db.database import SessionLocal
+from app.db.models import ParceiroModel
 from app.domain.parceiro import Parceiro
 
 
-class ParceiroRepository:
+class ParceiroRepository(Protocol):
+    def listar(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        categoria: str | None = None,
+        ativo: bool | None = None,
+    ) -> tuple[list[Parceiro], int]: ...
+    def buscar_por_id(self, parceiro_id: str) -> Parceiro | None: ...
+    def buscar_por_nome(self, nome: str) -> Parceiro | None: ...
+    def criar(self, parceiro: Parceiro) -> Parceiro: ...
+    def atualizar(self, parceiro: Parceiro) -> Parceiro: ...
+    def remover(self, parceiro_id: str) -> bool: ...
+
+
+class InMemoryParceiroRepository:
     def __init__(self) -> None:
         self._parceiros: dict[str, Parceiro] = {}
         self._inicializar_mock()
@@ -72,4 +97,74 @@ class ParceiroRepository:
         return False
 
 
-parceiro_repository = ParceiroRepository()
+class SqlParceiroRepository:
+    def __init__(self, session_factory: sessionmaker[Session]) -> None:
+        self._session_factory = session_factory
+
+    def listar(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        categoria: str | None = None,
+        ativo: bool | None = None,
+    ) -> tuple[list[Parceiro], int]:
+        with self._session_factory() as session:
+            consulta = select(ParceiroModel)
+            if categoria:
+                consulta = consulta.where(func.lower(ParceiroModel.categoria) == categoria.lower())
+            if ativo is not None:
+                consulta = consulta.where(ParceiroModel.ativo == ativo)
+            total = session.scalar(select(func.count()).select_from(consulta.subquery()))
+            modelos = session.scalars(
+                consulta.order_by(ParceiroModel.criado_em, ParceiroModel.id)
+                .offset((page - 1) * limit)
+                .limit(limit)
+            ).all()
+            return [Parceiro.model_validate(m) for m in modelos], total or 0
+
+    def buscar_por_id(self, parceiro_id: str) -> Parceiro | None:
+        with self._session_factory() as session:
+            modelo = session.get(ParceiroModel, parceiro_id)
+            return Parceiro.model_validate(modelo) if modelo else None
+
+    def buscar_por_nome(self, nome: str) -> Parceiro | None:
+        # Comparacao sem diferenciar maiusculas feita no Python: o lower() do
+        # SQLite nao entende acentos (ex.: "Araújo" x "ARAÚJO").
+        nome_limpo = nome.strip().lower()
+        with self._session_factory() as session:
+            for modelo in session.scalars(select(ParceiroModel)).all():
+                if modelo.nome.strip().lower() == nome_limpo:
+                    return Parceiro.model_validate(modelo)
+            return None
+
+    def criar(self, parceiro: Parceiro) -> Parceiro:
+        with self._session_factory() as session:
+            modelo = ParceiroModel(**parceiro.model_dump(mode="json"))
+            session.add(modelo)
+            session.commit()
+            session.refresh(modelo)
+            return Parceiro.model_validate(modelo)
+
+    def atualizar(self, parceiro: Parceiro) -> Parceiro:
+        with self._session_factory() as session:
+            modelo = session.get(ParceiroModel, parceiro.id)
+            if modelo is None:
+                modelo = ParceiroModel(id=parceiro.id)
+                session.add(modelo)
+            for campo, valor in parceiro.model_dump(mode="json").items():
+                setattr(modelo, campo, valor)
+            session.commit()
+            session.refresh(modelo)
+            return Parceiro.model_validate(modelo)
+
+    def remover(self, parceiro_id: str) -> bool:
+        with self._session_factory() as session:
+            modelo = session.get(ParceiroModel, parceiro_id)
+            if modelo is None:
+                return False
+            session.delete(modelo)
+            session.commit()
+            return True
+
+
+parceiro_repository: ParceiroRepository = SqlParceiroRepository(SessionLocal)
