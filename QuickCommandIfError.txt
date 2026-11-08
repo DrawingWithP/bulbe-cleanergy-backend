@@ -4,11 +4,23 @@ Esse comando é temporário, sendo necessário a execução novamente caso feche
 Caso queira a alteração permanente (não recomendado), use:
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-Ativação do venv e da API:
+Ativação do venv e da API (dentro da pasta backend):
 python -m venv venv
 venv\Scripts\activate (Para linux: source venv/bin/activate)
 pip install -r requirements.txt
 
-Ativar API: uvicorn app.main:app --reload 
+Criar/atualizar as tabelas do banco (bulbe.db) com o Alembic:
+alembic upgrade head
+
+(Opcional) Popular o banco com os dados da demo:
+python -m app.db.seed
+
+Ativar API: uvicorn app.main:app --reload
 
 http://localhost:8000/docs
+
+Rodar os testes:
+pytest
+
+Se aparecer "no such table": faltou rodar "alembic upgrade head".
+Mais detalhes em backend/docs/banco-de-dados.md
