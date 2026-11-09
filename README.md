@@ -37,8 +37,8 @@ No desenvolvimento do sistema de gerenciamento foi utilizado um agente de IA de 
 
 - **Linguagem:** [ex: Python, Java, Node.js]
 - **Framework:** [ex: FastAPI, Spring Boot, Express]
-- **Banco de dados:** [ex: PostgreSQL, MySQL]
-- **ORM:** [ex: SQLAlchemy, Hibernate, Prisma]
+- **Banco de dados:** SQLite em desenvolvimento (`backend/bulbe.db`); PostgreSQL via `BULBE_DATABASE_URL`
+- **ORM:** SQLAlchemy 2, com migrations no Alembic
 - **Testes:** [ex: Pytest, JUnit, Jest]
 - **Outras ferramentas:** [ex: Docker, Swagger/OpenAPI]
 
@@ -72,9 +72,10 @@ src/
    ```bash
    cp .env.example .env
    ```
-4. Rodar as migrations do banco de dados
+4. Rodar as migrations do banco de dados (na pasta `backend/`) e, opcionalmente, o seed da demo
    ```bash
-   [comando de migration]
+   alembic upgrade head
+   python -m app.db.seed
    ```
 5. Iniciar o servidor
    ```bash
@@ -104,6 +105,8 @@ Contrato completo em `docs/api/openapi.yaml`. Principais endpoints:
 ## Banco de dados
 
 Modelo lógico, físico e dicionário de dados em `docs/banco-de-dados/`.
+
+Tabelas, chaves estrangeiras, migrations, seed e testes com banco de teste: [`backend/docs/banco-de-dados.md`](backend/docs/banco-de-dados.md).
 
 ## Sprints e backlog
 

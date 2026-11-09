@@ -9,7 +9,9 @@ from app.domain.primeiro_acesso import (
     ConfirmacaoRequest,
     VerificacaoRequest,
 )
-from app.repositories.primeiro_acesso_repository import PrimeiroAcessoRepository
+from app.repositories.primeiro_acesso_repository import (
+    InMemoryPrimeiroAcessoRepository as PrimeiroAcessoRepository,
+)
 from app.services.primeiro_acesso_service import ErroDeNegocio, PrimeiroAcessoService
 
 

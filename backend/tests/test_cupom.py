@@ -3,18 +3,19 @@ Testes unitários para o módulo de Cupons (US-03, US-22 e US-23).
 """
 import pytest
 from app.domain.cupom import CupomUpdate, SituacaoCupom
-from app.repositories.cupom_repository import CupomRepository
+from app.repositories.cliente_repository import InMemoryClienteRepository
+from app.repositories.cupom_repository import InMemoryCupomRepository
 from app.services.cupom_service import CupomService, ErroDeNegocio
 
 
 @pytest.fixture
-def repository() -> CupomRepository:
-    return CupomRepository()
+def repository() -> InMemoryCupomRepository:
+    return InMemoryCupomRepository()
 
 
 @pytest.fixture
-def service(repository: CupomRepository) -> CupomService:
-    return CupomService(repository)
+def service(repository: InMemoryCupomRepository) -> CupomService:
+    return CupomService(repository, clientes=InMemoryClienteRepository())
 
 
 CLIENTE_ID_PADRAO = "8f1c2a6e-4b7d-4c1a-9f52-3d6a1b0c7e11"

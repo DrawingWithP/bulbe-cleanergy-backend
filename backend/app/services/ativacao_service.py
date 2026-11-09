@@ -13,7 +13,7 @@ from app.domain.ativacao import (
     SituacaoEtapa,
 )
 from app.repositories.ativacao_repository import AtivacaoRepository, ativacao_repository
-from app.repositories.cliente_repository import cliente_repository
+from app.repositories.cliente_repository import ClienteRepository, cliente_repository
 
 
 class ErroDeNegocio(Exception):
@@ -64,11 +64,16 @@ ETAPAS_CONFIG = [
 
 
 class AtivacaoService:
-    def __init__(self, repository: AtivacaoRepository) -> None:
+    def __init__(
+        self,
+        repository: AtivacaoRepository,
+        clientes: ClienteRepository = cliente_repository,
+    ) -> None:
         self._repository = repository
+        self._clientes = clientes
 
     def _obter_registro(self, cliente_id: str) -> AtivacaoCliente:
-        cliente = cliente_repository.buscar_por_id(cliente_id)
+        cliente = self._clientes.buscar_por_id(cliente_id)
         if not cliente:
             raise ErroDeNegocio(
                 code="RECURSO_NAO_ENCONTRADO",

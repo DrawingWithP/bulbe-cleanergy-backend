@@ -4,7 +4,7 @@ Camada de Serviço, CupomService (regras de negócio para US-03, US-22 e US-23).
 from datetime import datetime, timezone
 
 from app.domain.cupom import Cupom, CupomListaPaginada, CupomUpdate, SituacaoCupom
-from app.repositories.cliente_repository import cliente_repository
+from app.repositories.cliente_repository import ClienteRepository, cliente_repository
 from app.repositories.cupom_repository import CupomRepository, cupom_repository
 
 
@@ -17,8 +17,13 @@ class ErroDeNegocio(Exception):
 
 
 class CupomService:
-    def __init__(self, repository: CupomRepository) -> None:
+    def __init__(
+        self,
+        repository: CupomRepository,
+        clientes: ClienteRepository = cliente_repository,
+    ) -> None:
         self._repository = repository
+        self._clientes = clientes
 
     def listar_por_cliente(
         self,
@@ -28,7 +33,7 @@ class CupomService:
         situacao: SituacaoCupom | None = None,
     ) -> CupomListaPaginada:
         """US-03: Lista os cupons do cliente."""
-        if not cliente_repository.buscar_por_id(cliente_id):
+        if not self._clientes.buscar_por_id(cliente_id):
             raise ErroDeNegocio(
                 code="RECURSO_NAO_ENCONTRADO",
                 message=f"Cliente com id '{cliente_id}' não foi encontrado.",

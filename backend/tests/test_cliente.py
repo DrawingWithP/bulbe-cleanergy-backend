@@ -3,17 +3,17 @@ Testes unitários para o módulo de Clientes (US-05, US-31 e US-34).
 """
 import pytest
 from app.domain.cliente import ClienteCreate, ClienteUpdate, Endereco, EnderecoUpdate, StatusCliente
-from app.repositories.cliente_repository import ClienteRepository
+from app.repositories.cliente_repository import InMemoryClienteRepository
 from app.services.cliente_service import ClienteService, ErroDeNegocio
 
 
 @pytest.fixture
-def repository() -> ClienteRepository:
-    return ClienteRepository()
+def repository() -> InMemoryClienteRepository:
+    return InMemoryClienteRepository()
 
 
 @pytest.fixture
-def service(repository: ClienteRepository) -> ClienteService:
+def service(repository: InMemoryClienteRepository) -> ClienteService:
     return ClienteService(repository)
 
 
