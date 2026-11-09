@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulbe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="final.css">
+</head>
+
+<body>
+<div id="phone-wrapper">
+
+  <!-- ===================== TELA: INÍCIO ===================== -->
+  <div class="screen active" id="screen-inicio">
+
+    <header class="inicio-header">
+      <div class="logo-container">
+        <img src="icons_final/logo.svg" alt="Bulbe" />
+        <img src="icons_final/suaproxima.svg" alt="Sua próxima energia" />
+      </div>
+    </header>
+
+    <main class="inicio-main">
+      <section class="welcome-section">
+
+        <div class="welcome-text">
+          <h2>Bem-vindo!</h2>
+          <p>Entre para acessar a área do cliente Bulbe</p>
+        </div>
+
+        <div class="actions-container">
+
+          <button type="button" class="primary-button" data-nav="screen-status">Entrar</button>
+
+          <div class="divider"><span>ou</span></div>
+
+          <button type="button" class="secondary-button" data-nav="screen-primeiro-acesso">
+            É minha primeira vez no app
+          </button>
+
+        </div>
+
+        <div class="new-client-container">
+
+          <p class="small-text">AINDA NÃO É CLIENTE?</p>
+
+          <button type="button" class="outline-button" data-nav="screen-abrir-conta">
+            <div class="outline-icon">
+              <img src="icons_final/usuario.svg" alt="" />
+            </div>
+            <div class="outline-text">
+              <span>Abrir conta de luz</span>
+              <span>com a Bulbe</span>
+            </div>
+          </button>
+
+        </div>
+
+      </section>
+    </main>
+
+    <footer class="inicio-footer">
+      <div class="footer-content">
+        <p>Ainda não sabe sua economia?</p>
+        <button type="button" class="link-button" data-nav="screen-simulador">Simular agora</button>
+      </div>
+    </footer>
+
+  </div>
+  <!-- ===================== FIM: INÍCIO ===================== -->
+
+  <!-- ===================== TELA: STATUS ===================== -->
+  <div class="screen" id="screen-status">
+
+    <header class="st-header">
+      <button class="st-btn-menu" type="button" data-open-menu aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="st-logo">
+        <img src="icons_final/st-logo.svg" alt="Bulbe" />
+      </div>
+      <div class="st-header-acoes">
+        <div class="st-sino-wrapper">
+          <button type="button" class="st-btn-icone" aria-label="Notificações">
+            <img src="icons_final/st-bell.svg" alt="" />
+          </button>
+          <span class="st-notif-dot"></span>
+        </div>
+        <div>
+          <button type="button" class="st-btn-perfil"></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="st-sub-header">
+      <div class="st-sub-inner">
+        <p>Por que a CEMIG demora para responder? Toque para entender</p>
+        <img src="icons_final/st-chevron-right.svg" alt="" />
+      </div>
+    </div>
+
+    <main class="st-main">
+
+      <section class="st-saudacao">
+        <h1 class="st-saudacao-titulo">Sua energia mais barata será ativada em breve</h1>
+        <p class="st-saudacao-desc">A CEMIG está processando sua conta. A gente cuida do resto.</p>
+      </section>
+
+      <section class="st-progresso-card">
+        <div class="st-progresso-col">
+          <span class="st-progresso-amarelo" id="st-progresso-pct">30%</span>
+          <span class="st-progresso-label">CONCLUÍDO</span>
+        </div>
+        <div class="st-progresso-divisor"></div>
+        <div class="st-progresso-col">
+          <div class="st-progresso-amarelo"><span id="st-progresso-num">2</span>/5</div>
+          <span class="st-progresso-label">ETAPAS</span>
+        </div>
+      </section>
+
+      <section class="st-jornada">
+        <div class="st-jornada-topo">
+          <h2 class="st-jornada-titulo">Sua Jornada</h2>
+          <button type="button" class="st-jornada-detalhes" data-nav="screen-detalhes">
+            Detalhes <img src="icons_final/st-arrow-detalhes.svg" alt="" />
+          </button>
+        </div>
+
+        <div class="st-etapa_2 st-circles">
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-atual">2</div>
+          <div class="st-etapa-aguarde">3</div>
+          <div class="st-etapa-aguarde">4</div>
+          <div class="st-etapa-aguarde">5</div>
+        </div>
+        <div class="st-etapa_3 st-circles">
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-atual">3</div>
+          <div class="st-etapa-aguarde">4</div>
+          <div class="st-etapa-aguarde">5</div>
+        </div>
+        <div class="st-etapa_4 st-circles">
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-atual">4</div>
+          <div class="st-etapa-aguarde">5</div>
+        </div>
+        <div class="st-etapa_5 st-circles">
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-concluida"><img src="icons_final/st-check.svg" alt="" /></div>
+          <div class="st-etapa-atual">5</div>
+        </div>
+
+        <div class="st-jornada-labels">
+          <span class="st-label-concluido">Cadastro</span>
+          <span class="st-label-atual">Documentos</span>
+          <span>Solicitação</span>
+          <span>Análise<br />CEMIG</span>
+          <span>Energia<br />liberada</span>
+        </div>
+
+        <div class="st-etapa_2 st-etapa-card">
+          <p class="st-etapa-titulo">ETAPA 2 · DOCUMENTOS ENVIADOS</p>
+          <p class="st-etapa-desc">Recebemos seus documentos e eles estão em análise. Caso seja necessário algum ajuste, entraremos em contato.</p>
+        </div>
+        <div class="st-etapa_3 st-etapa-card">
+          <p class="st-etapa-titulo">ETAPA 3 · SOLICITAÇÃO EM ANDAMENTO</p>
+          <p class="st-etapa-desc">Sua solicitação foi encaminhada para a CEMIG. Estamos acompanhando o processo.</p>
+        </div>
+        <div class="st-etapa_4 st-etapa-card">
+          <p class="st-etapa-titulo">ETAPA 4 · EM ANÁLISE</p>
+          <p class="st-etapa-desc">Estamos aguardando a CEMIG. Você não precisa fazer nada — a gente avisa.</p>
+        </div>
+        <div class="st-etapa_5 st-etapa-card">
+          <p class="st-etapa-titulo">ETAPA 5 · ENERGIA LIBERADA</p>
+          <p class="st-etapa-desc">Sua solicitação foi aprovada. Em breve sua energia será liberada.</p>
+        </div>
+      </section>
+
+      <div class="st-cta-texto">
+        <p>Enquanto aguarda, que tal <strong class="st-cta-link">antecipar sua economia?</strong></p>
+      </div>
+
+      <button type="button" class="st-card-acao">
+        <div class="st-card-icone st-card-icone-rosa"><img src="icons_final/sim-presente.svg" alt=""></div>
+        <div class="st-card-texto">
+          <strong>Indique e ganhe R$50</strong>
+          <p>Crédito direto na sua próxima fatura</p>
+        </div>
+        <img src="icons_final/st-arrow.svg" alt="" class="st-card-seta" />
+      </button>
+
+      <button type="button" class="st-card-acao" data-nav="screen-simulador-logado">
+        <div class="st-card-icone st-card-icone-verde"><img src="icons_final/sim-dinheiro.svg" alt=""></div>
+        <div class="st-card-texto">
+          <strong>Simule sua economia</strong>
+          <p>Veja quanto vai sobrar todo mês</p>
+        </div>
+        <img src="icons_final/st-arrow-green.svg" alt="" class="st-card-seta" />
+      </button>
+
+    </main>
+
+    <footer class="st-footer">
+      <nav class="st-nav">
+        <button type="button" class="st-nav-item" data-nav="screen-dicas">
+          <img src="icons_final/st-dicas.svg" alt="" />
+          <div>Dicas</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-indicacoes">
+          <img src="icons_final/st-indicacoes.svg" alt="" />
+          <div>Indicações</div>
+        </button>
+        <button type="button" class="st-nav-item st-nav-ativo" data-nav="screen-status">
+          <img src="icons_final/st-conexao.svg" alt="" />
+          <div>Conexão</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-vantagens">
+          <img src="icons_final/st-vantagens.svg" alt="" />
+          <div>Vantagens</div>
+        </button>
+      </nav>
+    </footer>
+
+  </div>
+  <!-- ===================== FIM: STATUS ===================== -->
+
+  <!-- ===================== TELA: SIMULADOR DE ECONOMIA ===================== -->
+  <div class="screen" id="screen-simulador">
+
+    <header class="sim-topo-bar">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <img src="icons_final/bulbe.svg" alt="Bulbe" class="sim-logo-img">
+    </header>
+
+    <div class="sim-scroll">
+
+      <div class="sim-titulo-sec">
+        <span class="sim-dot-laranja" aria-hidden="true"></span>
+        <h1>Simulador de Economia</h1>
+      </div>
+
+      <!-- ENTRADA DE DADOS -->
+      <section class="sim-sec-entrada" aria-label="Configurar simulação">
+        <p class="sim-sec-pergunta">Quanto você paga de luz por mês?</p>
+        <div class="sim-input-wrapper">
+          <span class="sim-input-label">Valor da sua conta atual</span>
+          <input class="sim-input-valor" type="text" id="sim-vlr-pago" aria-label="Valor da conta atual" value="R$ 0">
+        </div>
+
+        <p class="sim-sec-pergunta">Simular por quanto tempo?</p>
+        <ul class="sim-tempo-pills" role="list">
+          <li class="sim-pill" role="button" tabindex="0">3 meses</li>
+          <li class="sim-pill" role="button" tabindex="0">6 meses</li>
+          <li class="sim-pill" role="button" tabindex="0">1 ano</li>
+        </ul>
+
+        <div id="sim-custom-secundario" class="oculto">
+          <button class="sim-btn-personalizar" type="button">✏️ Personalizar período</button>
+          <div class="sim-custom-row">
+            <span class="sim-custom-label">Quero simular</span>
+            <input class="sim-custom-input" type="number" id="sim-custom-meses" value="" min="1" aria-label="Quantidade de meses">
+            <span class="sim-custom-label">meses</span>
+            <button class="sim-btn-ok" type="button">OK</button>
+          </div>
+        </div>
+
+        <button id="sim-custom-principal" class="sim-btn-personalizar sim-btn-dashed" type="button">✏️ Personalizar período</button>
+      </section>
+
+      <!-- AMIGOS INDICADOS -->
+      <section class="sim-sec-amigos" aria-label="Amigos indicados">
+        <div class="sim-amigos-info">
+          <img src="icons_final/amigos.svg" alt="" class="sim-amigos-icon" aria-hidden="true">
+          <div class="sim-amigos-texto">
+            <h2>Amigos indicados</h2>
+            <p>Cada amigo vale <em class="sim-destaque">R$50</em> de desconto na fatura</p>
+          </div>
+        </div>
+        <div class="sim-contador-wrapper">
+          <button class="sim-btn-contador" type="button" aria-label="Diminuir">−</button>
+          <div class="sim-div-contador">
+            <input class="sim-contador-num" type="number" id="sim-contador-input" value="0" min="0" aria-label="Quantidade de amigos indicados">
+            <p class="sim-contador-label">amigos indicados</p>
+          </div>
+          <button class="sim-btn-contador sim-btn-mais" type="button" aria-label="Aumentar">+</button>
+        </div>
+      </section>
+
+      <!-- ECONOMIA TOTAL -->
+      <section class="sim-sec-economia oculto" aria-label="Resumo de economia">
+        <p class="sim-economia-titulo" id="sim-economia-titulo">ECONOMIA EM — MESES</p>
+        <div class="sim-economia-valor-wrapper">
+          <span class="sim-economia-cifrao">R$</span>
+          <span class="sim-economia-valor" id="sim-economia-total">0</span>
+        </div>
+        <p class="sim-economia-descricao" id="sim-economia-descricao">Preencha sua conta para simular</p>
+        <div class="sim-economia-cards">
+          <div class="sim-economia-card">
+            <p class="sim-economia-card-titulo">Desconto Bulbe</p>
+            <p class="sim-economia-card-valor" id="sim-desconto-valor">R$0</p>
+            <p class="sim-economia-card-sub" id="sim-desconto-pct">0% da conta</p>
+          </div>
+          <div class="sim-economia-card">
+            <p class="sim-economia-card-titulo">Bônus indicação</p>
+            <p class="sim-economia-card-valor" id="sim-bonus-valor">R$0</p>
+            <p class="sim-economia-card-sub" id="sim-bonus-sub">0 amigos × R$50</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPARATIVO MENSAL -->
+      <section class="sim-sec-comp-mensal oculto" aria-label="Comparativo mensal">
+        <div class="sim-comp-grid">
+          <div class="sim-comp-col sim-comp-sem">
+            <p class="sim-comp-label">SEM BULBE</p>
+            <p class="sim-comp-sub">Fatura mensal</p>
+            <p class="sim-comp-valor sim-comp-riscado" id="sim-comp-sem-mensal">R$0</p>
+            <p class="sim-comp-sub" id="sim-comp-sem-periodo-label">Por mês</p>
+            <p class="sim-comp-valor-sec" id="sim-comp-sem-periodo">R$0</p>
+          </div>
+          <div class="sim-comp-col sim-comp-com">
+            <p class="sim-comp-label">COM BULBE</p>
+            <p class="sim-comp-sub">Fatura mensal</p>
+            <p class="sim-comp-valor" id="sim-comp-com-mensal">R$0</p>
+            <p class="sim-comp-sub" id="sim-comp-com-periodo-label">Por mês</p>
+            <p class="sim-comp-valor-sec" id="sim-comp-com-periodo">R$0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- COM ESSE DINHEIRO -->
+      <section class="sim-sec-poderia" aria-label="Com esse dinheiro você poderia">
+        <h2 class="sim-sec-titulo">Com esse dinheiro você poderia...</h2>
+        <p class="sim-poderia-sub">Baseado na sua economia de <strong id="sim-poderia-total">R$0</strong></p>
+        <div class="sim-poderia-grid">
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#0B1E47;--pc-cor:#FFFFFF">
+            <img src="icons_final/sim-mercado.svg" alt="" class="sim-poderia-emoji">
+            <span class="sim-poderia-mult" id="sim-mult-0">1x</span>
+            <span class="sim-poderia-label">Mercado</span>
+            <div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div>
+          </div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#FFF0E5;--pc-cor:#F58220">
+            <img src="icons_final/sim-pizza.svg" alt="" class="sim-poderia-emoji">
+            <span class="sim-poderia-mult" id="sim-mult-1">1x</span>
+            <span class="sim-poderia-label">Jantar família</span>
+            <div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div>
+          </div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#EEF6FF;--pc-cor:#1A3470">
+            <img src="icons_final/sim-gasolina.svg" alt="" class="sim-poderia-emoji">
+            <span class="sim-poderia-mult" id="sim-mult-2">1x</span>
+            <span class="sim-poderia-label">Gasolina</span>
+            <div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div>
+          </div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#E8F5E9;--pc-cor:#1B5E20">
+            <img src="icons_final/sim-streaming.svg" alt="" class="sim-poderia-emoji">
+            <span class="sim-poderia-mult" id="sim-mult-3">1x</span>
+            <span class="sim-poderia-label">Streaming</span>
+            <div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div>
+          </div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#FDE8F0;--pc-cor:#8B1A4A">
+            <img src="icons_final/sim-remedios.svg" alt="" class="sim-poderia-emoji">
+            <span class="sim-poderia-mult" id="sim-mult-4">1x</span>
+            <span class="sim-poderia-label">Remédios</span>
+            <div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div>
+          </div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#F3F0FF;--pc-cor:#3D1A8F">
+            <img src="icons_final/sim-tenis.svg" alt="" class="sim-poderia-emoji">
+            <span class="sim-poderia-mult" id="sim-mult-5">1x</span>
+            <span class="sim-poderia-label">Tênis</span>
+            <div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- fim .sim-scroll -->
+
+    <!-- FOOTER CTA -->
+    <footer class="sim-footer-cta">
+      <button class="outline-button" type="button" data-nav="screen-abrir-conta">
+        <span class="outline-icon" aria-hidden="true">
+          <img src="icons_final/adesao.svg" alt="">
+        </span>
+        <div class="outline-text">
+          <span>Abrir conta de luz</span>
+          <span>com a Bulbe</span>
+        </div>
+      </button>
+    </footer>
+
+  </div>
+  <!-- ===================== FIM: SIMULADOR DE ECONOMIA ===================== -->
+
+  <!-- ===================== TELA: DETALHES ===================== -->
+  <div class="screen" id="screen-detalhes">
+    <div class="det-scroll">
+
+      <header class="det-topo">
+        <div class="det-topo-bar">
+          <button class="det-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+            <img src="icons_final/seta.svg" alt="">
+          </button>
+          <img src="icons_final/bulbe.svg" alt="Bulbe" class="det-logo-img">
+        </div>
+        <div class="det-topo-texto">
+          <h1>Status da conexão</h1>
+          <p>O que está acontecendo agora</p>
+        </div>
+      </header>
+
+      <section class="det-status-box">
+        <p class="det-etapa">ETAPA <span id="det-numero-etapa">2</span> DE 5</p>
+        <h2 id="det-status-titulo">Documentação sendo analisada</h2>
+        <p class="det-descricao" id="det-status-descricao">Seus documentos estão em análise. Em breve entraremos em contato.</p>
+        <div class="det-progress-bar">
+          <div class="det-progress-fill"></div>
+        </div>
+      </section>
+
+      <section class="det-timeline-section">
+        <h3>Sua jornada completa</h3>
+        <div class="det-timeline" id="det-timeline">
+
+          <div class="det-item det-concluido" id="det-etapa-1">
+            <div class="det-bolinha"></div>
+            <div class="det-conteudo">
+              <h4>Cadastro realizado</h4>
+              <small>Seu cadastro foi concluído com sucesso.</small>
+            </div>
+          </div>
+
+          <div class="det-item" id="det-etapa-2">
+            <div class="det-bolinha"></div>
+            <div class="det-conteudo">
+              <h4>Documentação sendo analisada</h4>
+              <small>Seus documentos estão em análise. Em breve entraremos em contato.</small>
+            </div>
+          </div>
+
+          <div class="det-item" id="det-etapa-3">
+            <div class="det-bolinha"></div>
+            <div class="det-conteudo">
+              <h4>Solicitação enviada à CEMIG</h4>
+              <small>Sua solicitação foi encaminhada para a CEMIG. Estamos acompanhando o processo.</small>
+            </div>
+          </div>
+
+          <div class="det-item" id="det-etapa-4">
+            <div class="det-bolinha"></div>
+            <div class="det-conteudo">
+              <h4>Em análise pela CEMIG</h4>
+              <small>A CEMIG está analisando a solicitação.</small>
+            </div>
+          </div>
+
+          <div class="det-item" id="det-etapa-5">
+            <div class="det-bolinha"></div>
+            <div class="det-conteudo">
+              <h4>Energia aprovada</h4>
+              <small>Sua solicitação foi aprovada. Em breve sua energia será liberada.</small>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="det-ajuda">
+        <h3>Precisa de ajuda?</h3>
+        <button type="button" id="det-botao-whatsapp">Falar pelo WhatsApp</button>
+      </section>
+
+    </div>
+  </div>
+  <!-- ===================== FIM: DETALHES ===================== -->
+
+  <!-- ===================== TELA: SIMULADOR LOGADO ===================== -->
+  <div class="screen" id="screen-simulador-logado">
+
+    <header class="sim-topo-bar">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <img src="icons_final/bulbe.svg" alt="Bulbe" class="sim-logo-img">
+    </header>
+
+    <div class="sim-scroll">
+
+      <div class="sim-titulo-sec">
+        <span class="sim-dot-laranja" aria-hidden="true"></span>
+        <h1>Simulador de Economia</h1>
+      </div>
+
+      <section class="sim-sec-entrada" aria-label="Configurar simulação">
+        <p class="sim-sec-pergunta">Quanto você paga de luz por mês?</p>
+        <div class="sim-input-wrapper">
+          <span class="sim-input-label">Valor da sua conta atual</span>
+          <input class="sim-input-valor" type="text" id="slog-vlr-pago" aria-label="Valor da conta atual" value="R$ 0">
+        </div>
+
+        <p class="sim-sec-pergunta">Simular por quanto tempo?</p>
+        <ul class="sim-tempo-pills slog-pills" role="list">
+          <li class="sim-pill" role="button" tabindex="0">3 meses</li>
+          <li class="sim-pill" role="button" tabindex="0">6 meses</li>
+          <li class="sim-pill" role="button" tabindex="0">1 ano</li>
+        </ul>
+
+        <div id="slog-custom-secundario" class="oculto">
+          <button class="sim-btn-personalizar" type="button">✏️ Personalizar período</button>
+          <div class="sim-custom-row">
+            <span class="sim-custom-label">Quero simular</span>
+            <input class="sim-custom-input" type="number" id="slog-custom-meses" value="" min="1" aria-label="Quantidade de meses">
+            <span class="sim-custom-label">meses</span>
+            <button class="sim-btn-ok" type="button">OK</button>
+          </div>
+        </div>
+
+        <button id="slog-custom-principal" class="sim-btn-personalizar sim-btn-dashed" type="button">✏️ Personalizar período</button>
+      </section>
+
+      <section class="sim-sec-amigos" aria-label="Amigos indicados">
+        <div class="sim-amigos-info">
+          <img src="icons_final/amigos.svg" alt="" class="sim-amigos-icon" aria-hidden="true">
+          <div class="sim-amigos-texto">
+            <h2>Amigos indicados</h2>
+            <p>Cada amigo vale <em class="sim-destaque">R$50</em> de desconto na fatura</p>
+          </div>
+        </div>
+        <div class="sim-contador-wrapper">
+          <button class="sim-btn-contador slog-btn-menos" type="button" aria-label="Diminuir">−</button>
+          <div class="sim-div-contador">
+            <input class="sim-contador-num" type="number" id="slog-contador-input" value="0" min="0" aria-label="Quantidade de amigos indicados">
+            <p class="sim-contador-label">amigos indicados</p>
+          </div>
+          <button class="sim-btn-contador sim-btn-mais slog-btn-mais" type="button" aria-label="Aumentar">+</button>
+        </div>
+      </section>
+
+      <section class="sim-sec-economia oculto" id="slog-sec-economia" aria-label="Resumo de economia">
+        <p class="sim-economia-titulo" id="slog-economia-titulo">ECONOMIA EM — MESES</p>
+        <div class="sim-economia-valor-wrapper">
+          <span class="sim-economia-cifrao">R$</span>
+          <span class="sim-economia-valor" id="slog-economia-total">0</span>
+        </div>
+        <p class="sim-economia-descricao" id="slog-economia-descricao">Preencha sua conta para simular</p>
+        <div class="sim-economia-cards">
+          <div class="sim-economia-card">
+            <p class="sim-economia-card-titulo">Desconto Bulbe</p>
+            <p class="sim-economia-card-valor" id="slog-desconto-valor">R$0</p>
+            <p class="sim-economia-card-sub" id="slog-desconto-pct">0% da conta</p>
+          </div>
+          <div class="sim-economia-card">
+            <p class="sim-economia-card-titulo">Bônus indicação</p>
+            <p class="sim-economia-card-valor" id="slog-bonus-valor">R$0</p>
+            <p class="sim-economia-card-sub" id="slog-bonus-sub">0 amigos × R$50</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="sim-sec-comp-mensal oculto" id="slog-sec-comp" aria-label="Comparativo mensal">
+        <div class="sim-comp-grid">
+          <div class="sim-comp-col sim-comp-sem">
+            <p class="sim-comp-label">SEM BULBE</p>
+            <p class="sim-comp-sub">Fatura mensal</p>
+            <p class="sim-comp-valor sim-comp-riscado" id="slog-comp-sem-mensal">R$0</p>
+            <p class="sim-comp-sub" id="slog-comp-sem-periodo-label">Por mês</p>
+            <p class="sim-comp-valor-sec" id="slog-comp-sem-periodo">R$0</p>
+          </div>
+          <div class="sim-comp-col sim-comp-com">
+            <p class="sim-comp-label">COM BULBE</p>
+            <p class="sim-comp-sub">Fatura mensal</p>
+            <p class="sim-comp-valor" id="slog-comp-com-mensal">R$0</p>
+            <p class="sim-comp-sub" id="slog-comp-com-periodo-label">Por mês</p>
+            <p class="sim-comp-valor-sec" id="slog-comp-com-periodo">R$0</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="sim-sec-poderia" aria-label="Com esse dinheiro você poderia">
+        <h2 class="sim-sec-titulo">Com esse dinheiro você poderia...</h2>
+        <p class="sim-poderia-sub">Baseado na sua economia de <strong id="slog-poderia-total">R$0</strong></p>
+        <div class="sim-poderia-grid">
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#0B1E47;--pc-cor:#FFFFFF"><img src="icons_final/sim-mercado.svg" alt="" class="sim-poderia-emoji"><span class="sim-poderia-mult" id="slog-mult-0">1x</span><span class="sim-poderia-label">Mercado</span><div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div></div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#FFF0E5;--pc-cor:#F58220"><img src="icons_final/sim-pizza.svg" alt="" class="sim-poderia-emoji"><span class="sim-poderia-mult" id="slog-mult-1">1x</span><span class="sim-poderia-label">Jantar família</span><div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div></div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#EEF6FF;--pc-cor:#1A3470"><img src="icons_final/sim-gasolina.svg" alt="" class="sim-poderia-emoji"><span class="sim-poderia-mult" id="slog-mult-2">1x</span><span class="sim-poderia-label">Gasolina</span><div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div></div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#E8F5E9;--pc-cor:#1B5E20"><img src="icons_final/sim-streaming.svg" alt="" class="sim-poderia-emoji"><span class="sim-poderia-mult" id="slog-mult-3">1x</span><span class="sim-poderia-label">Streaming</span><div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div></div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#FDE8F0;--pc-cor:#8B1A4A"><img src="icons_final/sim-remedios.svg" alt="" class="sim-poderia-emoji"><span class="sim-poderia-mult" id="slog-mult-4">1x</span><span class="sim-poderia-label">Remédios</span><div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div></div>
+          <div class="sim-poderia-card sim-poderia-bloqueado" style="--pc-bg:#F3F0FF;--pc-cor:#3D1A8F"><img src="icons_final/sim-tenis.svg" alt="" class="sim-poderia-emoji"><span class="sim-poderia-mult" id="slog-mult-5">1x</span><span class="sim-poderia-label">Tênis</span><div class="sim-poderia-overlay"><img src="icons_final/sim-cadeado.svg" alt=""></div></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <!-- ===================== FIM: SIMULADOR LOGADO ===================== -->
+
+  <!-- ===================== DRAWER: MENU LATERAL ===================== -->
+  <div id="menu-lateral" class="ml-drawer">
+    <div class="ml-overlay" id="ml-overlay"></div>
+    <aside class="ml-sidebar">
+
+      <div class="ml-header">
+        <div class="ml-logo-wrapper">
+          <img src="icons_final/ml-logo.svg" alt="Bulbe" />
+          <span class="ml-logo-tagline">sua próxima energia</span>
+        </div>
+        <button class="ml-btn-fechar" id="ml-btn-fechar" aria-label="Fechar menu">
+          <img src="icons_final/ml-fechar.svg" alt="" />
+        </button>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <nav class="ml-nav">
+        <button type="button" class="ml-nav-item ml-nav-ativo" data-nav="screen-como-funciona">
+          <img src="icons_final/ml-como-funciona.svg" alt="" />
+          <span>Como funciona?</span>
+        </button>
+        <button type="button" class="ml-nav-item">
+          <img src="icons_final/ml-perguntas-frequentes.svg" alt="" />
+          <span>Perguntas frequentes</span>
+        </button>
+        <button type="button" class="ml-nav-item">
+          <img src="icons_final/ml-mudanca-endereco.svg" alt="" />
+          <span>Mudança de endereço</span>
+        </button>
+        <button type="button" class="ml-nav-item">
+          <img src="icons_final/ml-indique-ganhe.svg" alt="" />
+          <span>Indique e ganhe</span>
+        </button>
+        <button type="button" class="ml-nav-item" data-nav="screen-simulador-logado" id="ml-nav-simulador">
+          <img src="icons_final/ml-simulador-economia.svg" alt="" />
+          <span>Simulador de economia</span>
+        </button>
+        <button type="button" class="ml-nav-item">
+          <img src="icons_final/ml-fale-conosco.svg" alt="" />
+          <span>Fale conosco</span>
+        </button>
+        <button type="button" class="ml-nav-item">
+          <img src="icons_final/ml-termos.svg" alt="" />
+          <span>Termos</span>
+        </button>
+      </nav>
+
+    </aside>
+  </div>
+  <!-- ===================== FIM: MENU LATERAL ===================== -->
+
+  <!-- ===================== TELA: COMO FUNCIONA ===================== -->
+  <div class="screen" id="screen-como-funciona">
+
+    <div class="cf-topo-fixo">
+      <header class="cf-header">
+        <div class="cf-main-header">
+          <button type="button" data-open-menu aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+          </button>
+          <img src="icons_final/cf-logo.svg" alt="Bulbe">
+          <nav class="cf-menu-superior">
+            <button type="button"><img src="icons_final/cf-bell.svg" alt="Notificações"></button>
+            <div class="cf-perfil"></div>
+          </nav>
+        </div>
+        <div class="cf-aside-indique">
+          <img src="icons_final/cf-indique.svg" alt="">
+          <p>Indique e Ganhe R$50 na próxima fatura</p>
+          <img src="icons_final/cf-chevron-right.svg" alt="">
+        </div>
+      </header>
+      <div class="cf-seletor-secao">
+        <span data-nav="screen-trilha" style="cursor:pointer;">Serviço</span>
+        <span class="cf-selecionado">Bulbe</span>
+        <span>App</span>
+      </div>
+    </div>
+
+    <main class="cf-main">
+
+      <div class="cf-section-header">
+        <h1 class="cf-section-title">COMO FUNCIONA</h1>
+        <div class="cf-section-line"></div>
+      </div>
+
+      <div class="cf-card-container">
+
+        <div class="cf-card-main cf-card-azul">
+          <div class="cf-card-topo">
+            <div class="cf-card-icone cf-icone-azul"><img src="icons_final/cf-folha.svg" alt=""></div>
+            <h2>Quem somos</h2>
+          </div>
+          <p>Queremos democratizar o acesso à energia limpa. Somos a Bulbe e conectamos você à energia sustentável.</p>
+        </div>
+
+        <div class="cf-card-main cf-card-verde">
+          <div class="cf-card-topo">
+            <div class="cf-card-icone cf-icone-verde"><img src="icons_final/cf-calendario.svg" alt=""></div>
+            <h2>Desde 2017</h2>
+          </div>
+          <p>Desenvolvemos e operamos fazendas solares. 100% digital e sem complicação.</p>
+        </div>
+
+        <div class="cf-card-main cf-card-escuro">
+          <div class="cf-card-topo">
+            <div class="cf-card-icone cf-icone-escuro"><img src="icons_final/cf-grafico.svg" alt=""></div>
+            <h2>Nossos números</h2>
+          </div>
+          <div class="cf-metricas">
+            <div class="cf-metrica"><span class="cf-metrica-valor">+R$300M</span><span class="cf-metrica-label">investidos</span></div>
+            <div class="cf-metrica"><span class="cf-metrica-valor">R$1bi</span><span class="cf-metrica-label">até 2025</span></div>
+            <div class="cf-metrica"><span class="cf-metrica-valor">100%</span><span class="cf-metrica-label">Brasil</span></div>
+          </div>
+        </div>
+
+        <div class="cf-card-main cf-card-laranja">
+          <div class="cf-card-topo">
+            <div class="cf-card-icone cf-icone-laranja"><img src="icons_final/cf-raio.svg" alt=""></div>
+            <h2>Como entregamos</h2>
+          </div>
+          <ul class="cf-lista-check">
+            <li>Sem instalação</li>
+            <li>Sem obras</li>
+            <li>Distribuição via rede elétrica</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="cf-section-header">
+        <h1 class="cf-section-title">NOSSOS VALORES</h1>
+        <div class="cf-section-line"></div>
+      </div>
+
+      <div class="cf-valores-grid">
+        <div class="cf-card-secondary cf-valor-azul">
+          <div class="cf-valor-icone cf-icone-sol"><img src="icons_final/cf-sol.svg" alt=""></div>
+          <p>Energia limpa deve ser simples</p>
+        </div>
+        <div class="cf-card-secondary cf-valor-verde">
+          <div class="cf-valor-icone cf-icone-globo"><img src="icons_final/cf-globo.svg" alt=""></div>
+          <p>Sustentabilidade precisa ser acessível</p>
+        </div>
+        <div class="cf-card-secondary cf-valor-laranja">
+          <div class="cf-valor-icone cf-icone-usuario"><img src="icons_final/cf-usuario.svg" alt=""></div>
+          <p>O consumidor deve ter controle</p>
+        </div>
+        <div class="cf-card-secondary cf-valor-roxo">
+          <div class="cf-valor-icone cf-icone-olho"><img src="icons_final/cf-olho.svg" alt=""></div>
+          <p>Transparência em todo o processo</p>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="cf-rodape-fixo">
+      <nav class="st-nav">
+        <button type="button" class="st-nav-item" data-nav="screen-dicas">
+          <img src="icons_final/st-dicas.svg" alt="" />
+          <div>Dicas</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-indicacoes">
+          <img src="icons_final/st-indicacoes.svg" alt="" />
+          <div>Indicações</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-status">
+          <img src="icons_final/st-conexao.svg" alt="" />
+          <div>Conexão</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-vantagens">
+          <img src="icons_final/st-vantagens.svg" alt="" />
+          <div>Vantagens</div>
+        </button>
+      </nav>
+    </footer>
+
+  </div>
+  <!-- ===================== FIM: COMO FUNCIONA ===================== -->
+
+  <!-- ===================== TELA: VANTAGENS ===================== -->
+  <div class="screen" id="screen-vantagens">
+
+    <header class="van-header">
+      <button type="button" data-open-menu aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="van-logo"><img src="icons_final/st-logo.svg" alt="Bulbe" /></div>
+      <div class="van-header-acoes">
+        <div>
+          <button type="button" class="st-btn-icone"><img src="icons_final/st-bell.svg" alt="" /></button>
+          <span></span>
+        </div>
+        <div><button type="button" class="st-btn-perfil"></button></div>
+      </div>
+    </header>
+
+    <div class="van-fundo-sub-header">
+      <div class="van-sub-header">
+        <img src="icons_final/cf-indique.svg" alt="" />
+        <p>Indique e Ganhe R$50 na próxima fatura</p>
+        <img src="icons_final/cf-chevron-right.svg" alt="" />
+      </div>
+    </div>
+
+    <main class="van-main">
+
+      <section id="van-titulo">
+        <h1>Vantagens</h1>
+        <p>Seus benefícios e cupons do Clube Bulbe</p>
+      </section>
+
+      <section>
+        <div class="van-card-proxima-carta" id="van-card-proxima-carta">
+
+          <!-- Estado normal: aguardando carta -->
+          <div class="van-estado-normal">
+            <div class="van-carta-info">
+              <div class="van-carta-icone"><img src="icons_final/van-carta.svg" alt="Carta"></div>
+              <div>
+                <p class="van-label-carta">PRÓXIMA CARTA</p>
+                <h2 id="van-titulo-dias">Em 7 dias</h2>
+                <p class="van-carta-data" id="van-carta-data">Sexta, 1 de maio · 09h00</p>
+              </div>
+            </div>
+            <div class="van-card-streak">
+              <div class="van-card-streak-row">
+                <img src="icons_final/van-fogo.svg" alt="Fogo">
+                <div class="van-streak-texto">
+                  <p id="van-texto-semanas">Comece sua sequência!</p>
+                  <p id="van-texto-bonus">Mais 5 e ganho bônus surpresa</p>
+                </div>
+              </div>
+              <div class="van-streak-dots" id="van-streak-dots">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estado: carta chegou! -->
+          <div class="van-estado-chegou">
+            <p class="van-boas-vindas" id="van-boas-vindas" style="display:none">
+              Bem-vindo à Bulbe! Como presente de boas-vindas, você já ganhou sua primeira carta com um benefício exclusivo.
+            </p>
+            <div class="van-carta-info">
+              <div class="van-carta-icone van-carta-icone-chegou">
+                <img src="icons_final/van-carta.svg" alt="Carta">
+                <span class="van-dot-verde"></span>
+              </div>
+              <div>
+                <p class="van-label-carta">SUA CARTA</p>
+                <h2 class="van-titulo-chegou">Chegou! ✨</h2>
+              </div>
+            </div>
+            <div class="van-beneficio-card">
+              <div class="van-beneficio-icone">🎁</div>
+              <div class="van-beneficio-texto">
+                <p>Seu benefício está aqui</p>
+                <small>Toque para desbloquear sua carta</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estado: carta especial (5ª semana) -->
+          <div class="van-estado-especial">
+            <div class="van-carta-info">
+              <div class="van-carta-icone van-carta-icone-chegou">
+                <img src="icons_final/van-carta.svg" alt="Carta">
+                <span class="van-dot-verde"></span>
+              </div>
+              <div>
+                <p class="van-label-carta van-label-especial">BÔNUS ESPECIAL</p>
+                <h2 class="van-titulo-chegou">5 semanas! 🏆</h2>
+              </div>
+            </div>
+            <div class="van-beneficio-card van-beneficio-card-especial">
+              <div class="van-beneficio-icone">⭐</div>
+              <div class="van-beneficio-texto">
+                <p>Sua carta especial chegou</p>
+                <small>Toque para abrir seu bônus surpresa</small>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section>
+        <div class="van-secao-header">
+          <h2 id="van-titulo-cupons">Cartas ativas</h2>
+        </div>
+        <div id="van-container-cupons">
+          <div class="van-empty-state">
+            <p class="van-empty-title">Nenhum benefício</p>
+            <p class="van-empty-sub">Abra sua carta semanal para desbloquear benefícios exclusivos</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="van-secao-header">
+          <h2 id="van-titulo-historico">Histórico de cartas</h2>
+        </div>
+        <div id="van-container-historico">
+          <div class="van-empty-state">
+            <p class="van-empty-title">Nenhuma carta no histórico</p>
+            <p class="van-empty-sub">Suas cartas abertas aparecerão aqui</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="van-secao-header">
+          <h2>Parceiros do Clube</h2>
+          <a href="#">Ver tudo →</a>
+        </div>
+        <ul class="van-lista-parceiros">
+          <li><img src="img_final/van-image25.png" alt="Araujo"><p>Araujo</p><small>Farmácia</small></li>
+          <li><img src="img_final/van-image26.png" alt="Inter"><p>Inter</p><small>Banco</small></li>
+        </ul>
+      </section>
+
+      <section class="van-secao-como-funciona">
+        <h2>Como funciona</h2>
+        <ul class="van-lista-faq">
+          <li><span class="van-faq-numero">1</span><span>Quando recebo minha carta?</span><img src="icons_final/cf-chevron-right.svg" alt=""></li>
+          <li><span class="van-faq-numero">2</span><span>Como uso meus cupons?</span><img src="icons_final/cf-chevron-right.svg" alt=""></li>
+          <li><span class="van-faq-numero">3</span><span>E se eu esquecer de abrir uma carta?</span><img src="icons_final/cf-chevron-right.svg" alt=""></li>
+        </ul>
+      </section>
+
+    </main>
+
+    <footer class="van-footer">
+      <nav class="st-nav">
+        <button type="button" class="st-nav-item" data-nav="screen-dicas"><img src="icons_final/st-dicas.svg" alt="" /><div>Dicas</div></button>
+        <button type="button" class="st-nav-item" data-nav="screen-indicacoes"><img src="icons_final/st-indicacoes.svg" alt="" /><div>Indicações</div></button>
+        <button type="button" class="st-nav-item" data-nav="screen-status"><img src="icons_final/st-conexao.svg" alt="" /><div>Conexão</div></button>
+        <button type="button" class="st-nav-item st-nav-ativo"><img src="icons_final/st-vantagens.svg" alt="" /><div>Vantagens</div></button>
+      </nav>
+    </footer>
+
+    <!-- Overlays internos -->
+    <div id="van-overlay-wrapper" class="van-overlay-wrapper">
+
+      <div id="van-tela-carta" class="van-overlay-screen">
+        <div class="van-overlay-header-bar">
+          <button class="van-btn-voltar-overlay" id="van-voltar-carta"><img src="icons_final/cf-chevron-right.svg" alt="" class="van-icon-voltar"></button>
+          <span class="van-overlay-titulo">Clube Bulbe</span>
+        </div>
+        <div class="van-overlay-body">
+          <div id="van-carta-normal" class="van-carta-body">
+            <section class="van-hero">
+              <p class="van-data" id="van-data-carta">TERÇA · 28 DE ABRIL</p>
+              <h2>Sua carta da semana<br>está aqui ⭐</h2>
+              <p class="van-subtitulo">Seu benefício exclusivo desta semana está esperando por você.</p>
+            </section>
+            <section class="van-carta-semana">
+              <div class="van-envelope" id="van-btn-abrir-envelope" tabindex="0" role="button">
+                <span class="van-envelope__linha van-envelope__linha--esquerda"></span>
+                <span class="van-envelope__linha van-envelope__linha--direita"></span>
+                <div class="van-envelope__selo"><img src="icons_final/van-simbolo-bulbe-carta.svg" alt="Bulbe"></div>
+              </div>
+              <button class="van-botao-carta" id="van-btn-abrir-carta">Abrir minha carta</button>
+            </section>
+          </div>
+
+          <div id="van-carta-especial" class="van-carta-body hidden">
+            <section class="van-hero">
+              <p class="van-data">BÔNUS SURPRESA</p>
+              <h2>5 semanas<br>seguidas! 🎉</h2>
+              <p class="van-subtitulo">Você desbloqueou um benefício especial pelo seu comprometimento.</p>
+            </section>
+            <section class="van-carta-semana">
+              <div class="van-envelope van-envelope--especial" id="van-btn-abrir-envelope-especial" tabindex="0" role="button">
+                <span class="van-envelope__linha van-envelope__linha--esquerda"></span>
+                <span class="van-envelope__linha van-envelope__linha--direita"></span>
+                <div class="van-envelope__selo"><img src="icons_final/van-simbolo-bulbe-carta.svg" alt="Bulbe"></div>
+              </div>
+              <button class="van-botao-carta van-botao-carta--especial" id="van-btn-abrir-bonus">Abrir meu bônus surpresa</button>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div id="van-tela-recompensa" class="van-overlay-screen">
+        <div class="van-rec-popup" id="van-popup-copiado"><p>Cupom copiado!</p></div>
+        <div class="van-rec-popup" id="van-popup-salvo"><p>Cupom salvo!</p></div>
+        <div class="van-rec-popup" id="van-popup-ativo"><p>Cupom ativo! Aproveite!</p></div>
+        <div class="van-overlay-header-bar">
+          <button class="van-btn-voltar-overlay" id="van-voltar-recompensa"><img src="icons_final/cf-chevron-right.svg" alt="" class="van-icon-voltar"></button>
+          <span class="van-overlay-titulo">Sua carta da semana</span>
+        </div>
+        <div class="van-overlay-body">
+          <section class="van-rec-hero">
+            <h1>Parabéns, <span>você</span>! 🎉</h1>
+            <p>Você desbloqueou seu benefício</p>
+          </section>
+          <div class="van-rec-card">
+            <div class="van-rec-parceria">
+              <p class="van-rec-tag" id="van-rec-tag-parceria"></p>
+              <img id="van-recompensa-logo" src="" alt="" class="van-rec-logo">
+            </div>
+            <div class="van-rec-beneficio">
+              <p class="van-rec-voce-ganhou">Você ganhou</p>
+              <h2 class="van-rec-titulo" id="van-rec-titulo-beneficio"></h2>
+              <p class="van-rec-desc" id="van-rec-desc-beneficio"></p>
+            </div>
+            <div class="van-rec-cupom-section">
+              <article class="van-rec-cupom-article">
+                <p class="van-rec-cupom-p">
+                  <span class="van-rec-cupom-label">SEU CUPOM</span>
+                  <strong id="van-cupom-codigo-valor"></strong>
+                </p>
+                <button class="van-rec-btn-copiar" id="van-btn-copiar">Copiar</button>
+              </article>
+            </div>
+            <div class="van-rec-validade-section">
+              <p class="van-rec-validade-pill" id="van-rec-validade-texto"></p>
+            </div>
+            <div class="van-rec-botoes">
+              <button class="van-rec-btn-salvar" id="van-btn-salvar">Salvar</button>
+              <button class="van-rec-btn-usar" id="van-btn-usar">Usar agora</button>
+            </div>
+          </div>
+          <div class="van-rec-proxima">
+            <div class="van-rec-cal">
+              <span class="van-rec-cal-mes" id="van-rec-cal-mes">JUL</span>
+              <span class="van-rec-cal-dia" id="van-rec-cal-dia">17</span>
+            </div>
+            <p>Próxima carta em <span class="van-rec-proxima-destaque">7 dias</span></p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /van-overlay-wrapper -->
+
+  </div>
+  <!-- ===================== FIM: VANTAGENS ===================== -->
+
+  <!-- ===================== TELA: CARTA ===================== -->
+  <div class="screen" id="screen-carta">
+    <div class="carta-scroll">
+
+      <header class="carta-topo">
+        <button type="button" data-nav-back class="carta-btn-voltar">
+          <img src="icons_final/carta-seta-voltar.svg" alt="Voltar">
+        </button>
+        <h1>Clube Bulbe</h1>
+      </header>
+
+      <main class="carta-main">
+
+        <section class="carta-hero">
+          <p class="carta-data-label" id="carta-data-label">TERÇA · 28 DE ABRIL</p>
+          <h2>Sua carta da semana<br>está aqui ⭐</h2>
+          <p class="carta-subtitulo">Seu benefício exclusivo desta semana está esperando por você.</p>
+        </section>
+
+        <section class="carta-secao-envelope">
+          <button type="button" id="carta-btn-abrir" class="carta-envelope-btn">
+            <img src="screens/carta/icons/carta.svg" class="carta-imagem" alt="Carta da Semana">
+          </button>
+          <p class="carta-toque-texto">Toque para abrir a carta</p>
+        </section>
+
+        <section class="carta-sequencia">
+          <div class="carta-seq-topo">
+            <div class="carta-icone-fogo">🔥</div>
+            <div class="carta-seq-conteudo">
+              <h2><span id="carta-numero-streak">0 semanas</span> seguidas!</h2>
+              <p id="carta-sub-streak">Mais 5 semanas e você ganha o bônus especial</p>
+            </div>
+          </div>
+          <div class="carta-barra-prog">
+            <div class="carta-barra-fill" id="carta-barra-fill"></div>
+          </div>
+          <div class="carta-barra-labels">
+            <span>0 semanas</span>
+            <span class="carta-barra-atual" id="carta-label-atual">0 de 5</span>
+            <span>bônus 🎁</span>
+          </div>
+          <p class="carta-progresso-label" id="carta-progresso-label">Complete 5 semanas para ganhar o bônus especial!</p>
+        </section>
+
+      </main>
+
+
+    </div>
+  </div>
+  <!-- ===================== FIM: CARTA ===================== -->
+
+  <!-- ===================== TELA: RECOMPENSA CARTA ===================== -->
+  <!-- ===================== TELA: BÔNUS EXTRA ===================== -->
+  <div class="screen" id="screen-bonus-extra">
+    <div class="be-container">
+      <header class="be-header">
+        <button class="be-btn-back" data-nav-back aria-label="Voltar">
+          <img src="screens/bônus extra/icones/seta-voltar.svg" alt="" class="be-icon-back">
+        </button>
+        <h1 class="be-header-title">Clube Bulbe</h1>
+      </header>
+      <main class="be-content">
+        <div class="be-congrats-badge"><span>Parabéns, Marcos! 🎉</span></div>
+        <div class="be-streak-headline">
+          <h2>Você chegou à<br>sequência de<br><span class="be-highlight">5 semanas seguidas!</span></h2>
+        </div>
+        <div class="be-prize-callout"><h3>PEGUE SEU GRANDE PRÊMIO!</h3></div>
+        <div class="be-card-trigger" id="be-btn-abrir-envelope">
+          <div class="be-envelope-glow">
+            <img src="screens/bônus extra/icones/carta.svg" alt="Envelope do Prêmio" class="be-prize-envelope">
+          </div>
+          <p class="be-instruction">Toque para abrir a carta</p>
+        </div>
+        <div class="be-trail">
+          <img src="screens/bônus extra/icones/trilha.svg" alt="" class="be-trail-img">
+        </div>
+      </main>
+      <footer class="be-footer">
+        <img src="screens/bônus extra/icones/bulbe.svg" alt="Bulbe" class="be-brand-logo">
+      </footer>
+    </div>
+  </div>
+  <!-- ===================== FIM: BÔNUS EXTRA ===================== -->
+
+
+
+
+  <div class="screen" id="screen-recompensa-carta">
+    <div class="rc-scroll">
+
+      <div class="van-rec-popup" id="rc-popup-copiado"><p>Cupom copiado!</p></div>
+      <div class="van-rec-popup" id="rc-popup-salvo"><p>Cupom resgatado!</p></div>
+      <div class="van-rec-popup" id="rc-popup-ativo"><p>Cupom compartilhado!</p></div>
+
+      <header class="carta-topo">
+        <button type="button" id="rc-btn-voltar" class="carta-btn-voltar">
+          <img src="icons_final/carta-seta-voltar.svg" alt="Voltar">
+        </button>
+        <h1>Sua carta da semana</h1>
+      </header>
+
+      <div class="rc-body">
+        <section class="van-rec-hero">
+          <h1>Parabéns, <span>Marcos</span>! 🎉</h1>
+          <p>Você desbloqueou seu benefício</p>
+        </section>
+
+        <div class="van-rec-card">
+          <div class="van-rec-parceria">
+            <p class="van-rec-tag" id="rc-tag">Parceria Drogaria Araújo</p>
+            <img src="screens/recompensa-carta/icons/logo-araujo.svg" id="rc-logo" alt="Logo parceiro" class="van-rec-logo">
+          </div>
+          <div class="van-rec-beneficio">
+            <p class="van-rec-voce-ganhou">Você ganhou</p>
+            <h2 class="van-rec-titulo" id="rc-titulo">15% de desconto na Araújo</h2>
+            <p class="van-rec-desc" id="rc-desc">Use o cupom em qualquer loja física ou no app da Araújo.</p>
+          </div>
+          <div class="van-rec-cupom-section">
+            <article class="van-rec-cupom-article">
+              <p class="van-rec-cupom-p">
+                <span class="van-rec-cupom-label">SEU CUPOM</span>
+                <strong id="rc-cupom-codigo">ARAUJO50</strong>
+              </p>
+              <button type="button" id="rc-btn-copiar" class="van-rec-btn-copiar">Copiar</button>
+            </article>
+          </div>
+          <div class="rc-auto-aplicado">
+            <span class="rc-auto-icone">✅</span>
+            <p>Desconto aplicado automaticamente na sua próxima fatura</p>
+          </div>
+          <div class="van-rec-validade-section">
+            <p class="van-rec-validade-pill" id="rc-validade">Válido até 5 de junho — 7 dias para usar</p>
+          </div>
+          <div class="van-rec-botoes">
+            <button type="button" id="rc-btn-salvar" class="van-rec-btn-salvar">Resgatar</button>
+            <button type="button" id="rc-btn-usar" class="van-rec-btn-usar">Compartilhar</button>
+          </div>
+        </div>
+
+        <div class="rc-proxima">
+          <p>Próxima carta em <span class="van-rec-proxima-destaque">7 dias</span></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <!-- ===================== FIM: RECOMPENSA CARTA ===================== -->
+
+  <!-- ===================== TELA: DICAS ===================== -->
+  <div class="screen" id="screen-dicas">
+
+    <header class="van-header">
+      <button type="button" data-open-menu aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="van-logo"><img src="icons_final/st-logo.svg" alt="Bulbe" /></div>
+      <div class="van-header-acoes">
+        <div>
+          <button type="button" class="st-btn-icone"><img src="icons_final/st-bell.svg" alt="" /></button>
+          <span></span>
+        </div>
+        <div><button type="button" class="st-btn-perfil"></button></div>
+      </div>
+    </header>
+
+    <div class="van-fundo-sub-header">
+      <div class="van-sub-header">
+        <img src="icons_final/cf-indique.svg" alt="" />
+        <p>Indique e Ganhe R$50 na próxima fatura</p>
+        <img src="icons_final/cf-chevron-right.svg" alt="" />
+      </div>
+    </div>
+
+    <main class="dc-main">
+      <section class="dc-titulo">
+        <h1>Dicas</h1>
+        <p>Pequenas ações que fazem diferença no seu bolso</p>
+      </section>
+
+      <section class="dc-blue-card-section">
+        <div class="dc-blue-card">
+          <div class="dc-blue-card-text">
+            <p class="dc-mensal">Economia mensal <span>R$ 12,00</span></p>
+            <p class="dc-anual">Economia anual <span>R$ 144,00</span></p>
+          </div>
+          <div class="dc-blue-card-image">
+            <img src="screens/dicas/icons/piggybank.svg" alt="">
+          </div>
+        </div>
+      </section>
+
+      <section class="dc-carousel-section">
+        <ul id="dc-dicas-list">
+          <li>
+            <article class="dc-card">
+              <img src="screens/dicas/icons/light_lamp.svg" alt="">
+              <h2>Troque por LED</h2>
+              <p>Lâmpadas LED duram mais e gastam menos energia</p>
+            </article>
+          </li>
+          <li aria-hidden="true">
+            <article class="dc-card">
+              <img src="screens/dicas/icons/shower.svg" alt="">
+              <h2>Banhos rápidos</h2>
+              <p>Além de economizar água, você economiza energia</p>
+            </article>
+          </li>
+          <li aria-hidden="true">
+            <article class="dc-card">
+              <img src="screens/dicas/icons/laundry.svg" alt="">
+              <h2>Cestos cheios</h2>
+              <p>Prefira usar máquinas de lavar apenas quando estiverem cheias. Menos ciclos, mais energia</p>
+            </article>
+          </li>
+          <li aria-hidden="true">
+            <article class="dc-card">
+              <img src="screens/dicas/icons/dark_lamp.svg" alt="">
+              <h2>Cômodos em uso</h2>
+              <p>Deixe apenas as luzes dos cômodos que você está ligadas.</p>
+            </article>
+          </li>
+        </ul>
+
+        <ol id="dc-dicas-indicators">
+          <li aria-current="true"><span class="sr-only">Dica 1</span></li>
+          <li><span class="sr-only">Dica 2</span></li>
+          <li><span class="sr-only">Dica 3</span></li>
+          <li><span class="sr-only">Dica 4</span></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="st-footer">
+      <nav class="st-nav">
+        <button type="button" data-nav="screen-dicas" class="st-nav-item st-nav-ativo">
+          <img src="icons_final/st-dicas.svg" alt="" /><div>Dicas</div>
+        </button>
+        <button type="button" class="st-nav-item">
+          <img src="icons_final/st-indicacoes.svg" alt="" /><div>Indicações</div>
+        </button>
+        <button type="button" data-nav="screen-status" class="st-nav-item">
+          <img src="icons_final/st-conexao.svg" alt="" /><div>Conexão</div>
+        </button>
+        <button type="button" data-nav="screen-vantagens" class="st-nav-item">
+          <img src="icons_final/st-vantagens.svg" alt="" /><div>Vantagens</div>
+        </button>
+      </nav>
+    </footer>
+
+  </div>
+  <!-- ===================== FIM: DICAS ===================== -->
+
+  <!-- Botão para simular passagem de dias — só aparece na tela Vantagens -->
+  <button id="van-btn-voltar-dia" type="button">◀ Voltar 1 dia</button>
+  <button id="van-btn-passar-dia" type="button">▶ Passar 1 dia</button>
+  <button id="van-btn-resetar" type="button">🔄 Resetar</button>
+
+  <!-- Botões de teste de etapa — só aparecem quando a tela Status está ativa -->
+  <button id="st-btn-anterior" type="button">◀ Etapa anterior</button>
+  <button id="st-btn-proxima"  type="button">▶ Próxima etapa</button>
+
+  <!-- Botões de etapa — só aparecem quando a tela Detalhes está ativa -->
+  <button id="det-btn-anterior" type="button">◀ Etapa anterior</button>
+  <button id="det-btn-avancar"  type="button">▶ Próxima etapa</button>
+
+  <!-- ===================== TELA: TRILHA ===================== -->
+  <div class="screen" id="screen-trilha">
+
+    <div class="cf-topo-fixo">
+      <header class="cf-header">
+        <div class="cf-main-header">
+          <button type="button" data-open-menu aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+          </button>
+          <img src="icons_final/cf-logo.svg" alt="Bulbe">
+          <nav class="cf-menu-superior">
+            <button type="button"><img src="icons_final/cf-bell.svg" alt="Notificações"></button>
+            <div class="cf-perfil"></div>
+          </nav>
+        </div>
+        <div class="cf-aside-indique">
+          <img src="icons_final/cf-indique.svg" alt="">
+          <p>Indique e Ganhe R$50 na próxima fatura</p>
+          <img src="icons_final/cf-chevron-right.svg" alt="">
+        </div>
+      </header>
+      <div class="cf-seletor-secao">
+        <span class="cf-selecionado">Serviço</span>
+        <span data-nav="screen-como-funciona" style="cursor:pointer;">Bulbe</span>
+        <span>App</span>
+      </div>
+    </div>
+
+    <main class="tr-viewport-mapa">
+      <div class="tabuleiro-mapa" id="tabuleiro">
+        <img src="screens/trilha/icons/background.svg" class="img-fundo" alt="">
+        <img src="screens/trilha/icons/sol.svg" class="O-SOL" alt="">
+        <img src="screens/trilha/icons/pino_azul.svg" class="pino" id="fazendas" alt="">
+        <img src="screens/trilha/icons/pino_azul.svg" class="pino" id="CEMIG" alt="">
+        <img src="screens/trilha/icons/pino_azul.svg" class="pino" id="predio_bulbe" alt="">
+        <img src="screens/trilha/icons/pino_azul.svg" class="pino" id="casa_final" alt="">
+        <img src="screens/trilha/icons/Progresso1-2.svg" class="progresso" id="to_cemig" alt="">
+        <img src="screens/trilha/icons/Progresso2-3.svg" class="progresso" id="to_bulbe" alt="">
+        <img src="screens/trilha/icons/Progresso3-4.svg" class="progresso" id="to_house" alt="">
+        <img src="screens/trilha/icons/predio.svg" class="predio" alt="">
+        <img src="screens/trilha/icons/aperto-de-mao.svg" class="aperto-de-mao" alt="">
+        <svg class="casa" alt="" width="70" height="67" viewBox="0 0 70 67" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4.84619" y="25.8461" width="60.3077" height="40.9231" rx="4.30769" fill="#272687"/>
+          <mask id="mask0_1294_6143" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="4" y="25" width="62" height="42">
+            <rect x="4.84619" y="25.8461" width="60.3077" height="40.9231" rx="4.30769" fill="#D9D9D9"/>
+          </mask>
+          <g mask="url(#mask0_1294_6143)">
+            <rect class="fenda-luz" x="25.8462" y="43.0768" width="18.8462" height="30.6923" rx="8.07692" fill="black"/>
+          </g>
+          <path d="M35 2.69214L65.3109 26.1152H4.68911L35 2.69214Z" fill="#272687"/>
+          <line x1="66.9726" y1="28.3363" x2="35.3364" y2="3.02725" stroke="black" stroke-width="4.30769" stroke-linecap="round"/>
+          <line x1="59.7692" y1="22.0766" x2="59.7692" y2="11.3074" stroke="black" stroke-width="4.30769" stroke-linecap="round"/>
+          <line x1="2.15385" y1="-2.15385" x2="42.668" y2="-2.15385" transform="matrix(0.780869 -0.624695 -0.624695 -0.780869 0.53833 27.9999)" stroke="black" stroke-width="4.30769" stroke-linecap="round"/>
+          <circle class="fenda-luz" cx="35" cy="29.0767" r="2.15385" fill="black"/>
+        </svg>
+      </div>
+
+      <div class="grupo-step-1">
+        <div id="titulo">
+          <p>Entenda em <em>4 etapas</em> como a economia chega no seu bolso</p>
+        </div>
+        <button type="button" class="botao" id="iniciar-trilha">
+          Iniciar trilha
+        </button>
+      </div>
+
+      <div class="texts">
+        <button class="botao hidden" id="avancar">Próximo Passo</button>
+        <div class="text_box hidden" id="primeira-caixa">
+          <p>A Bulbe Energia tem mais de 30 fazendas de placas solares, que geram energia constantemente</p>
+        </div>
+        <div class="text_box hidden" id="segunda-caixa">
+          <p>A energia gerada pelas fazendas é injetada na rede de distribuição da CEMIG</p>
+        </div>
+        <div class="text_box hidden" id="terceira-caixa">
+          <p>A energia gerada gera créditos para a Bulbe direto com a CEMIG</p>
+        </div>
+        <div class="text_box hidden" id="quarta-caixa">
+          <p>No fim, esses créditos são usados para descontar na conta de luz final dos nossos clientes</p>
+        </div>
+      </div>
+
+      <button type="button" id="reset-btn" class="reset-btn hidden" aria-label="Voltar ao início">
+        <img src="screens/trilha/icons/circulo_progresso.svg" alt="Voltar ao início">
+      </button>
+    </main>
+
+  </div>
+  <!-- ===================== FIM: TRILHA ===================== -->
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="final.js"></script>
+
+  <div class="phone-chrome" aria-hidden="true">
+    <div class="phone-home-bar"></div>
+  </div>
+
+</div><!-- /phone-wrapper -->
+</body>
+</html>
