@@ -97,7 +97,7 @@ class UsinaService:
             raise ErroDeNegocio(
                 code="RECURSO_NAO_ENCONTRADO",
                 message=(
-      sina com id {usina_id} "
+                    f"Usina com id {usina_id} "
                     "nao foi encontrada."
                 ),
                 status=404,

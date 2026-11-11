@@ -113,7 +113,10 @@ class InMemoryUsinaRepository:
         self,
         usina_id: int,
     ) -> bool:
-        if usina_id not in self._usinas  del self._usinas[usina_id]
+        if usina_id not in self._usinas:
+            return False
+
+        del self._usinas[usina_id]
 
         return True
 
@@ -130,7 +133,8 @@ class SqlUsinaRepository:
     ) -> None:
         self._session_factory = session_factory
 
-    def listar(self) -> listwith self._session_factory() as session:
+    def listar(self) -> list[Usina]:
+        with self._session_factory() as session:
             consulta = select(
                 UsinaModel
             ).order_by(

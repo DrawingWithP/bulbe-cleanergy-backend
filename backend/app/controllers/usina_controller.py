@@ -106,7 +106,8 @@ def remover_usina(
     _usuario: Usuario = Depends(
         obter_usuario_atual
     ),
-) -""
+) -> None:
+    """
     Remove uma usina.
 
     Requer autenticacao.
