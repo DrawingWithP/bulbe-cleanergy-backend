@@ -88,9 +88,7 @@ def criar_parceiro(
     Requer autenticação.
     """
 
-    return parceiro_service.criar(
-        dados
-    )
+    return parceiro_service.criar(dados)
 
 
 @router.get(
