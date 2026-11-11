@@ -1,55 +1,138 @@
-from typing import List
+"""
+Camada de Servico, IndicacaoService.
+"""
 
-from app.domain.indicacao import Indicacao, IndicacaoCreate, StatusIndicacao
-from app.repositories.indicacao_repository import indicacao_repository
+from app.domain.indicacao import (
+    Indicacao,
+    IndicacaoCreate,
+    StatusIndicacao,
+)
+from app.repositories.indicacao_repository import (
+    IndicacaoRepository,
+    indicacao_repository,
+)
 
 
-class IndicacaoNaoEncontradaError(Exception):
-    pass
+class ErroDeNegocio(Exception):
+    """
+    Erro de negocio com formato padronizado:
+    code, message e status.
+    """
 
-
-class IndicacaoDuplicadaError(Exception):
-    pass
-
-
-class IndicacaoNaoPodeSerExcluidaError(Exception):
-    pass
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status: int,
+    ) -> None:
+        self.code = code
+        self.message = message
+        self.status = status
+        super().__init__(message)
 
 
 class IndicacaoService:
+    def __init__(
+        self,
+        repository: IndicacaoRepository,
+    ) -> None:
+        self._repository = repository
 
-    def criar(self, dados: IndicacaoCreate) -> Indicacao:
-        existente = indicacao_repository.buscar_por_contato(dados.contato)
+    def criar(
+        self,
+        dados: IndicacaoCreate,
+    ) -> Indicacao:
+        """
+        Cria uma nova indicacao.
+        """
+
+        existente = self._repository.buscar_por_contato(
+            dados.contato
+        )
 
         if existente is not None:
-            raise IndicacaoDuplicadaError(
-                "Esta pessoa ja possui uma indicacao cadastrada."
+            raise ErroDeNegocio(
+                code="INDICACAO_DUPLICADA",
+                message=(
+                    "Esta pessoa ja possui uma "
+                    "indicacao cadastrada."
+                ),
+                status=409,
             )
 
-        return indicacao_repository.criar(dados)
+        return self._repository.criar(dados)
 
-    def buscar_por_id(self, indicacao_id: int) -> Indicacao:
-        indicacao = indicacao_repository.buscar_por_id(indicacao_id)
+    def buscar_por_id(
+        self,
+        indicacao_id: int,
+    ) -> Indicacao:
+        """
+        Busca uma indicacao pelo ID.
+        """
+
+        indicacao = self._repository.buscar_por_id(
+            indicacao_id
+        )
 
         if indicacao is None:
-            raise IndicacaoNaoEncontradaError(
-                "Indicacao nao encontrada."
+            raise ErroDeNegocio(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
+                    f"Indicacao com id {indicacao_id} "
+                    "nao foi encontrada."
+                ),
+                status=404,
             )
 
         return indicacao
 
-    def listar_por_cliente(self, cliente_id: int) -> List[Indicacao]:
-        return indicacao_repository.listar_por_cliente(cliente_id)
+    def listar_por_cliente(
+        self,
+        cliente_id: int,
+    ) -> list[Indicacao]:
+        """
+        Lista as indicacoes de um cliente.
+        """
 
-    def excluir(self, indicacao_id: int) -> None:
+        return self._repository.listar_por_cliente(
+            cliente_id
+        )
+
+    def excluir(
+        self,
+        indicacao_id: int,
+    ) -> None:
+        """
+        Exclui uma indicacao caso ela ainda esteja pendente.
+        """
+
         indicacao = self.buscar_por_id(indicacao_id)
 
         if indicacao.situacao != StatusIndicacao.pendente:
-            raise IndicacaoNaoPodeSerExcluidaError(
-                "A indicacao nao pode ser excluida porque ja foi concluida."
+            raise ErroDeNegocio(
+                code="INDICACAO_NAO_PODE_SER_EXCLUIDA",
+                message=(
+                    "A indicacao nao pode ser excluida "
+                    "porque ja foi concluida."
+                ),
+                status=409,
             )
 
-        indicacao_repository.excluir(indicacao_id)
+        removida = self._repository.excluir(
+            indicacao_id
+        )
+
+        if removida is False:
+            raise ErroDeNegocio(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
+                    f"Indicacao com id {indicacao_id} "
+                    "nao foi encontrada."
+                ),
+                status=404,
+            )
 
 
-indicacao_service = IndicacaoService() 
+indicacao_service = IndicacaoService(
+    indicacao_repository
+)
