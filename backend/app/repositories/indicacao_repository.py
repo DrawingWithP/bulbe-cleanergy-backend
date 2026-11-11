@@ -22,7 +22,9 @@ from app.domain.indicacao import (
 BONUS_INDICACAO = 50.0
 
 
-def _normalizar_contato(contato: str) -> str:
+def _normalizar_contato(
+    contato: str,
+) -> str:
     """
     Normaliza o contato para comparacoes.
     """
@@ -93,7 +95,9 @@ class InMemoryIndicacaoRepository:
         self,
         indicacao_id: int,
     ) -> Indicacao | None:
-        return self._indicacoes.get(indicacao_id)
+        return self._indicacoes.get(
+            indicacao_id
+        )
 
     def listar_por_cliente(
         self,
@@ -154,7 +158,8 @@ class SqlIndicacaoRepository:
             modelo = IndicacaoModel(
                 cliente_id=dados.cliente_id,
                 nome=dados.nome,
-                contato=dados.StatusIndicacao.pendente.value,
+                contato=dados.contato.strip(),
+                situacao=StatusIndicacao.pendente.value,
                 bonus=BONUS_INDICACAO,
             )
 
@@ -162,22 +167,25 @@ class SqlIndicacaoRepository:
             session.commit()
             session.refresh(modelo)
 
-            return Indicacao.model_validate(modelo)
+            return Indicacao.model_validate(
+                modelo
+            )
 
     def buscar_por_id(
         self,
         indicacao_id: int,
     ) -> Indicacao | None:
         with self._session_factory() as session:
-            modelo = session.get(
-                IndicacaoModel,
+        IndicacaoModel,
                 indicacao_id,
             )
 
             if modelo is None:
                 return None
 
-            return Indicacao.model_validate(modelo)
+            return Indicacao.model_validate(
+                modelo
+            )
 
     def listar_por_cliente(
         self,
@@ -189,7 +197,9 @@ class SqlIndicacaoRepository:
                     IndicacaoModel.cliente_id
                     == cliente_id
                 )
-                .order_by(IndicacaoModel.id)
+                .order_by(
+                    IndicacaoModel.id
+                )
             )
 
             modelos = session.scalars(
@@ -214,7 +224,9 @@ class SqlIndicacaoRepository:
                 IndicacaoModel
             ).where(
                 func.lower(
-                    func.trim(IndicacaoModel.contato)
+                    func.trim(
+                        IndicacaoModel.contato
+                    )
                 )
                 == contato_normalizado
             )
@@ -226,7 +238,9 @@ class SqlIndicacaoRepository:
             if modelo is None:
                 return None
 
-            return Indicacao.model_validate(modelo)
+            return Indicacao.model_validate(
+                modelo
+            )
 
     def excluir(
         self,
