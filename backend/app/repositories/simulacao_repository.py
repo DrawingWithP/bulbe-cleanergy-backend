@@ -128,7 +128,9 @@ class SqlSimulacaoRepository:
             )
 
             if modelo is None:
-          
+                return None
+
+            return Simulacao.model_validate(
                 modelo
             )
 

@@ -76,7 +76,7 @@ class SimulacaoService:
         Cria uma nova simulacao.
         """
 
- epository.criar(dados)
+        return self._repository.criar(dados)
 
     def remover(
         self,
