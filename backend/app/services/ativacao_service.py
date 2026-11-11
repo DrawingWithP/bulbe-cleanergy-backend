@@ -1,7 +1,8 @@
 """
 Camada de Serviço, AtivacaoService (regras de negócio para US-11 e US-12).
 """
-from datetime import datetime, timezone
+
+from datetime import datetime, timedelta, timezone
 
 from app.domain.ativacao import (
     AtivacaoAtualizadaResponse,
@@ -12,8 +13,14 @@ from app.domain.ativacao import (
     EtapasListaResponse,
     SituacaoEtapa,
 )
-from app.repositories.ativacao_repository import AtivacaoRepository, ativacao_repository
-from app.repositories.cliente_repository import ClienteRepository, cliente_repository
+from app.repositories.ativacao_repository import (
+    AtivacaoRepository,
+    ativacao_repository,
+)
+from app.repositories.cliente_repository import (
+    ClienteRepository,
+    cliente_repository,
+)
 
 
 class ErroDeNegocio(Exception):
@@ -36,14 +43,20 @@ ETAPAS_CONFIG = [
         "numero": 2,
         "nome": "Documentos",
         "titulo": "Documentação sendo analisada",
-        "descricao": "Seus documentos estão em análise. Em breve entraremos em contato.",
+        "descricao": (
+            "Seus documentos estão em análise. "
+            "Em breve entraremos em contato."
+        ),
         "percentual": 30,
     },
     {
         "numero": 3,
         "nome": "Solicitação",
         "titulo": "Solicitação enviada à CEMIG",
-        "descricao": "A Bulbe protocolou o pedido para a CEMIG liberar sua conexão.",
+        "descricao": (
+            "A Bulbe protocolou o pedido para a CEMIG "
+            "liberar sua conexão."
+        ),
         "percentual": 45,
     },
     {
@@ -57,7 +70,10 @@ ETAPAS_CONFIG = [
         "numero": 5,
         "nome": "Energia liberada",
         "titulo": "Energia aprovada",
-        "descricao": "Em breve ela será liberada e seu desconto vai começar a aparecer na fatura.",
+        "descricao": (
+            "Em breve ela será liberada e seu desconto "
+            "vai começar a aparecer na fatura."
+        ),
         "percentual": 100,
     },
 ]
@@ -74,6 +90,7 @@ class AtivacaoService:
 
     def _obter_registro(self, cliente_id: str) -> AtivacaoCliente:
         cliente = self._clientes.buscar_por_id(cliente_id)
+
         if not cliente:
             raise ErroDeNegocio(
                 code="RECURSO_NAO_ENCONTRADO",
@@ -82,29 +99,39 @@ class AtivacaoService:
             )
 
         ativacao = self._repository.buscar_por_cliente_id(cliente_id)
+
         if not ativacao:
-            # Inicializa jornada padrão para o cliente
-            agora = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            # Inicializa jornada padrão para o cliente.
+            agora = datetime.now(timezone.utc)
+            prazo_ativacao_dias = 90
+            previsao = agora + timedelta(days=prazo_ativacao_dias)
+
             ativacao = AtivacaoCliente(
                 cliente_id=cliente_id,
                 etapa_atual=1,
                 distribuidora=cliente.distribuidora or "CEMIG",
-                prazo_ativacao_dias=90,
-                previsao_conclusao="2026-08-31",
-                atualizado_em=agora,
+                prazo_ativacao_dias=prazo_ativacao_dias,
+                previsao_conclusao=previsao.strftime("%Y-%m-%d"),
+                atualizado_em=agora.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
+
             self._repository.salvar_ou_atualizar(ativacao)
+
         return ativacao
 
-    def obter_resumo(self, cliente_id: str) -> AtivacaoResumoResponse:
+    def obter_resumo(
+        self,
+        cliente_id: str,
+    ) -> AtivacaoResumoResponse:
         """US-11: Retorna resumo do status e progresso de ativação."""
+
         ativacao = self._obter_registro(cliente_id)
         config_etapa = ETAPAS_CONFIG[ativacao.etapa_atual - 1]
 
         return AtivacaoResumoResponse(
             cliente_id=ativacao.cliente_id,
             etapa_atual=ativacao.etapa_atual,
-            total_etapas=5,
+            total_etapas=len(ETAPAS_CONFIG),
             percentual_concluido=config_etapa["percentual"],
             titulo=config_etapa["titulo"],
             descricao=config_etapa["descricao"],
@@ -114,53 +141,76 @@ class AtivacaoService:
             atualizado_em=ativacao.atualizado_em,
         )
 
-    def listar_etapas(self, cliente_id: str) -> EtapasListaResponse:
-        """Lista as 5 etapas da jornada e sua situação atual para o cliente."""
+    def listar_etapas(
+        self,
+        cliente_id: str,
+    ) -> EtapasListaResponse:
+        """Lista as etapas da jornada e sua situação atual para o cliente."""
+
         ativacao = self._obter_registro(cliente_id)
         etapa_atual = ativacao.etapa_atual
 
         etapas: list[EtapaDetalhe] = []
+
         for conf in ETAPAS_CONFIG:
-            num = conf["numero"]
-            if num < etapa_atual:
-                sit = SituacaoEtapa.concluida
+            numero = conf["numero"]
+
+            if numero < etapa_atual:
+                situacao = SituacaoEtapa.concluida
                 concluida_em = ativacao.atualizado_em[:10]
-            elif num == etapa_atual:
-                sit = SituacaoEtapa.atual
+
+            elif numero == etapa_atual:
+                situacao = SituacaoEtapa.atual
                 concluida_em = None
+
             else:
-                sit = SituacaoEtapa.pendente
+                situacao = SituacaoEtapa.pendente
                 concluida_em = None
 
             etapas.append(
                 EtapaDetalhe(
-                    numero=num,
+                    numero=numero,
                     nome=conf["nome"],
                     titulo=conf["titulo"],
                     descricao=conf["descricao"],
-                    situacao=sit,
+                    situacao=situacao,
                     concluida_em=concluida_em,
                 )
             )
-        return EtapasListaResponse(data=etapas, total=5)
 
-    def atualizar_etapa(self, cliente_id: str, dados: AtivacaoUpdateRequest) -> AtivacaoAtualizadaResponse:
+        return EtapasListaResponse(
+            data=etapas,
+            total=len(ETAPAS_CONFIG),
+        )
+
+    def atualizar_etapa(
+        self,
+        cliente_id: str,
+        dados: AtivacaoUpdateRequest,
+    ) -> AtivacaoAtualizadaResponse:
         """US-12: Atualiza a etapa atual da jornada."""
-        if dados.etapa_atual < 1 or dados.etapa_atual > 5:
+
+        total_etapas = len(ETAPAS_CONFIG)
+
+        if dados.etapa_atual < 1 or dados.etapa_atual > total_etapas:
             raise ErroDeNegocio(
                 code="ETAPA_INVALIDA",
-                message="A etapa atual deve estar entre 1 e 5.",
+                message=f"A etapa atual deve estar entre 1 e {total_etapas}.",
                 status=400,
             )
 
         ativacao = self._obter_registro(cliente_id)
+
         ativacao.etapa_atual = dados.etapa_atual
-        ativacao.atualizado_em = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        ativacao.atualizado_em = datetime.now(timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
 
         if dados.observacao:
             ativacao.observacoes.append(dados.observacao)
 
         self._repository.salvar_ou_atualizar(ativacao)
+
         config_etapa = ETAPAS_CONFIG[ativacao.etapa_atual - 1]
 
         return AtivacaoAtualizadaResponse(
