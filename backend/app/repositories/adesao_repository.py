@@ -65,13 +65,17 @@ class InMemoryAdesaoRepository:
         self._proximo_id = 1
 
     def listar(self) -> list[Adesao]:
-        return list(self._adesoes.values())
+        return list(
+            self._adesoes.values()
+        )
 
     def buscar_por_id(
         self,
         adesao_id: int,
     ) -> Adesao | None:
-        return self._adesoes.get(adesao_id)
+        return self._adesoes.get(
+            adesao_id
+        )
 
     def criar(
         self,
@@ -83,7 +87,10 @@ class InMemoryAdesaoRepository:
             **dados.model_dump(),
         )
 
-        self._adesoes[adesao.id] = adesao
+        self._adesoes[
+            adesao.id
+        ] = adesao
+
         self._proximo_id += 1
 
         return adesao
@@ -93,22 +100,30 @@ class InMemoryAdesaoRepository:
         adesao_id: int,
         dados: AdesaoUpdate,
     ) -> Adesao | None:
-        adesao_atual = self._adesoes.get(adesao_id)
+        adesao_atual = self._adesoes.get(
+            adesao_id
+        )
 
         if adesao_atual is None:
             return None
 
-        dados_atualizados = adesao_atual.model_dump()
+        dados_atualizados = (
+            adesao_atual.model_dump()
+        )
 
         dados_atualizados.update(
-            dados.model_dump(exclude_unset=True)
+            dados.model_dump(
+                exclude_unset=True
+            )
         )
 
         adesao_atualizada = Adesao(
             **dados_atualizados
         )
 
-        self._adesoes[adesao_id] = adesao_atualizada
+        self._adesoes[
+            adesao_id
+        ] = adesao_atualizada
 
         return adesao_atualizada
 
@@ -119,7 +134,9 @@ class InMemoryAdesaoRepository:
         if adesao_id not in self._adesoes:
             return False
 
-        del self._adesoes[adesao_id]
+        del self._adesoes[
+            adesao_id
+        ]
 
         return True
 
@@ -165,7 +182,9 @@ class SqlAdesaoRepository:
             if modelo is None:
                 return None
 
-            return Adesao.model_validate(modelo)
+            return Adesao.model_validate(
+                modelo
+            )
 
     def criar(
         self,
@@ -173,15 +192,17 @@ class SqlAdesaoRepository:
     ) -> Adesao:
         with self._session_factory() as session:
             modelo = AdesaoModel(
-                **dados.model_dump(mode="json"),
+                **dados.model_dump(
+                    mode="json"
+                ),
                 data_ativacao=date.today(),
             )
 
             session.add(modelo)
             session.commit()
-            session.refresh(modelo)
-
-            return Adesao.model_validate(modelo)
+            el_validate(
+                modelo
+            )
 
     def atualizar(
         self,
@@ -212,7 +233,9 @@ class SqlAdesaoRepository:
             session.commit()
             session.refresh(modelo)
 
-            return Adesao.model_validate(modelo)
+            return Adesao.model_validate(
+                modelo
+            )
 
     def remover(
         self,
@@ -234,5 +257,6 @@ class SqlAdesaoRepository:
 
 
 # Uma unica instancia compartilhada por toda a aplicacao.
-adesao_repositoryocal
+adesao_repository: AdesaoRepository = (
+    SqlAdesaoRepository(SessionLocal)
 )
