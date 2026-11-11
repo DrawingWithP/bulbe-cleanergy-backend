@@ -245,7 +245,7 @@ class PrimeiroAcessoService:
                     "Este código de confirmação "
                     "já foi utilizado."
                 ),
-                status=409,
+                status=400,
             )
 
         if (

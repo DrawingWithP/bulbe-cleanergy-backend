@@ -27,7 +27,7 @@ def service(repository: PrimeiroAcessoRepository) -> PrimeiroAcessoService:
 
 def test_solicitar_verificacao_com_sucesso(service: PrimeiroAcessoService):
     """US-09: Cliente existente solicita código e recebe status 202 com destino mascarado."""
-    requisicao = VerificacaoRequest(cpf="123.456.789-00", canal=CanalVerificacao.whatsapp)
+    requisicao = VerificacaoRequest(cpf="529.982.247-25", canal=CanalVerificacao.whatsapp)
     resposta = service.solicitar_verificacao(requisicao)
 
     assert resposta.verificacao_id is not None
@@ -39,7 +39,7 @@ def test_solicitar_verificacao_com_sucesso(service: PrimeiroAcessoService):
 def test_solicitar_verificacao_cpf_invalido(service: PrimeiroAcessoService):
     """US-09: Rejeita CPF com tamanho ou formato inválido com erro 400."""
     with pytest.raises(ErroDeNegocio) as erro:
-        service.solicitar_verificacao(VerificacaoRequest(cpf="12345"))
+        service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
     assert erro.value.status == 400
     assert erro.value.code == "CPF_INVALIDO"
 
@@ -51,7 +51,7 @@ def test_solicitar_verificacao_cpf_invalido(service: PrimeiroAcessoService):
 
 def test_solicitar_verificacao_cpf_nao_cadastrado(service: PrimeiroAcessoService):
     """US-09: Retorna 404 se o CPF informado não corresponder a um cliente Bulbe."""
-    requisicao = VerificacaoRequest(cpf="999.888.777-66", canal=CanalVerificacao.sms)
+    requisicao = VerificacaoRequest(cpf="123.456.789-09", canal=CanalVerificacao.sms)
     with pytest.raises(ErroDeNegocio) as erro:
         service.solicitar_verificacao(requisicao)
     assert erro.value.status == 404
@@ -61,7 +61,7 @@ def test_solicitar_verificacao_cpf_nao_cadastrado(service: PrimeiroAcessoService
 def test_confirmar_codigo_com_sucesso(service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository):
     """US-10: Confirma código gerado, habilitando acesso ao app com status 201."""
     # 1. Solicita verificação
-    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900", canal=CanalVerificacao.whatsapp))
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="52998224725", canal=CanalVerificacao.whatsapp))
 
     # 2. Obtém o código gerado no repositório
     verificacao_salva = repository.buscar_verificacao_por_id(verif.verificacao_id)
@@ -80,10 +80,10 @@ def test_confirmar_codigo_com_sucesso(service: PrimeiroAcessoService, repository
 
 def test_confirmar_codigo_incorreto(service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository):
     """US-10: Código incorreto retorna 400 e incrementa tentativas."""
-    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="52998224725"))
 
     with pytest.raises(ErroDeNegocio) as erro:
-        service.confirmar_codigo(ConfirmacaoRequest(verificacao_id=verif.verificacao_id, codigo="000000"))
+        service.confirmar_codigo(ConfirmacaoRequest(verificacao_id=verif.verificacao_id, codigo=("000000" if repository.buscar_verificacao_por_id(verif.verificacao_id).codigo != "000000" else "999999")))
     assert erro.value.status == 400
     assert erro.value.code == "CODIGO_INVALIDO"
 
@@ -93,7 +93,7 @@ def test_confirmar_codigo_incorreto(service: PrimeiroAcessoService, repository: 
 
 def test_confirmar_codigo_expirado(service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository):
     """US-10: Código expirado retorna 410 Gone."""
-    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="52998224725"))
 
     # Força a data de expiração para o passado
     verificacao_salva = repository.buscar_verificacao_por_id(verif.verificacao_id)
@@ -110,7 +110,7 @@ def test_confirmar_codigo_expirado(service: PrimeiroAcessoService, repository: P
 
 def test_confirmar_codigo_ja_utilizado(service: PrimeiroAcessoService, repository: PrimeiroAcessoRepository):
     """US-10: Reutilização de código já usado retorna 400."""
-    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="12345678900"))
+    verif = service.solicitar_verificacao(VerificacaoRequest(cpf="52998224725"))
     verificacao_salva = repository.buscar_verificacao_por_id(verif.verificacao_id)
 
     # Primeira confirmação válida

@@ -118,7 +118,7 @@ def test_ativacao_exige_cliente_existente(session_factory):
 
 def test_primeiro_acesso_habilita_o_cliente_da_tabela_clientes(session_factory, com_seed):
     repo = SqlPrimeiroAcessoRepository(session_factory)
-    cliente = repo.buscar_cliente_por_cpf("123.456.789-00")
+    cliente = repo.buscar_cliente_por_cpf("529.982.247-25")
     agora = datetime.now(timezone.utc)
     repo.salvar_verificacao(
         Verificacao(

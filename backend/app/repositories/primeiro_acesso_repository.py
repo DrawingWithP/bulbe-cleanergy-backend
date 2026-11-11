@@ -194,15 +194,13 @@ class SqlPrimeiroAcessoRepository:
         verificacao: Verificacao,
         modelo: VerificacaoModel,
     ) -> None:
-        dados = verificacao.model_dump(
-            mode="json"
-        )
+        dados = verificacao.model_dump()
 
         for campo, valor in dados.items():
             setattr(
                 modelo,
                 campo,
-                valor,
+                valor.value if hasattr(valor, "value") else valor,
             )
 
     def buscar_cliente_por_cpf(
