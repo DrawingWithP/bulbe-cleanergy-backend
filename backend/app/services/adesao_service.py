@@ -60,7 +60,8 @@ class AdesaoService:
     def buscar_por_id(
         self,
         adesao_id: int,
-    ) -> "
+    ) -> Adesao:
+        """
         Busca uma adesao pelo ID.
         """
 

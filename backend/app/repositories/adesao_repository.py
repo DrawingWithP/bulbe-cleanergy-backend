@@ -200,7 +200,9 @@ class SqlAdesaoRepository:
 
             session.add(modelo)
             session.commit()
-            el_validate(
+            session.refresh(modelo)
+
+            return Adesao.model_validate(
                 modelo
             )
 

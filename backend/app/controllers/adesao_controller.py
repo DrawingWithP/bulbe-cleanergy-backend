@@ -28,7 +28,8 @@ router = APIRouter(
     "",
     response_model=list[Adesao],
 )
-def listar_adesoes() -> list"""
+def listar_adesoes() -> list[Adesao]:
+    """
     Lista todas as adesoes cadastradas.
     """
 
