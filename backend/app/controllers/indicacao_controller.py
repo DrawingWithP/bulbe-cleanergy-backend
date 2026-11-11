@@ -81,7 +81,7 @@ def excluir_indicacao(
     ),
 ) -> None:
     """
-    Exclui uma indicacao que ente.
+    Exclui uma indicacao que ainda esteja pendente.
 
     Requer autenticacao.
     """
