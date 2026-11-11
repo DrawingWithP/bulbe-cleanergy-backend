@@ -22,7 +22,7 @@ def dados_cliente() -> ClienteCreate:
     return ClienteCreate(
         nome="Lucas Ferreira",
         email="lucas.ferreira@email.com",
-        cpf="11122233344",
+        cpf="16899535009",
         telefone="(31) 99999-8888",
         endereco=Endereco(
             cep="30140-071",
@@ -42,7 +42,7 @@ def test_criar_cliente_com_sucesso(service: ClienteService):
     novo = ClienteCreate(
         nome="Mariana Costa",
         email="mariana.costa@email.com",
-        cpf="22233344455",
+        cpf="12345678909",
         telefone="(31) 98765-4321",
         endereco=Endereco(
             cep="30130-110",

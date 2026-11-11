@@ -54,7 +54,7 @@ def test_cliente_e_jornada_de_ativacao(client, cliente_valido):
     cliente_id = criado.json()["id"]
 
     assert client.post("/v1/clientes", json=cliente_valido).status_code == 409
-    assert client.get(f"/v1/clientes/{cliente_id}").json()["cpf"] == "11122233344"
+    assert client.get(f"/v1/clientes/{cliente_id}").json()["cpf"] == "16899535009"
     assert client.get(f"/v1/clientes/{cliente_id}/ativacao").json()["etapa_atual"] == 1
 
     patch = client.patch(f"/v1/clientes/{cliente_id}/ativacao", json={"etapa_atual": 3})
@@ -67,7 +67,7 @@ def test_cliente_e_jornada_de_ativacao(client, cliente_valido):
 def test_primeiro_acesso_habilita_o_cliente_cadastrado(client, cliente_valido):
     cliente_id = client.post("/v1/clientes", json=cliente_valido).json()["id"]
 
-    verificacao = client.post("/v1/primeiro-acesso/verificacoes", json={"cpf": "11122233344"})
+    verificacao = client.post("/v1/primeiro-acesso/verificacoes", json={"cpf": "16899535009"})
     assert verificacao.status_code == 202
     verificacao_id = verificacao.json()["verificacao_id"]
     codigo = primeiro_acesso_repository.buscar_verificacao_por_id(verificacao_id).codigo
