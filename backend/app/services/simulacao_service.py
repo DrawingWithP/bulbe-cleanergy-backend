@@ -76,7 +76,7 @@ class SimulacaoService:
         Cria uma nova simulacao.
         """
 
-        return self._repository.criar(dados)
+ epository.criar(dados)
 
     def remover(
         self,
@@ -95,7 +95,8 @@ class SimulacaoService:
                 code="RECURSO_NAO_ENCONTRADO",
                 message=(
                     f"Simulacao com id {simulacao_id} "
-                    "nao foi         ),
+                    "nao foi encontrada."
+                ),
                 status=404,
             )
 
