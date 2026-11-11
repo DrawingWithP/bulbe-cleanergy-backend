@@ -1,5 +1,5 @@
 """
-Verifica CSS/assets originais, HTML e escopo do backend.
+Verifica CSS/assets originais, HTML e escopo preservado.
 
 Sem dependencias extras.
 """
@@ -18,7 +18,7 @@ MANIFEST_PATH = Path(__file__).with_name(
 
 COMMIT_BASE = "86e8777040bb7733e13d3c325c5bd2c3de49d099"
 
-ARQUIVOS_HTML_IGNORADOS = {
+ARQUIVOS_IGNORADOS = {
     "final.html",
     "final.js",
 }
@@ -28,8 +28,7 @@ SCRIPTS_ADICIONADOS = (
     b'  <script src="api.js"></script>\n'
 )
 
-ESCOPO_BACKEND = (
-    "backend/app",
+ESCOPO_PRESERVADO = (
     "backend/migrations",
     "sistema-de-gerenciamento",
 )
@@ -67,7 +66,9 @@ def verificar_arquivos_originais(
     Verifica se CSS e assets permanecem
     identicos aos arquivos originais.
 
-    Retorna a quantidade de arquivos verificados.
+    final.html e final.js sao tratados
+    separadamente porque fazem parte
+    da integracao.
     """
 
     total_verificados = 0
@@ -75,7 +76,7 @@ def verificar_arquivos_originais(
     for nome, digest_esperado in manifesto[
         "sha256"
     ].items():
-        if nome in ARQUIVOS_HTML_IGNORADOS:
+        if nome in ARQUIVOS_IGNORADOS:
             continue
 
         caminho = ROOT / "frontend" / nome
@@ -89,7 +90,7 @@ def verificar_arquivos_originais(
         )
 
         assert digest_atual == digest_esperado, (
-            f"Arquivo alterado: {nome}"
+            f"Arquivo original alterado: {nome}"
         )
 
         total_verificados += 1
@@ -137,11 +138,13 @@ def verificar_html(
     )
 
 
-def verificar_escopo_backend() -> None:
+def verificar_escopo_preservado() -> None:
     """
-    Confirma que o backend, migrations e
-    sistema independente permanecem iguais
-    ao commit base.
+    Confirma que migrations e o sistema independente
+    permanecem iguais ao commit base.
+
+    backend/app nao faz parte desta verificacao porque
+    contem alteracoes intencionais da integracao.
     """
 
     comando = [
@@ -150,7 +153,7 @@ def verificar_escopo_backend() -> None:
         COMMIT_BASE,
         "--name-only",
         "--",
-        *ESCOPO_BACKEND,
+        *ESCOPO_PRESERVADO,
     ]
 
     resultado = subprocess.run(
@@ -166,8 +169,8 @@ def verificar_escopo_backend() -> None:
     )
 
     assert not arquivos_alterados, (
-        "Foram encontradas alteracoes fora "
-        "do escopo permitido:\n"
+        "Foram encontradas alteracoes no "
+        "escopo que deveria permanecer preservado:\n"
         f"{arquivos_alterados}"
     )
 
@@ -189,13 +192,13 @@ def main() -> None:
         manifesto
     )
 
-    verificar_escopo_backend()
+    verificar_escopo_preservado()
 
     print(
         "PASS: "
         f"{total_verificados} arquivos originais "
-        "identicos; HTML so adiciona scripts; "
-        "backend e sistema independente preservados"
+        "identicos; HTML somente adiciona scripts; "
+        "migrations e sistema independente preservados"
     )
 
 
