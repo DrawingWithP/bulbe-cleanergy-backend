@@ -8,11 +8,13 @@ O pytest encontra este arquivo sozinho; nao e preciso importa-lo.
 """
 
 import os
+from tempfile import TemporaryDirectory
 
 # A ORDEM IMPORTA: a variavel precisa existir antes de qualquer "from app ...",
 # senao o engine e criado apontando para o bulbe.db de desenvolvimento
 # e os testes apagariam os seus dados.
-os.environ["BULBE_DATABASE_URL"] = "sqlite:///./bulbe_test.db"
+_banco_testes = TemporaryDirectory(prefix="bulbe-test-")
+os.environ["BULBE_DATABASE_URL"] = f"sqlite:///{_banco_testes.name}/bulbe_test.db"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -20,6 +22,13 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.db import models  # noqa: E402,F401  (registra as tabelas no Base.metadata)
 from app.db.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
+
+
+@pytest.fixture(scope="session", autouse=True)
+def encerrar_banco_testes():
+    yield
+    engine.dispose()
+    _banco_testes.cleanup()
 
 
 @pytest.fixture(autouse=True)
@@ -75,7 +84,7 @@ def cliente_valido() -> dict:
     return {
         "nome": "Lucas Ferreira",
         "email": "lucas.ferreira@email.com",
-        "cpf": "111.222.333-44",
+        "cpf": "168.995.350-09",
         "telefone": "(31) 99999-8888",
         "endereco": {
             "cep": "30140-071",
@@ -87,4 +96,14 @@ def cliente_valido() -> dict:
         },
         "distribuidora": "CEMIG",
         "numero_instalacao": "4009876543",
+    }
+
+
+@pytest.fixture
+def adesao_valida() -> dict:
+    return {
+        "nome": "Joao da Silva", "email": "joao@example.com", "cpf": "16899535009",
+        "telefone": "31999999999", "cep": "30575160", "logradouro": "Rua Oliveira",
+        "numero": 213, "bairro": "Buritis", "cidade": "Belo Horizonte", "uf": "MG",
+        "distribuidora": "CEMIG", "numero_instalacao": "3242412", "valor_conta_atual": 399,
     }
