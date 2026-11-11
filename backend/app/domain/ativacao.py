@@ -131,7 +131,7 @@ class AtivacaoCliente(BaseModel):
         gt=0,
     )
 
-    previsao_conclusao: str
+    previsao_conclusao: str = "2026-07-31"
 
     atualizado_em: str
 

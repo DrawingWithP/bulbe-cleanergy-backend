@@ -7,17 +7,14 @@ Endpoints da Jornada de Ativação CEMIG do Cliente
 
 from fastapi import (
     APIRouter,
-    Depends,
 )
 
-from app.core.dependencies import obter_usuario_atual
 from app.domain.ativacao import (
     AtivacaoAtualizadaResponse,
     AtivacaoResumoResponse,
     AtivacaoUpdateRequest,
     EtapasListaResponse,
 )
-from app.domain.usuario import Usuario
 from app.services.ativacao_service import ativacao_service
 
 
@@ -71,15 +68,10 @@ def listar_etapas_ativacao(
 def atualizar_etapa_ativacao(
     cliente_id: str,
     dados: AtivacaoUpdateRequest,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> AtivacaoAtualizadaResponse:
     """
     Avança ou ajusta a etapa atual da jornada
     de ativação junto à concessionária.
-
-    Requer autenticação.
     """
 
     return ativacao_service.atualizar_etapa(
