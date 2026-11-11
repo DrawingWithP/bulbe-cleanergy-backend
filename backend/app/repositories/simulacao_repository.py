@@ -98,7 +98,10 @@ class SqlSimulacaoRepository:
         self,
         session_factory: sessionmaker[Session],
     ) -> None:
-        selfef listar(self) -> listwith self._session_factory() as session:
+        self._session_factory = session_factory
+
+    def listar(self) -> list[Simulacao]:
+        with self._session_factory() as session:
             consulta = select(
                 SimulacaoModel
             ).order_by(
@@ -125,9 +128,7 @@ class SqlSimulacaoRepository:
             )
 
             if modelo is None:
-                return None
-
-            return Simulacao.model_validate(
+          
                 modelo
             )
 
