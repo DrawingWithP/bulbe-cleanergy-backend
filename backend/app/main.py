@@ -11,7 +11,9 @@ from app.controllers.dica_controller import router as dica_router
 from app.controllers.adesao_controller import router as adesao_router
 from app.controllers.simulacao_controller import router as simulacao_router
 from app.controllers.indicacao_controller import router as indicacao_router
-from app.controllers.primeiro_acesso_controller import router as primeiro_acesso_router
+from app.controllers.primeiro_acesso_controller import (
+    router as primeiro_acesso_router,
+)
 from app.controllers.cliente_controller import router as cliente_router
 from app.controllers.ativacao_controller import router as ativacao_router
 from app.controllers.parceiro_controller import router as parceiro_router
@@ -19,17 +21,36 @@ from app.controllers.cupom_controller import router as cupom_router
 from app.controllers.carta_controller import router as carta_router
 
 from app.services.usina_service import ErroDeNegocio
-from app.services.dica_service import ErroDeNegocio as DicaErroDeNegocio
-from app.services.adesao_service import ErroDeNegocio as AdesaoErroDeNegocio
-from app.services.simulacao_service import ErroDeNegocio as SimulacaoErroDeNegocio
+from app.services.dica_service import (
+    ErroDeNegocio as DicaErroDeNegocio,
+)
+from app.services.adesao_service import (
+    ErroDeNegocio as AdesaoErroDeNegocio,
+)
+from app.services.simulacao_service import (
+    ErroDeNegocio as SimulacaoErroDeNegocio,
+)
+from app.services.indicacao_service import (
+    ErroDeNegocio as IndicacaoErroDeNegocio,
+)
 from app.services.primeiro_acesso_service import (
     ErroDeNegocio as PrimeiroAcessoErroDeNegocio,
 )
-from app.services.cliente_service import ErroDeNegocio as ClienteErroDeNegocio
-from app.services.ativacao_service import ErroDeNegocio as AtivacaoErroDeNegocio
-from app.services.parceiro_service import ErroDeNegocio as ParceiroErroDeNegocio
-from app.services.cupom_service import ErroDeNegocio as CupomErroDeNegocio
-from app.services.carta_service import ErroDeNegocio as CartaErroDeNegocio
+from app.services.cliente_service import (
+    ErroDeNegocio as ClienteErroDeNegocio,
+)
+from app.services.ativacao_service import (
+    ErroDeNegocio as AtivacaoErroDeNegocio,
+)
+from app.services.parceiro_service import (
+    ErroDeNegocio as ParceiroErroDeNegocio,
+)
+from app.services.cupom_service import (
+    ErroDeNegocio as CupomErroDeNegocio,
+)
+from app.services.carta_service import (
+    ErroDeNegocio as CartaErroDeNegocio,
+)
 
 
 app = FastAPI(
@@ -57,9 +78,16 @@ app.include_router(cupom_router)
 app.include_router(carta_router)
 
 
-# Formatacao padrao dos erros de negocio
 def _formatar_erro(exc) -> JSONResponse:
-    headers = {"WWW-Authenticate": "Bearer"} if exc.status == 401 else None
+    """
+    Formata os erros de negocio no padrao da API.
+    """
+
+    headers = (
+        {"WWW-Authenticate": "Bearer"}
+        if exc.status == 401
+        else None
+    )
 
     return JSONResponse(
         status_code=exc.status,
@@ -74,7 +102,6 @@ def _formatar_erro(exc) -> JSONResponse:
     )
 
 
-# Tratamento dos erros de negocio
 @app.exception_handler(ErroDeNegocio)
 def tratar_erro_usina(
     request: Request,
@@ -103,6 +130,14 @@ def tratar_erro_adesao(
 def tratar_erro_simulacao(
     request: Request,
     exc: SimulacaoErroDeNegocio,
+) -> JSONResponse:
+    return _formatar_erro(exc)
+
+
+@app.exception_handler(IndicacaoErroDeNegocio)
+def tratar_erro_indicacao(
+    request: Request,
+    exc: IndicacaoErroDeNegocio,
 ) -> JSONResponse:
     return _formatar_erro(exc)
 
@@ -155,9 +190,13 @@ def tratar_erro_carta(
     return _formatar_erro(exc)
 
 
-# Status da API
-@app.get("/", tags=["Status"])
+@app.get(
+    "/",
+    tags=["Status"],
+)
 def raiz() -> dict:
     return {
-        "mensagem": "API no ar. Acesse /docs para o Swagger."
+        "mensagem": (
+            "API no ar. Acesse /docs para o Swagger."
+        )
     }
