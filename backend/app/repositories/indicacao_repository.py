@@ -176,7 +176,8 @@ class SqlIndicacaoRepository:
         indicacao_id: int,
     ) -> Indicacao | None:
         with self._session_factory() as session:
-        IndicacaoModel,
+            modelo = session.get(
+                IndicacaoModel,
                 indicacao_id,
             )
 
@@ -190,7 +191,8 @@ class SqlIndicacaoRepository:
     def listar_por_cliente(
         self,
         cliente_id: int,
-    ) -> listwith self._session_factory() as session:
+    ) -> list[Indicacao]:
+        with self._session_factory() as session:
             consulta = (
                 select(IndicacaoModel)
                 .where(
