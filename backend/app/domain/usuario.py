@@ -1,30 +1,75 @@
 """
-Camada de Dominio, entidade Usuario (operador do painel da Bulbe Energia).
+Camada de Dominio, entidade Usuario
+(operador do painel da Bulbe Energia).
 """
 
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+)
 
 
 class UsuarioCreate(BaseModel):
-    """Dados enviados para cadastrar um usuario."""
-    nome: str = Field(..., min_length=3, max_length=100)
-    email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", description="Email do usuario")
-    senha: str = Field(..., min_length=8, max_length=72, description="Minimo de 8 caracteres")
+    """
+    Dados enviados para cadastrar um usuario.
+    """
+
+    nome: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+    )
+
+    email: EmailStr = Field(
+        ...,
+        description="Email do usuario",
+    )
+
+    senha: str = Field(
+        ...,
+        min_length=8,
+        max_length=72,
+        description=(
+            "Senha do usuario com minimo de 8 "
+            "e maximo de 72 caracteres"
+        ),
+    )
 
 
 class Usuario(BaseModel):
-    """Representacao publica do usuario. Nunca expoe a senha."""
+    """
+    Representacao publica do usuario.
+    Nunca expoe a senha ou seu hash.
+    """
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
     id: int
     nome: str
-    email: str
+    email: EmailStr
 
 
 class UsuarioInterno(Usuario):
-    """Usuario como fica guardado no repositorio, com o hash da senha."""
+    """
+    Representacao interna do usuario,
+    contendo o hash da senha.
+    """
+
     senha_hash: str
 
 
 class Token(BaseModel):
-    """Resposta do login."""
-    access_token: str
+    """
+    Resposta retornada após autenticacao.
+    """
+
+    access_token: str = Field(
+        ...,
+        min_length=1,
+    )
+
     token_type: str = "bearer"
