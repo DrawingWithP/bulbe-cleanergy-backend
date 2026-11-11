@@ -7,19 +7,16 @@ Endpoints de Cupons de Desconto do Clube Bulbe
 
 from fastapi import (
     APIRouter,
-    Depends,
     Query,
     status,
 )
 
-from app.core.dependencies import obter_usuario_atual
 from app.domain.cupom import (
     Cupom,
     CupomListaPaginada,
     CupomUpdate,
     SituacaoCupom,
 )
-from app.domain.usuario import Usuario
 from app.services.cupom_service import cupom_service
 
 
@@ -90,15 +87,10 @@ def buscar_cupom(
 def atualizar_situacao_cupom(
     cupom_id: str,
     dados: CupomUpdate,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> Cupom:
     """
     Atualiza a situação do cupom
     para salvo ou usado.
-
-    Requer autenticação.
     """
 
     return cupom_service.atualizar_situacao(
@@ -114,15 +106,10 @@ def atualizar_situacao_cupom(
 )
 def descartar_cupom(
     cupom_id: str,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> None:
     """
     Descarta logicamente o cupom
     da carteira do cliente.
-
-    Requer autenticação.
     """
 
     cupom_service.descartar(
