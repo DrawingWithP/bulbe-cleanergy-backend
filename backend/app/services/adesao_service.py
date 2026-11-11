@@ -1,201 +1,168 @@
 """
-Ponto de entrada da aplicacao.
+Camada de Servico, AdesaoService.
 """
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+import re
 
-from app.controllers.auth_controller import router as auth_router
-from app.controllers.usina_controller import router as usina_router
-from app.controllers.dica_controller import router as dica_router
-from app.controllers.adesao_controller import router as adesao_router
-from app.controllers.simulacao_controller import router as simulacao_router
-from app.controllers.indicacao_controller import router as indicacao_router
-from app.controllers.primeiro_acesso_controller import (
-    router as primeiro_acesso_router,
+from app.domain.adesao import (
+    Adesao,
+    AdesaoCreate,
+    AdesaoUpdate,
 )
-from app.controllers.cliente_controller import router as cliente_router
-from app.controllers.ativacao_controller import router as ativacao_router
-from app.controllers.parceiro_controller import router as parceiro_router
-from app.controllers.cupom_controller import router as cupom_router
-from app.controllers.carta_controller import router as carta_router
-
-from app.services.usina_service import ErroDeNegocio
-from app.services.dica_service import (
-    ErroDeNegocio as DicaErroDeNegocio,
-)
-from app.services.adesao_service import (
-    ErroDeNegocio as AdesaoErroDeNegocio,
-)
-from app.services.simulacao_service import (
-    ErroDeNegocio as SimulacaoErroDeNegocio,
-)
-from app.services.indicacao_service import (
-    ErroDeNegocio as IndicacaoErroDeNegocio,
-)
-from app.services.primeiro_acesso_service import (
-    ErroDeNegocio as PrimeiroAcessoErroDeNegocio,
-)
-from app.services.cliente_service import (
-    ErroDeNegocio as ClienteErroDeNegocio,
-)
-from app.services.ativacao_service import (
-    ErroDeNegocio as AtivacaoErroDeNegocio,
-)
-from app.services.parceiro_service import (
-    ErroDeNegocio as ParceiroErroDeNegocio,
-)
-from app.services.cupom_service import (
-    ErroDeNegocio as CupomErroDeNegocio,
-)
-from app.services.carta_service import (
-    ErroDeNegocio as CartaErroDeNegocio,
+from app.repositories.adesao_repository import (
+    AdesaoRepository,
+    adesao_repository,
 )
 
 
-app = FastAPI(
-    title="Bulbe Energia, API",
-    description=(
-        "Handson de CRUD em FastAPI, arquitetura em camadas "
-        "com autenticacao JWT e testes."
-    ),
-    version="1.0.0",
-)
+class ErroDeNegocio(Exception):
+    """
+    Erro de negocio com formato padronizado:
+    code, message e status.
+    """
+
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status: int,
+    ) -> None:
+        self.code = code
+        self.message = message
+        self.status = status
+        super().__init__(message)
 
 
-# Rotas
-app.include_router(auth_router)
-app.include_router(usina_router)
-app.include_router(adesao_router)
-app.include_router(dica_router)
-app.include_router(simulacao_router)
-app.include_router(indicacao_router)
-app.include_router(primeiro_acesso_router)
-app.include_router(cliente_router)
-app.include_router(ativacao_router)
-app.include_router(parceiro_router)
-app.include_router(cupom_router)
-app.include_router(carta_router)
+def _normalizar_cpf(
+    cpf: str,
+) -> str:
+    """
+    Remove caracteres nao numericos do CPF.
+    """
+
+    return re.sub(r"\D", "", cpf)
 
 
-# Formatacao padrao dos erros de negocio
-def _formatar_erro(exc) -> JSONResponse:
-    headers = (
-        {"WWW-Authenticate": "Bearer"}
-        if exc.status == 401
-        else None
-    )
+class AdesaoService:
+    def __init__(
+        self,
+        repository: AdesaoRepository,
+    ) -> None:
+        self._repository = repository
 
-    return JSONResponse(
-        status_code=exc.status,
-        content={
-            "error": {
-                "code": exc.code,
-                "message": exc.message,
-                "status": exc.status,
-            }
-        },
-        headers=headers,
-    )
+    def listar(self) -> list[Adesao]:
+        """
+        Lista todas as adesoes cadastradas.
+        """
 
+        return self._repository.listar()
 
-# Tratamento dos erros de negocio
-@app.exception_handler(ErroDeNegocio)
-def tratar_erro_usina(
-    request: Request,
-    exc: ErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
+    def buscar_por_id(
+        self,
+        adesao_id: int,
+    ) -> "
+        Busca uma adesao pelo ID.
+        """
 
-
-@app.exception_handler(DicaErroDeNegocio)
-def tratar_erro_dica(
-    request: Request,
-    exc: DicaErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(AdesaoErroDeNegocio)
-def tratar_erro_adesao(
-    request: Request,
-    exc: AdesaoErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(SimulacaoErroDeNegocio)
-def tratar_erro_simulacao(
-    request: Request,
-    exc: SimulacaoErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(IndicacaoErroDeNegocio)
-def tratar_erro_indicacao(
-    request: Request,
-    exc: IndicacaoErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(PrimeiroAcessoErroDeNegocio)
-def tratar_erro_primeiro_acesso(
-    request: Request,
-    exc: PrimeiroAcessoErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(ClienteErroDeNegocio)
-def tratar_erro_cliente(
-    request: Request,
-    exc: ClienteErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(AtivacaoErroDeNegocio)
-def tratar_erro_ativacao(
-    request: Request,
-    exc: AtivacaoErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(ParceiroErroDeNegocio)
-def tratar_erro_parceiro(
-    request: Request,
-    exc: ParceiroErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(CupomErroDeNegocio)
-def tratar_erro_cupom(
-    request: Request,
-    exc: CupomErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-@app.exception_handler(CartaErroDeNegocio)
-def tratar_erro_carta(
-    request: Request,
-    exc: CartaErroDeNegocio,
-) -> JSONResponse:
-    return _formatar_erro(exc)
-
-
-# Status da API
-@app.get(
-    "/",
-    tags=["Status"],
-)
-def raiz() -> dict:
-    return {
-        "mensagem": (
-            "API no ar. Acesse /docs para o Swagger."
+        adesao = self._repository.buscar_por_id(
+            adesao_id
         )
-    }
+
+        if adesao is None:
+            raise ErroDeNegocio(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
+                    f"Adesao com id {adesao_id} "
+                    "nao foi encontrada."
+                ),
+                status=404,
+            )
+
+        return adesao
+
+    def criar(
+        self,
+        dados: AdesaoCreate,
+    ) -> Adesao:
+        """
+        Cria uma nova adesao, impedindo
+        o cadastro duplicado de CPF.
+        """
+
+        cpf_informado = _normalizar_cpf(
+            dados.cpf
+        )
+
+        for adesao in self._repository.listar():
+            if (
+                _normalizar_cpf(adesao.cpf)
+                == cpf_informado
+            ):
+                raise ErroDeNegocio(
+                    code="CPF_JA_CADASTRADO",
+                    message=(
+                        "Ja existe uma adesao cadastrada "
+                        f"com o CPF {dados.cpf}."
+                    ),
+                    status=409,
+                )
+
+        return self._repository.criar(
+            dados
+        )
+
+    def atualizar(
+        self,
+        adesao_id: int,
+        dados: AdesaoUpdate,
+    ) -> Adesao:
+        """
+        Atualiza uma adesao existente.
+        """
+
+        adesao_atualizada = (
+            self._repository.atualizar(
+                adesao_id,
+                dados,
+            )
+        )
+
+        if adesao_atualizada is None:
+            raise ErroDeNegocio(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
+                    f"Adesao com id {adesao_id} "
+                    "nao foi encontrada."
+                ),
+                status=404,
+            )
+
+        return adesao_atualizada
+
+    def remover(
+        self,
+        adesao_id: int,
+    ) -> None:
+        """
+        Remove uma adesao pelo ID.
+        """
+
+        removida = self._repository.remover(
+            adesao_id
+        )
+
+        if not removida:
+            raise ErroDeNegocio(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
+                    f"Adesao com id {adesao_id} "
+                    "nao foi encontrada."
+                ),
+                status=404,
+            )
+
+
+# Uma unica instancia compartilhada por toda a aplicacao.
+adesao_service = AdesaoService(
+    adesao_repository
+)
