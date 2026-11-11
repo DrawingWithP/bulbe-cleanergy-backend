@@ -7,12 +7,10 @@ Endpoints do Clube Bulbe: cartas e situação de ofensiva
 
 from fastapi import (
     APIRouter,
-    Depends,
     Query,
     status,
 )
 
-from app.core.dependencies import obter_usuario_atual
 from app.domain.carta import (
     AberturaCartaResponse,
     Carta,
@@ -20,7 +18,6 @@ from app.domain.carta import (
     ClubeSituacaoResponse,
     SituacaoCarta,
 )
-from app.domain.usuario import Usuario
 from app.services.carta_service import carta_service
 
 
@@ -109,9 +106,6 @@ def buscar_carta(
 )
 def abrir_carta(
     carta_id: str,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> AberturaCartaResponse:
     """
     Abre a carta da semana e gera a recompensa.
@@ -122,8 +116,6 @@ def abrir_carta(
 
     A operação é idempotente: abrir novamente
     uma carta já aberta retorna o mesmo cupom.
-
-    Requer autenticação.
     """
 
     return carta_service.abrir_carta(
