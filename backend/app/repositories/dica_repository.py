@@ -141,7 +141,11 @@ class SqlDicaRepository:
 
             return [
                 Dica.model_validate(modelo)
-                for modelo in       self,
+                for modelo in modelos
+            ]
+
+    def buscar_por_id(
+        self,
         dica_id: int,
     ) -> Dica | None:
         with self._session_factory() as session:

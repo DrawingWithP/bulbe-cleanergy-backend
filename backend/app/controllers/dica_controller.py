@@ -55,7 +55,9 @@ def buscar_dica(
 @router.post(
     "",
     response_model=Dica,
-    status_code=status.HTTP_201_CREATEDr_dica(
+    status_code=status.HTTP_201_CREATED,
+)
+def criar_dica(
     dados: DicaCreate,
     _usuario: Usuario = Depends(
         obter_usuario_atual

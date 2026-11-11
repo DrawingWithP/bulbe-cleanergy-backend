@@ -93,7 +93,8 @@ class DicaService:
 
         if dica_atualizada is None:
             raise ErroDeNegocio(
-                code="RECURSO_NAO              message=(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
                     f"Dica com id {dica_id} "
                     "nao foi encontrada."
                 ),
