@@ -171,7 +171,10 @@ def preparar_banco(
     )
 
 
-def autenticar(api, endereco: str) -> dict[str, str]:
+def autenticar(
+    api,
+    endereco: str,
+) -> dict[str, str]:
     """
     Realiza login e devolve o cabeçalho
     Authorization para chamadas protegidas.
@@ -197,7 +200,9 @@ def autenticar(api, endereco: str) -> dict[str, str]:
     }
 
 
-def executar(reference: Path | None) -> None:
+def executar(
+    reference: Path | None,
+) -> None:
     """
     Executa as jornadas integradas do frontend
     contra o backend e banco reais.
@@ -249,9 +254,7 @@ def executar(reference: Path | None) -> None:
             )
 
             with sync_playwright() as playwright:
-                navegador = (
-                    playwright.chromium.launch()
-                )
+                navegador = playwright.chromium.launch()
 
                 pagina = navegador.new_page(
                     viewport={
@@ -307,8 +310,7 @@ def executar(reference: Path | None) -> None:
                     porta_original = obter_porta_livre()
 
                     endereco_original = (
-                        "http://127.0.0.1:"
-                        f"{porta_original}"
+                        f"http://127.0.0.1:{porta_original}"
                     )
 
                     comando_original = [
@@ -333,14 +335,12 @@ def executar(reference: Path | None) -> None:
                             processo_referencia,
                         )
 
-                        pagina_original = (
-                            navegador.new_page(
-                                viewport={
-                                    "width": 430,
-                                    "height": 932,
-                                },
-                                device_scale_factor=1,
-                            )
+                        pagina_original = navegador.new_page(
+                            viewport={
+                                "width": 430,
+                                "height": 932,
+                            },
+                            device_scale_factor=1,
                         )
 
                         pagina_original.goto(
@@ -501,7 +501,9 @@ def executar(reference: Path | None) -> None:
                 ).click()
 
                 expect(
-                    pagina.locator("#rc-titulo")
+                    pagina.locator(
+                        "#rc-titulo"
+                    )
                 ).to_have_text(
                     "500 pontos Livelo"
                 )
@@ -532,7 +534,9 @@ def executar(reference: Path | None) -> None:
 
                 assert resposta_cupons.status == 200
 
-                cupons = resposta_cupons.json()["data"]
+                cupons = resposta_cupons.json()[
+                    "data"
+                ]
 
                 cupom_gerado = next(
                     cupom
@@ -570,8 +574,7 @@ def executar(reference: Path | None) -> None:
                     (
                         f"{endereco}/v1/cartas/"
                         f"{CARTA_ID}/abertura"
-                    ),
-                    headers=headers_autenticacao,
+                    )
                 )
 
                 assert resultado_abertura.status in {
@@ -580,7 +583,9 @@ def executar(reference: Path | None) -> None:
                 }
 
                 assert (
-                    resultado_abertura.json()["cupom"]["id"]
+                    resultado_abertura.json()[
+                        "cupom"
+                    ]["id"]
                     == cupom_gerado["id"]
                 )
 
@@ -641,18 +646,14 @@ def executar(reference: Path | None) -> None:
 
                     pagina.wait_for_timeout(800)
 
-                    assert any(
-                        "indicacoes" in dialogo
-                        for dialogo in dialogos
-                    ), dialogos
-
-                    classe_economia = (
+                    expect(
                         pagina.locator(
-                            f"#{tela} .sim-sec-economia"
-                        ).get_attribute("class")
-                    )
-
-                    assert "oculto" in classe_economia
+                            (
+                                f"#{prefixo}"
+                                "-economia-total"
+                            )
+                        )
+                    ).to_have_text("90")
 
                     pagina.locator(
                         f"#{tela} .sim-btn-mais"
@@ -709,7 +710,8 @@ def executar(reference: Path | None) -> None:
 
                 print(
                     "PASS: dois simuladores, períodos, "
-                    "indicação e erro 422 real"
+                    "zero ou mais indicações e "
+                    "persistência real"
                 )
 
                 pagina_cliente_inexistente = (
@@ -864,7 +866,9 @@ def executar(reference: Path | None) -> None:
                     f"{cupom_gerado['id']}"
                 )
             ) as resposta:
-                cupom_salvo = json.load(resposta)
+                cupom_salvo = json.load(
+                    resposta
+                )
 
             assert (
                 cupom_salvo["situacao"]
