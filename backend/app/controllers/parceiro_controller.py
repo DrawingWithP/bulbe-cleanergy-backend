@@ -7,12 +7,10 @@ Endpoints do catálogo de parceiros do Clube Bulbe
 
 from fastapi import (
     APIRouter,
-    Depends,
     Query,
     status,
 )
 
-from app.core.dependencies import obter_usuario_atual
 from app.domain.parceiro import (
     Parceiro,
     ParceiroCreate,
@@ -20,7 +18,6 @@ from app.domain.parceiro import (
     ParceiroListaPaginada,
     ParceiroUpdate,
 )
-from app.domain.usuario import Usuario
 from app.services.parceiro_service import parceiro_service
 
 
@@ -77,15 +74,10 @@ def listar_parceiros(
 )
 def criar_parceiro(
     dados: ParceiroCreate,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> ParceiroCriadoResponse:
     """
     Cadastra uma nova empresa parceira
     no Clube Bulbe.
-
-    Requer autenticação.
     """
 
     return parceiro_service.criar(dados)
@@ -117,15 +109,10 @@ def buscar_parceiro(
 def atualizar_parceiro(
     parceiro_id: str,
     dados: ParceiroUpdate,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> Parceiro:
     """
     Atualiza as informações cadastrais
     de um parceiro existente.
-
-    Requer autenticação.
     """
 
     return parceiro_service.atualizar(
@@ -141,14 +128,9 @@ def atualizar_parceiro(
 )
 def remover_parceiro(
     parceiro_id: str,
-    _usuario: Usuario = Depends(
-        obter_usuario_atual
-    ),
 ) -> None:
     """
     Remove um parceiro credenciado do Clube.
-
-    Requer autenticação.
     """
 
     parceiro_service.remover(
