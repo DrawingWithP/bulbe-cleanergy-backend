@@ -476,7 +476,7 @@ window._onAtivacao = async function () {
     }
 
     try {
-      const simulacao = await BulbeAPI.request('/v1/simulacaos', { method: 'POST', body: JSON.stringify({
+      const simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
         valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos
       }) });
       if (revision !== simRevision) return;
@@ -634,7 +634,7 @@ window._onAtivacao = async function () {
     }
 
     try {
-      const simulacao = await BulbeAPI.request('/v1/simulacaos', { method: 'POST', body: JSON.stringify({
+      const simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
         valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos
       }) });
       if (revision !== slogRevision) return;
