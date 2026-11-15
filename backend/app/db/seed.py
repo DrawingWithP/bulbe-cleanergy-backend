@@ -221,6 +221,62 @@ def _popular_dicas(
     return inseridos
 
 
+def _cpf_valido(cpf: str) -> bool:
+    """Confere os dois digitos verificadores do CPF."""
+
+    digitos = "".join(c for c in str(cpf or "") if c.isdigit())
+    if len(digitos) != 11 or digitos == digitos[0] * 11:
+        return False
+    for posicao in (9, 10):
+        soma = sum(
+            int(digitos[i]) * (posicao + 1 - i)
+            for i in range(posicao)
+        )
+        if (soma * 10) % 11 % 10 != int(digitos[posicao]):
+            return False
+    return True
+
+
+def _corrigir_cpf_de_demonstracao(
+    session: Session,
+) -> int:
+    """
+    Bancos criados por versoes antigas do seed guardavam CPFs
+    ficticios antigos para os clientes de demonstracao
+    (12345678900 e 98765432100). O primeiro nem e um CPF valido,
+    o que impede o login pelo app. Para todo mundo ter os mesmos
+    CPFs de demonstracao, troca o CPF de um cliente de demonstracao
+    quando ele e invalido ou e um desses valores antigos.
+    """
+
+    corrigidos = 0
+
+    for cliente_id, cpf, antigo in (
+        (ID_MARCOS, CPF_MARCOS, "12345678900"),
+        (ID_ANA, CPF_ANA, "98765432100"),
+    ):
+        cliente = session.get(ClienteModel, cliente_id)
+
+        if cliente is None or cliente.cpf == cpf:
+            continue
+
+        if _cpf_valido(cliente.cpf) and cliente.cpf != antigo:
+            continue
+
+        ocupado = session.scalars(
+            select(ClienteModel).where(
+                ClienteModel.cpf == cpf,
+                ClienteModel.id != cliente_id,
+            )
+        ).first()
+
+        if ocupado is None:
+            cliente.cpf = cpf
+            corrigidos += 1
+
+    return corrigidos
+
+
 def _popular_clientes(
     session: Session,
 ) -> int:
@@ -269,6 +325,8 @@ def _popular_clientes(
         acesso_habilitado=False,
         criado_em="2026-05-10T09:00:00Z",
     )
+
+    inseridos += _corrigir_cpf_de_demonstracao(session)
 
     session.flush()
 

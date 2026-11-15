@@ -141,3 +141,24 @@ def test_seed_e_idempotente(session_factory):
 
     assert primeira > 0
     assert segunda == 0
+
+
+def test_seed_corrige_cpf_invalido_de_banco_antigo(session_factory):
+    from app.db.models import ClienteModel
+    from app.db.seed import CPF_MARCOS
+
+    from app.db.seed import CPF_ANA, ID_ANA
+
+    with session_factory() as session:
+        popular(session)
+        session.get(ClienteModel, ID_MARCOS).cpf = "12345678900"
+        session.get(ClienteModel, ID_ANA).cpf = "98765432100"
+        session.commit()
+
+    with session_factory() as session:
+        assert popular(session) == 2
+        assert session.get(ClienteModel, ID_MARCOS).cpf == CPF_MARCOS
+        assert session.get(ClienteModel, ID_ANA).cpf == CPF_ANA
+
+    with session_factory() as session:
+        assert popular(session) == 0
