@@ -398,3 +398,29 @@ def test_indicacao_cancelada_no_app_vira_expirada_no_painel(banco_app):
         (i["nome_indicado"], i["situacao"])
         for i in indicacoes
     ] == [("Paula Reis", "expirada")]
+
+
+def test_sincronizacao_atualiza_cadastro_sem_duplicar_cliente(banco_app):
+    assert sincronizacao.sincronizar()["sucesso"] is True
+    antes = consultas.obter_cliente(ID_NOVA_APP)
+    assert antes is not None
+
+    with sqlite3.connect(banco_app) as con:
+        con.execute(
+            "UPDATE clientes SET nome = ?, telefone = ?, numero_instalacao = ? WHERE id = ?",
+            ("Beatriz Atualizada", "(31) 97777-6655", "3001112223", ID_NOVA_APP),
+        )
+    hash_app = _sha(banco_app)
+
+    resultado = sincronizacao.sincronizar()
+
+    assert resultado["sucesso"] is True
+    assert resultado["contagens"]["clientes"]["criados"] == 0
+    depois = consultas.obter_cliente(antes["id"])
+    assert depois["id"] == antes["id"]
+    assert depois["id_app"] == ID_NOVA_APP
+    assert depois["nome"] == "Beatriz Atualizada"
+    assert depois["telefone"] == "31977776655"
+    assert depois["numero_instalacao"] == "3001112223"
+    assert [c["id"] for c in consultas.buscar_clientes(CPF_NOVA_APP)] == [antes["id"]]
+    assert _sha(banco_app) == hash_app
