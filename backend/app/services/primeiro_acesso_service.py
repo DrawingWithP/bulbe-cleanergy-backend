@@ -8,6 +8,7 @@ import re
 import secrets
 import uuid
 
+from app.core import relogio
 from app.core import config
 from app.domain.primeiro_acesso import (
     ConfirmacaoRequest,
@@ -165,7 +166,7 @@ class PrimeiroAcessoService:
                 status=404,
             )
 
-        agora = datetime.now(timezone.utc)
+        agora = relogio.agora()
 
         expiracao = agora + timedelta(
             minutes=TEMPO_EXPIRACAO_MINUTOS
@@ -266,7 +267,7 @@ class PrimeiroAcessoService:
                 status=410,
             )
 
-        agora = datetime.now(timezone.utc)
+        agora = relogio.agora()
 
         expira_em = verificacao.expira_em
 

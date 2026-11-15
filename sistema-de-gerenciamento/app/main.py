@@ -28,6 +28,7 @@ from app.integracao import sincronizacao
 from app.integracao.config import obter_config
 from app.erros import ErroDeNegocio
 from app.painel.controller import router as painel_router
+from app.painel.operacoes import router as operacoes_router
 
 PASTA_ESTATICA_PAINEL = Path(__file__).parent / "painel" / "static"
 
@@ -114,6 +115,7 @@ async def tratar_http_exception(request: Request, exc: StarletteHTTPException) -
 
 
 app.include_router(painel_router)
+app.include_router(operacoes_router)
 app.include_router(chatbot_router)
 
 app.mount("/painel", StaticFiles(directory=PASTA_ESTATICA_PAINEL, html=True), name="painel")

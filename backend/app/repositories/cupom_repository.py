@@ -5,11 +5,14 @@ Contrato (Protocol) + InMemoryCupomRepository (testes unitários)
 + SqlCupomRepository (API, cupom_repository).
 """
 
+from datetime import timedelta
+
 from typing import Protocol
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core import relogio
 from app.db.database import SessionLocal
 from app.db.models import CupomModel
 from app.domain.cupom import (
@@ -77,7 +80,8 @@ class InMemoryCupomRepository:
                 categoria="Farmácia",
             ),
             situacao=SituacaoCupom.ativo,
-            valido_ate="2026-11-15",
+            # Validade relativa: o cupom de demonstracao vale 14 dias a partir de hoje.
+            valido_ate=(relogio.hoje() + timedelta(days=14)).isoformat(),
             dias_restantes=14,
             criado_em="2026-06-12T19:42:00Z",
         )

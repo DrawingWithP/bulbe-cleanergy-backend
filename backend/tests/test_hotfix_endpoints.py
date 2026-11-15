@@ -65,6 +65,9 @@ CASOS = [
     ("GET", "/v1/bandeiras/atual", 200),
     ("GET", "/v1/bandeiras/{mes_referencia}", 200),
     ("PUT", "/v1/bandeiras/{mes_referencia}", 200),
+    ("GET", "/v1/demonstracao/relogio", 200),
+    ("POST", "/v1/demonstracao/relogio/avancar", 200),
+    ("POST", "/v1/demonstracao/relogio/resetar", 200),
     ("GET", "/", 200),
 ]
 ESQUEMA = app.openapi()
@@ -86,12 +89,14 @@ PROTEGIDAS = {
     ("DELETE", "/v1/clientes/{cliente_id}"),
     ("DELETE", "/v1/cupons/{cupom_id}"),
     ("PUT", "/v1/bandeiras/{mes_referencia}"),
+    ("POST", "/v1/demonstracao/relogio/avancar"),
+    ("POST", "/v1/demonstracao/relogio/resetar"),
 }
 
 
 def test_inventario_e_autenticacao_dos_contratos():
     assert set(ROTAS) == {(m, p) for m, p, _ in CASOS}
-    assert len(CASOS) == len(ROTAS) == 52
+    assert len(CASOS) == len(ROTAS) == 55
     assert {rota for rota, op in ROTAS.items() if op.get("security")} == PROTEGIDAS
 
 
@@ -134,6 +139,7 @@ def contratos(client, session_factory, adesao_valida, cliente_valido, usina_vali
         "/v1/parceiros/{parceiro_id}": {"nome": "Parceiro Atualizado"},
         "/v1/cupons/{cupom_id}": {"situacao": "salvo"},
         "/v1/bandeiras/{mes_referencia}": {"bandeira": "amarela"},
+        "/v1/demonstracao/relogio/avancar": {"dias": 1},
     }
 
 

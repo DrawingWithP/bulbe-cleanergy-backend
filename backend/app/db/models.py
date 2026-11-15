@@ -787,3 +787,33 @@ class OfensivaClubeModel(Base):
         default=0,
         nullable=False,
     )
+
+
+# --------------------------------------------------------------------------
+# Demonstracao
+# --------------------------------------------------------------------------
+
+
+class RelogioDemonstracaoModel(Base):
+    """
+    Deslocamento do relogio usado na demonstracao (pular dias).
+    Uma unica linha (id = 1). Ignorado em producao.
+    """
+
+    __tablename__ = "relogio_demonstracao"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+    )
+
+    deslocamento_segundos: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+    )

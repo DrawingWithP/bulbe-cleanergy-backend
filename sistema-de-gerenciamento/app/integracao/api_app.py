@@ -1,9 +1,10 @@
 """
 Cliente HTTP da API do app (backend), usado pelo painel para escrever no app.
 
-Hoje cobre uma operacao: alterar a etapa de ativacao de um cliente
-(PATCH /v1/clientes/{id}/ativacao, protegido por JWT de operador). O token e obtido
-com o operador configurado (INTEGRACAO_APP_API_EMAIL/SENHA) e reaproveitado ate expirar.
+Operacoes: alterar a etapa de ativacao, controlar o relogio de demonstracao
+e as demais acoes de operador (dicas, parceiros, catalogo de cupons, adesoes e
+atendimentos). As rotas protegidas usam um token JWT obtido com o operador
+configurado (INTEGRACAO_APP_API_EMAIL/SENHA), reaproveitado ate expirar.
 
 Usa so a biblioteca padrao (urllib), sem dependencia nova.
 """
@@ -71,6 +72,12 @@ def _mensagem(conteudo: Any, padrao: str) -> str:
     return padrao
 
 
+def _codigo(conteudo: Any) -> str | None:
+    if isinstance(conteudo, dict) and isinstance(conteudo.get("error"), dict):
+        return conteudo["error"].get("code")
+    return None
+
+
 def _obter_token(cfg: ConfigIntegracao, renovar: bool = False) -> str:
     chave = (cfg.api_url, cfg.api_email)
     with _trava:
@@ -98,29 +105,75 @@ def limpar_token() -> None:
         _token.update(valor=None, expira=0.0, chave=None)
 
 
+def chamar(
+    metodo: str,
+    caminho: str,
+    corpo: Any = None,
+    *,
+    autenticado: bool = True,
+    config: ConfigIntegracao | None = None,
+) -> Any:
+    """
+    Chama a API do app e devolve o JSON da resposta (None para 204).
+    Erros viram ErroApiApp com o codigo e a mensagem do app; 401 renova o token uma vez.
+    """
+    cfg = config or obter_config()
+    url = f"{cfg.api_url}{caminho}"
+    dados = json.dumps(corpo).encode() if corpo is not None else None
+
+    status, conteudo = 0, None
+    for tentativa in range(2):
+        cabecalhos = {"Accept": "application/json"}
+        if dados is not None:
+            cabecalhos["Content-Type"] = "application/json"
+        if autenticado:
+            cabecalhos["Authorization"] = f"Bearer {_obter_token(cfg, renovar=tentativa > 0)}"
+        status, conteudo = _requisitar(metodo, url, corpo=dados, cabecalhos=cabecalhos)
+        if status == 401 and autenticado and tentativa == 0:
+            continue  # token expirado: renova uma vez
+        break
+
+    if 200 <= status < 300:
+        return conteudo
+    if status == 404:
+        raise ErroApiApp(_codigo(conteudo) or "NAO_ENCONTRADO_NO_APP",
+                         _mensagem(conteudo, "Registro nao encontrado no app."), 404)
+    if status in (400, 409, 422):
+        raise ErroApiApp(_codigo(conteudo) or "REQUISICAO_INVALIDA",
+                         _mensagem(conteudo, "O app recusou a operacao."), 422 if status == 400 else status)
+    raise ErroApiApp("APP_ERRO", _mensagem(conteudo, f"A API do app respondeu {status}."), 502)
+
+
+def _id(valor: str) -> str:
+    return urllib.parse.quote(str(valor), safe="")
+
+
+# ---------------------------------------------------------------------------
+# Operacoes usadas pelo painel
+# ---------------------------------------------------------------------------
 def alterar_etapa_ativacao(
     id_cliente_app: str, etapa: int, observacao: str | None = None, config: ConfigIntegracao | None = None
 ) -> dict:
     """PATCH /v1/clientes/{id}/ativacao no app. Devolve a resposta da API."""
-    cfg = config or obter_config()
-    url = f"{cfg.api_url}/v1/clientes/{urllib.parse.quote(id_cliente_app, safe='')}/ativacao"
-    corpo = json.dumps({"etapa_atual": etapa, **({"observacao": observacao} if observacao else {})}).encode()
+    corpo = {"etapa_atual": etapa, **({"observacao": observacao} if observacao else {})}
+    try:
+        return chamar("PATCH", f"/v1/clientes/{_id(id_cliente_app)}/ativacao", corpo, config=config)
+    except ErroApiApp as erro:
+        if erro.status == 404:
+            raise ErroApiApp("CLIENTE_NAO_ENCONTRADO_NO_APP", erro.message, 404) from erro
+        if erro.status in (409, 422):
+            raise ErroApiApp("ATIVACAO_INVALIDA", erro.message, 422) from erro
+        raise
 
-    for tentativa in range(2):
-        token = _obter_token(cfg, renovar=tentativa > 0)
-        status, conteudo = _requisitar(
-            "PATCH", url, corpo=corpo,
-            cabecalhos={"Content-Type": "application/json", "Accept": "application/json",
-                        "Authorization": f"Bearer {token}"},
-        )
-        if status == 401 and tentativa == 0:
-            continue  # token expirado: renova uma vez
-        break
 
-    if status == 200 and isinstance(conteudo, dict):
-        return conteudo
-    if status == 404:
-        raise ErroApiApp("CLIENTE_NAO_ENCONTRADO_NO_APP", _mensagem(conteudo, "Cliente nao encontrado no app."), 404)
-    if status in (400, 409, 422):
-        raise ErroApiApp("ATIVACAO_INVALIDA", _mensagem(conteudo, "O app recusou a mudanca de etapa."), 422)
-    raise ErroApiApp("APP_ERRO", _mensagem(conteudo, f"A API do app respondeu {status}."), 502)
+def relogio() -> dict:
+    """GET /v1/demonstracao/relogio (publico)."""
+    return chamar("GET", "/v1/demonstracao/relogio", autenticado=False)
+
+
+def avancar_relogio(dias: int) -> dict:
+    return chamar("POST", "/v1/demonstracao/relogio/avancar", {"dias": dias})
+
+
+def resetar_relogio() -> dict:
+    return chamar("POST", "/v1/demonstracao/relogio/resetar")

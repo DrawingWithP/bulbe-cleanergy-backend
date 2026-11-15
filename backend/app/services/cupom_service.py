@@ -3,8 +3,9 @@ Camada de Serviço, CupomService
 (regras de negócio para US-03, US-22 e US-23).
 """
 
-from datetime import datetime, timezone
+from datetime import date
 
+from app.core import relogio
 from app.domain.cupom import (
     Cupom,
     CupomListaPaginada,
@@ -65,6 +66,38 @@ class CupomService:
                 status=404,
             )
 
+    def _atualizar_validade(self, cupom: Cupom) -> Cupom:
+        """
+        Recalcula os dias restantes pelo relogio da API e marca como
+        expirado o cupom ativo/salvo que passou da validade.
+        """
+
+        if cupom.situacao not in (SituacaoCupom.ativo, SituacaoCupom.salvo):
+            return cupom
+
+        dias = (date.fromisoformat(cupom.valido_ate) - relogio.hoje()).days
+        situacao = SituacaoCupom.expirado if dias < 0 else cupom.situacao
+        dias = max(dias, 0)
+
+        if (situacao, dias) != (cupom.situacao, cupom.dias_restantes):
+            cupom.situacao = situacao
+            cupom.dias_restantes = dias
+            cupom = self._repository.atualizar(cupom)
+
+        return cupom
+
+    def _atualizar_validade_do_cliente(self, cliente_id: str) -> None:
+        pagina = 1
+        while True:
+            cupons, total = self._repository.listar_por_cliente(
+                cliente_id, pagina, 100, None
+            )
+            for cupom in cupons:
+                self._atualizar_validade(cupom)
+            if pagina * 100 >= total or not cupons:
+                return
+            pagina += 1
+
     def listar_por_cliente(
         self,
         cliente_id: str,
@@ -77,6 +110,7 @@ class CupomService:
         """
 
         self._validar_cliente(cliente_id)
+        self._atualizar_validade_do_cliente(cliente_id)
 
         if page < 1:
             raise ErroDeNegocio(
@@ -129,7 +163,7 @@ class CupomService:
                 status=404,
             )
 
-        return cupom
+        return self._atualizar_validade(cupom)
 
     def atualizar_situacao(
         self,
@@ -158,6 +192,13 @@ class CupomService:
                 status=400,
             )
 
+        if cupom.situacao == SituacaoCupom.expirado:
+            raise ErroDeNegocio(
+                code="CUPOM_EXPIRADO",
+                message="Este cupom passou da validade.",
+                status=409,
+            )
+
         if (
             cupom.situacao == SituacaoCupom.usado
             and dados.situacao != SituacaoCupom.usado
@@ -175,9 +216,7 @@ class CupomService:
 
         if dados.situacao == SituacaoCupom.usado:
             if cupom.usado_em is None:
-                cupom.usado_em = datetime.now(
-                    timezone.utc
-                ).strftime("%Y-%m-%dT%H:%M:%SZ")
+                cupom.usado_em = relogio.agora().strftime("%Y-%m-%dT%H:%M:%SZ")
 
         return self._repository.atualizar(cupom)
 

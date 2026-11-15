@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bulbe Energia, API",
-    "description": "API do app da Bulbe Energia (squad Cleanergy): clientes, adesao, primeiro acesso, jornada de ativacao, simulador com bandeira tarifaria, indicacoes, Clube Bulbe (cartas e cupons), parceiros, dicas e usinas. Arquitetura em camadas, SQLAlchemy/Alembic e autenticacao JWT para operadores.",
-    "version": "1.1.0"
+    "description": "API do app da Bulbe Energia (squad Cleanergy): clientes, adesao, primeiro acesso, jornada de ativacao, simulador com bandeira tarifaria, indicacoes, Clube Bulbe (cartas e cupons), parceiros, dicas, usinas e relogio de demonstracao. Arquitetura em camadas, SQLAlchemy/Alembic e autenticacao JWT para operadores.",
+    "version": "1.2.0"
   },
   "paths": {
     "/v1/auth/registrar": {
@@ -2336,6 +2336,102 @@
         }
       }
     },
+    "/v1/demonstracao/relogio": {
+      "get": {
+        "tags": [
+          "Demonstracao"
+        ],
+        "summary": "Data usada pela API (com os dias adiantados)",
+        "description": "Data e hora que a API esta usando e quantos dias foram adiantados.",
+        "operationId": "consultar_relogio_v1_demonstracao_relogio_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelogioDemonstracao"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demonstracao/relogio/avancar": {
+      "post": {
+        "tags": [
+          "Demonstracao"
+        ],
+        "summary": "Adiantar o relogio (somente demonstracao)",
+        "description": "Adianta o relogio da API em alguns dias. Requer autenticacao e\nresponde 404 em producao.",
+        "operationId": "avancar_relogio_v1_demonstracao_relogio_avancar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvancarRelogio"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelogioDemonstracao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/demonstracao/relogio/resetar": {
+      "post": {
+        "tags": [
+          "Demonstracao"
+        ],
+        "summary": "Voltar o relogio para a data real (somente demonstracao)",
+        "description": "Volta o relogio para hoje. Requer autenticacao.",
+        "operationId": "resetar_relogio_v1_demonstracao_relogio_resetar_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelogioDemonstracao"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -2959,6 +3055,23 @@
         ],
         "title": "AtivacaoUpdateRequest",
         "description": "Corpo para avançar ou corrigir a etapa de ativação.\n\nPATCH /v1/clientes/{id}/ativacao\nUS-12."
+      },
+      "AvancarRelogio": {
+        "properties": {
+          "dias": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Dias",
+            "description": "Quantos dias adiantar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dias"
+        ],
+        "title": "AvancarRelogio",
+        "description": "Corpo do POST /v1/demonstracao/relogio/avancar."
       },
       "BandeiraMes": {
         "properties": {
@@ -4459,6 +4572,38 @@
           "disponivel_em"
         ],
         "title": "ProximaCartaInfo"
+      },
+      "RelogioDemonstracao": {
+        "properties": {
+          "modo_demonstracao": {
+            "type": "boolean",
+            "title": "Modo Demonstracao"
+          },
+          "agora": {
+            "type": "string",
+            "title": "Agora",
+            "description": "Instante simulado (UTC)"
+          },
+          "hoje": {
+            "type": "string",
+            "title": "Hoje",
+            "description": "Data simulada (AAAA-MM-DD)"
+          },
+          "dias_adiantados": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dias Adiantados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modo_demonstracao",
+          "agora",
+          "hoje",
+          "dias_adiantados"
+        ],
+        "title": "RelogioDemonstracao",
+        "description": "Estado do relogio, como a API devolve."
       },
       "Simulacao": {
         "properties": {

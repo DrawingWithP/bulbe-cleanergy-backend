@@ -17,12 +17,13 @@ Usuario de demonstracao do painel:
     Senha: bulbe12345
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
+from app.core import relogio
 from app.core.security import gerar_hash_senha
 from app.domain.bandeira import BANDEIRA_PADRAO, mes_referencia_atual
 from app.db.database import SessionLocal, engine
@@ -446,7 +447,8 @@ def _popular_clube_bulbe(
         parceiro_nome="Drogaria Araújo",
         parceiro_categoria="Farmácia",
         situacao="ativo",
-        valido_ate="2026-11-15",
+        # Validade relativa: o cupom de demonstracao vale 14 dias a partir de hoje.
+        valido_ate=(relogio.hoje() + timedelta(days=14)).isoformat(),
         dias_restantes=14,
         criado_em="2026-06-12T19:42:00Z",
         usado_em=None,

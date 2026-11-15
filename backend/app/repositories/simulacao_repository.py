@@ -5,12 +5,12 @@ Contrato (Protocol) + InMemorySimulacaoRepository (testes unitarios)
 + SqlSimulacaoRepository (API, simulacao_repository).
 """
 
-from datetime import date
 from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core import relogio
 from app.db.database import SessionLocal
 from app.db.models import SimulacaoModel
 from app.domain.simulacao import (
@@ -68,7 +68,7 @@ class InMemorySimulacaoRepository:
     ) -> Simulacao:
         simulacao = Simulacao(
             id=self._proximo_id,
-            data_ativacao=date.today(),
+            data_ativacao=relogio.hoje(),
             **dados.model_dump(exclude_none=True),
         )
 
@@ -145,7 +145,7 @@ class SqlSimulacaoRepository:
                     mode="json",
                     exclude_none=True,
                 ),
-                data_ativacao=date.today(),
+                data_ativacao=relogio.hoje(),
             )
 
             session.add(modelo)

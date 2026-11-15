@@ -5,12 +5,12 @@ Contrato (Protocol) + InMemoryDicaRepository (testes unitarios)
 + SqlDicaRepository (API, dica_repository).
 """
 
-from datetime import date
 from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core import relogio
 from app.db.database import SessionLocal
 from app.db.models import DicaModel
 from app.domain.dica import (
@@ -73,7 +73,7 @@ class InMemoryDicaRepository:
     ) -> Dica:
         dica = Dica(
             id=self._proximo_id,
-            data_ativacao=date.today(),
+            data_ativacao=relogio.hoje(),
             **dados.model_dump(),
         )
 
@@ -166,7 +166,7 @@ class SqlDicaRepository:
         with self._session_factory() as session:
             modelo = DicaModel(
                 **dados.model_dump(mode="json"),
-                data_ativacao=date.today(),
+                data_ativacao=relogio.hoje(),
             )
 
             session.add(modelo)
