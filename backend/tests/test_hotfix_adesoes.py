@@ -29,3 +29,17 @@ def test_cadastro_retorna_adesao_persistida(client, adesao_valida, session_facto
     assert client.get("/v1/adesoes").json() == [criada]
     assert client.post("/v1/adesoes", json=adesao_valida).status_code == 409
     assert len(client.get("/v1/adesoes").json()) == 1
+
+
+def test_patch_com_campo_nulo_nao_apaga_o_valor(client, headers_auth, adesao_valida):
+    criada = client.post("/v1/adesoes", json=adesao_valida).json()
+
+    resposta = client.patch(
+        f"/v1/adesoes/{criada['id']}",
+        json={"cidade": None, "bairro": "Savassi"},
+        headers=headers_auth,
+    )
+
+    assert resposta.status_code == 200
+    assert resposta.json()["cidade"] == criada["cidade"]
+    assert resposta.json()["bairro"] == "Savassi" 
