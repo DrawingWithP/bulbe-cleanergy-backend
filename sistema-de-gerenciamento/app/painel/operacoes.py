@@ -199,3 +199,57 @@ def atualizar_dica(dica_id: int, dados: DicaEntrada, admin: dict = Depends(exigi
 @router.delete("/app/dicas/{dica_id}", status_code=204)
 def remover_dica(dica_id: int, admin: dict = Depends(exigir_admin)) -> None:
     no_app(api_app.remover_dica, dica_id)
+
+
+# ---------------------------------------------------------------------------
+# Atendimento: chat com o cliente do app
+# ---------------------------------------------------------------------------
+class RespostaEntrada(BaseModel):
+    texto: str = Field(..., min_length=1, max_length=1000)
+
+
+def _atendimento(atendimento_id: int) -> dict:
+    from app.database import consultas
+
+    item = consultas.obter_atendimento(atendimento_id)
+    if item is not None:
+        return item
+    raise HTTPException(404, detail={"error": {"code": "ATENDIMENTO_NAO_ENCONTRADO",
+                                                "message": "Atendimento nao encontrado.", "status": 404}})
+
+
+def _id_app_atendimento(atendimento: dict) -> str:
+    if not atendimento.get("id_app"):
+        raise HTTPException(409, detail={"error": {
+            "code": "ATENDIMENTO_SEM_CHAT",
+            "message": "Este atendimento e do historico ficticio do painel e nao tem conversa no app.",
+            "status": 409}})
+    return atendimento["id_app"]
+
+
+@router.get("/atendimentos/{atendimento_id}/conversa", dependencies=[Depends(funcionario_logado)])
+def conversa(atendimento_id: int, depois_de: int = 0) -> dict:
+    """
+    Atendimento do painel + mensagens do chat do app, lidas ao vivo na API
+    (use depois_de com o id da ultima mensagem para buscar so as novas).
+    """
+    atendimento = _atendimento(atendimento_id)
+    if not atendimento.get("id_app"):
+        return {"atendimento": atendimento, "conversa": None}
+    dados = no_app(api_app.conversa, atendimento["id_app"], max(depois_de, 0), sincronizar=False)
+    return {"atendimento": atendimento, "conversa": dados}
+
+
+@router.post("/atendimentos/{atendimento_id}/respostas", status_code=201)
+def responder(atendimento_id: int, dados: RespostaEntrada,
+              funcionario: dict = Depends(funcionario_logado)) -> dict:
+    """Resposta do funcionario ao cliente; o nome dele aparece no app."""
+    id_app = _id_app_atendimento(_atendimento(atendimento_id))
+    nome = " ".join((funcionario.get("nome") or "Atendimento Bulbe").split())[:100]
+    return no_app(api_app.responder_atendimento, id_app, dados.texto.strip(), nome)
+
+
+@router.post("/atendimentos/{atendimento_id}/encerramento")
+def encerrar(atendimento_id: int, funcionario: dict = Depends(funcionario_logado)) -> dict:
+    """Encerra a conversa no app (o cliente ve 'Conversa encerrada')."""
+    return no_app(api_app.encerrar_atendimento, _id_app_atendimento(_atendimento(atendimento_id)))

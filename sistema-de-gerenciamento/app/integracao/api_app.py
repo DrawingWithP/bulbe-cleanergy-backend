@@ -229,3 +229,17 @@ def atualizar_dica(dica_id: int, dados: dict) -> dict:
 
 def remover_dica(dica_id: int) -> None:
     chamar("DELETE", f"/v1/dicas/{int(dica_id)}")
+
+
+# Atendimento (chat do app)
+def conversa(atendimento_id: str, depois_de: int = 0) -> dict:
+    return chamar("GET", f"/v1/atendimentos/{_id(atendimento_id)}?depois_de={int(depois_de)}", autenticado=False)
+
+
+def responder_atendimento(atendimento_id: str, texto: str, atendente: str) -> dict:
+    return chamar("POST", f"/v1/atendimentos/{_id(atendimento_id)}/respostas",
+                  {"texto": texto, "atendente": atendente})
+
+
+def encerrar_atendimento(atendimento_id: str) -> dict:
+    return chamar("POST", f"/v1/atendimentos/{_id(atendimento_id)}/encerramento", {}, autenticado=False)

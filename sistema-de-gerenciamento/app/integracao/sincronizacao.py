@@ -70,8 +70,15 @@ logger = logging.getLogger(__name__)
 
 TABELAS_APP = (
     "usinas", "parceiros", "dicas", "clientes", "ativacoes", "ofensivas_clube",
-    "cartas", "cupons", "indicacoes", "simulacoes", "adesoes",
+    "cartas", "cupons", "indicacoes", "simulacoes", "adesoes", "atendimentos",
 )
+# status do chat do app -> status do atendimento no painel
+STATUS_ATENDIMENTO_APP = {
+    "bot": "aberto",
+    "aguardando_atendente": "aberto",
+    "em_atendimento": "em_andamento",
+    "resolvido": "resolvido",
+}
 BONUS_INDICACAO = 50.0
 DESCONTO_PADRAO = 0.15
 META_SEQUENCIA = 5
@@ -208,6 +215,14 @@ def _ler_app(conexao: Connection) -> dict[str, list[dict]]:
             dados[tabela] = [dict(linha) for linha in conexao.execute(text(f'SELECT * FROM "{tabela}"')).mappings()]
         else:
             dados[tabela] = []
+    # Primeira mensagem do cliente em cada conversa (vira a descricao do atendimento no painel)
+    primeira: dict[str, str] = {}
+    if "atendimento_mensagens" in existentes:
+        for linha in conexao.execute(text(
+            "SELECT atendimento_id, texto FROM atendimento_mensagens WHERE autor = 'cliente' ORDER BY id"
+        )).mappings():
+            primeira.setdefault(str(linha["atendimento_id"]), str(linha["texto"]))
+    dados["_primeira_mensagem"] = primeira  # type: ignore[assignment]
     return dados
 
 
@@ -760,6 +775,34 @@ def _sinc_simulacoes(ctx: _Contexto, linhas: list[dict]) -> None:
     _remover_ausentes(ctx, Simulacao, "simulacoes", validos)
 
 
+def _sinc_atendimentos(ctx: _Contexto, linhas: list[dict], primeira_mensagem: dict[str, str]) -> None:
+    sessao = ctx.sessao
+    validos: list[str] = []
+    for app in linhas:
+        id_app = str(app["id"])
+        cliente_id = ctx.clientes.get(str(app.get("cliente_id")))
+        if cliente_id is None:
+            ctx.contagem("atendimentos").ignorados += 1
+            continue
+        linha, _, _ = _vincular(ctx, Atendimento, "atendimentos", id_app, None,
+                                lambda: Atendimento(canal="app"))
+        status_app = str(app.get("status") or "bot")
+        linha.cliente_id = cliente_id
+        linha.canal = "app"
+        linha.assunto = _cortar(app.get("assunto"), 120) or "Conversa pelo app"
+        linha.descricao = _cortar(primeira_mensagem.get(id_app) or linha.assunto, 1000)
+        linha.status = STATUS_ATENDIMENTO_APP.get(status_app, "aberto")
+        linha.status_app = status_app
+        linha.atendente_nome = _cortar(app.get("atendente_nome"), 100) or None
+        linha.criado_em = _instante(app.get("criado_em")) or _agora()
+        linha.atualizado_em = _instante(app.get("atualizado_em")) or linha.criado_em
+        linha.resolvido_em = _instante(app.get("encerrado_em"))
+        sessao.flush()
+        validos.append(id_app)
+
+    _remover_ausentes(ctx, Atendimento, "atendimentos", validos)
+
+
 def _sinc_adesoes(ctx: _Contexto, linhas: list[dict]) -> None:
     sessao = ctx.sessao
     validos: list[str] = []
@@ -810,6 +853,7 @@ def _aplicar(sessao: Session, dados: dict[str, list[dict]]) -> _Contexto:
         _sinc_indicacoes(ctx, dados["indicacoes"])
         _sinc_simulacoes(ctx, dados["simulacoes"])
         _sinc_adesoes(ctx, dados["adesoes"])
+        _sinc_atendimentos(ctx, dados["atendimentos"], dados.get("_primeira_mensagem", {}))
     return ctx
 
 

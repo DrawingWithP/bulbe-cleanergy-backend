@@ -2760,6 +2760,372 @@
         }
       }
     },
+    "/v1/atendimentos": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Abrir conversa (o robo responde na hora)",
+        "operationId": "abrir_atendimento_v1_atendimentos_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbrirAtendimento"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoDetalhe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Fila de atendimentos (operador)",
+        "operationId": "fila_de_atendimentos_v1_atendimentos_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusAtendimento"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtendimentoResumo"
+                  },
+                  "title": "Response Fila De Atendimentos V1 Atendimentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/atendimentos": {
+      "get": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Conversas do cliente",
+        "operationId": "atendimentos_do_cliente_v1_clientes__cliente_id__atendimentos_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtendimentoResumo"
+                  },
+                  "title": "Response Atendimentos Do Cliente V1 Clientes  Cliente Id  Atendimentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}": {
+      "get": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Conversa com as mensagens",
+        "operationId": "detalhar_atendimento_v1_atendimentos__atendimento_id__get",
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          },
+          {
+            "name": "depois_de",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "So mensagens com id maior (polling)",
+              "default": 0,
+              "title": "Depois De"
+            },
+            "description": "So mensagens com id maior (polling)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoDetalhe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}/mensagens": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Mensagem do cliente",
+        "operationId": "enviar_mensagem_v1_atendimentos__atendimento_id__mensagens_post",
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaMensagem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Mensagem"
+                  },
+                  "title": "Response Enviar Mensagem V1 Atendimentos  Atendimento Id  Mensagens Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}/respostas": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Resposta do atendente (operador)",
+        "operationId": "responder_atendimento_v1_atendimentos__atendimento_id__respostas_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespostaAtendente"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}/encerramento": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Encerrar conversa (com nota opcional)",
+        "operationId": "encerrar_atendimento_v1_atendimentos__atendimento_id__encerramento_post",
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Encerramento"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoDetalhe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -2820,6 +3186,33 @@
         ],
         "title": "AberturaCartaResponse",
         "description": "Resposta após abrir a carta e resgatar\no cupom (US-21)."
+      },
+      "AbrirAtendimento": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cliente Id"
+          },
+          "assunto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assunto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id"
+        ],
+        "title": "AbrirAtendimento"
       },
       "Adesao": {
         "properties": {
@@ -3253,6 +3646,182 @@
         "title": "AdesaoUpdate",
         "description": "Campos que podem ser atualizados.\nTodos são opcionais."
       },
+      "AtendimentoDetalhe": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "assunto": {
+            "type": "string",
+            "title": "Assunto"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusAtendimento"
+          },
+          "atendente_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendente Nome"
+          },
+          "avaliacao": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avaliacao"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          },
+          "encerrado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrado Em"
+          },
+          "mensagens": {
+            "items": {
+              "$ref": "#/components/schemas/Mensagem"
+            },
+            "type": "array",
+            "title": "Mensagens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "cliente_id",
+          "assunto",
+          "status",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "title": "AtendimentoDetalhe",
+        "description": "Conversa com as mensagens (a partir de `depois_de`, para o polling)."
+      },
+      "AtendimentoResumo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "assunto": {
+            "type": "string",
+            "title": "Assunto"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusAtendimento"
+          },
+          "atendente_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendente Nome"
+          },
+          "avaliacao": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avaliacao"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          },
+          "encerrado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrado Em"
+          },
+          "cliente_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Nome"
+          },
+          "ultima_mensagem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultima Mensagem"
+          },
+          "total_mensagens": {
+            "type": "integer",
+            "title": "Total Mensagens",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "cliente_id",
+          "assunto",
+          "status",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "title": "AtendimentoResumo",
+        "description": "Item da lista/fila, com a ultima mensagem."
+      },
       "AtivacaoAtualizadaResponse": {
         "properties": {
           "cliente_id": {
@@ -3383,6 +3952,16 @@
         ],
         "title": "AtivacaoUpdateRequest",
         "description": "Corpo para avançar ou corrigir a etapa de ativação.\n\nPATCH /v1/clientes/{id}/ativacao\nUS-12."
+      },
+      "AutorMensagem": {
+        "type": "string",
+        "enum": [
+          "cliente",
+          "bot",
+          "atendente",
+          "sistema"
+        ],
+        "title": "AutorMensagem"
       },
       "AvancarRelogio": {
         "properties": {
@@ -4638,6 +5217,26 @@
         "title": "DicaUpdate",
         "description": "Campos que podem ser atualizados.\nTodos são opcionais."
       },
+      "Encerramento": {
+        "properties": {
+          "avaliacao": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avaliacao",
+            "description": "Nota de 1 a 5 (opcional)"
+          }
+        },
+        "type": "object",
+        "title": "Encerramento"
+      },
       "Endereco": {
         "properties": {
           "cep": {
@@ -4976,6 +5575,62 @@
         "title": "IndicacaoCreate",
         "description": "Campos exigidos para criar uma indicacao (POST)."
       },
+      "Mensagem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/AutorMensagem"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "opcoes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opcoes"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "autor",
+          "texto",
+          "criado_em"
+        ],
+        "title": "Mensagem"
+      },
+      "NovaMensagem": {
+        "properties": {
+          "texto": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Texto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "texto"
+        ],
+        "title": "NovaMensagem"
+      },
       "Parceiro": {
         "properties": {
           "nome": {
@@ -5281,6 +5936,29 @@
         "title": "RelogioDemonstracao",
         "description": "Estado do relogio, como a API devolve."
       },
+      "RespostaAtendente": {
+        "properties": {
+          "texto": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Texto"
+          },
+          "atendente": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Atendente",
+            "description": "Nome exibido para o cliente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "texto",
+          "atendente"
+        ],
+        "title": "RespostaAtendente"
+      },
       "Simulacao": {
         "properties": {
           "id": {
@@ -5459,6 +6137,16 @@
           "recusada"
         ],
         "title": "StatusAdesao"
+      },
+      "StatusAtendimento": {
+        "type": "string",
+        "enum": [
+          "bot",
+          "aguardando_atendente",
+          "em_atendimento",
+          "resolvido"
+        ],
+        "title": "StatusAtendimento"
       },
       "StatusCliente": {
         "type": "string",

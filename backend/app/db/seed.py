@@ -29,6 +29,8 @@ from app.domain.bandeira import BANDEIRA_PADRAO, mes_referencia_atual
 from app.db.database import SessionLocal, engine
 from app.db.models import (
     AdesaoModel,
+    AtendimentoMensagemModel,
+    AtendimentoModel,
     AtivacaoModel,
     BandeiraTarifariaModel,
     CupomCatalogoModel,
@@ -540,6 +542,44 @@ def _popular_catalogo(
     return inseridos
 
 
+ID_ATENDIMENTO_ANA = "a7e1d0c2-5b3f-4c9e-8d21-000000000001"
+
+
+def _popular_atendimento(
+    session: Session,
+) -> int:
+    """Conversa da Ana na fila do atendimento (mudanca de endereco)."""
+
+    if session.get(ClienteModel, ID_ANA) is None or session.get(AtendimentoModel, ID_ATENDIMENTO_ANA):
+        return 0
+
+    from app.services import atendimento_bot as bot
+
+    session.add(AtendimentoModel(
+        id=ID_ATENDIMENTO_ANA,
+        cliente_id=ID_ANA,
+        assunto="Mudança de endereço",
+        status="aguardando_atendente",
+        criado_em="2026-11-14T13:02:00Z",
+        atualizado_em="2026-11-14T13:04:00Z",
+    ))
+    session.flush()  # a conversa precisa existir antes das mensagens (FK)
+    mensagens = (
+        ("bot", bot.boas_vindas("Ana").texto, bot.OPCOES_MENU, "2026-11-14T13:02:00Z"),
+        ("cliente", "Mudança de endereço", None, "2026-11-14T13:02:30Z"),
+        ("bot", bot.responder("Mudança de endereço", {}).texto, bot.OPCOES_DEPOIS, "2026-11-14T13:02:31Z"),
+        ("cliente", "Falar com um atendente", None, "2026-11-14T13:03:40Z"),
+        ("bot", bot.responder("Falar com um atendente", {}).texto, None, "2026-11-14T13:03:41Z"),
+        ("sistema", "Você entrou na fila de atendimento.", None, "2026-11-14T13:03:41Z"),
+        ("cliente", "Vou mudar para Contagem no fim do mês. O que preciso enviar?", None, "2026-11-14T13:04:00Z"),
+    )
+    for autor, texto, opcoes, criado_em in mensagens:
+        session.add(AtendimentoMensagemModel(
+            atendimento_id=ID_ATENDIMENTO_ANA, autor=autor, texto=texto, opcoes=opcoes, criado_em=criado_em,
+        ))
+    return 1
+
+
 def _popular_bandeira(
     session: Session,
 ) -> int:
@@ -578,6 +618,7 @@ def popular(
         inseridos += _popular_bandeira(session)
         session.flush()
         inseridos += _popular_catalogo(session)
+        inseridos += _popular_atendimento(session)
 
         session.commit()
 

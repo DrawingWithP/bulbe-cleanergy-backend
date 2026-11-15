@@ -73,6 +73,7 @@ function navigateBack() {
   if (previousId === 'screen-vantagens') window._onVantagens?.();
   if (previousId === 'screen-dicas') window._onDicas?.();
   if (previousId === 'screen-indicacoes') window._onIndicacoes?.();
+  if (previousId === 'screen-fale-conosco') window._onFaleConosco?.();
 }
 
 document.addEventListener('click', (e) => {

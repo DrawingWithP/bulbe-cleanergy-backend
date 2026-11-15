@@ -916,3 +916,63 @@ class CupomCatalogoModel(Base):
         String(30),
         nullable=True,
     )
+
+
+# --------------------------------------------------------------------------
+# Atendimento (chat do app com robo e atendente)
+# --------------------------------------------------------------------------
+
+
+class AtendimentoModel(Base):
+    """Conversa do cliente com o atendimento (robo e, se pedir, atendente)."""
+
+    __tablename__ = "atendimentos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+
+    cliente_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("clientes.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    assunto: Mapped[str] = mapped_column(String(120), nullable=False)
+
+    # bot | aguardando_atendente | em_atendimento | resolvido
+    status: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+
+    atendente_nome: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    avaliacao: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    criado_em: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    atualizado_em: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    encerrado_em: Mapped[str | None] = mapped_column(String(30), nullable=True)
+
+
+class AtendimentoMensagemModel(Base):
+    """Mensagem de uma conversa de atendimento."""
+
+    __tablename__ = "atendimento_mensagens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    atendimento_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("atendimentos.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    # cliente | bot | atendente | sistema
+    autor: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    texto: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Botoes de resposta rapida (so nas mensagens do robo)
+    opcoes: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+
+    criado_em: Mapped[str] = mapped_column(String(30), nullable=False)

@@ -74,6 +74,13 @@ CASOS = [
     ("GET", "/v1/catalogo-cupons/{modelo_id}", 200),
     ("PATCH", "/v1/catalogo-cupons/{modelo_id}", 200),
     ("DELETE", "/v1/catalogo-cupons/{modelo_id}", 204),
+    ("POST", "/v1/atendimentos", 201),
+    ("GET", "/v1/atendimentos", 200),
+    ("GET", "/v1/clientes/{cliente_id}/atendimentos", 200),
+    ("GET", "/v1/atendimentos/{atendimento_id}", 200),
+    ("POST", "/v1/atendimentos/{atendimento_id}/mensagens", 201),
+    ("POST", "/v1/atendimentos/{atendimento_id}/respostas", 201),
+    ("POST", "/v1/atendimentos/{atendimento_id}/encerramento", 200),
     ("GET", "/", 200),
 ]
 ESQUEMA = app.openapi()
@@ -103,12 +110,14 @@ PROTEGIDAS = {
     ("GET", "/v1/catalogo-cupons/{modelo_id}"),
     ("PATCH", "/v1/catalogo-cupons/{modelo_id}"),
     ("DELETE", "/v1/catalogo-cupons/{modelo_id}"),
+    ("GET", "/v1/atendimentos"),
+    ("POST", "/v1/atendimentos/{atendimento_id}/respostas"),
 }
 
 
 def test_inventario_e_autenticacao_dos_contratos():
     assert set(ROTAS) == {(m, p) for m, p, _ in CASOS}
-    assert len(CASOS) == len(ROTAS) == 61
+    assert len(CASOS) == len(ROTAS) == 68
     assert {rota for rota, op in ROTAS.items() if op.get("security")} == PROTEGIDAS
 
 
@@ -117,7 +126,8 @@ def _url(caminho):
            "cliente_id": ID_MARCOS, "parceiro_id": ID_ARAUJO,
            "cupom_id": ID_CUPOM_MARCOS, "carta_id": ID_CARTA_MARCOS,
            "mes_referencia": "2026-11",
-           "modelo_id": "c1a0f3e2-0001-4b6c-9a11-000000000001"}
+           "modelo_id": "c1a0f3e2-0001-4b6c-9a11-000000000001",
+           "atendimento_id": "a7e1d0c2-5b3f-4c9e-8d21-000000000001"}
     return caminho.format(**ids)
 
 
@@ -154,6 +164,10 @@ def contratos(client, session_factory, adesao_valida, cliente_valido, usina_vali
         "/v1/bandeiras/{mes_referencia}": {"bandeira": "amarela"},
         "/v1/demonstracao/relogio/avancar": {"dias": 1},
         "/v1/dicas/vitrine": {"dicas": [1, 2, 3, 4, 5]},
+        "/v1/atendimentos": {"cliente_id": ID_MARCOS},
+        "/v1/atendimentos/{atendimento_id}/mensagens": {"texto": "Oi"},
+        "/v1/atendimentos/{atendimento_id}/respostas": {"texto": "Oi, Ana!", "atendente": "Paula"},
+        "/v1/atendimentos/{atendimento_id}/encerramento": {"avaliacao": 5},
         "/v1/catalogo-cupons": {"parceiro_id": ID_ARAUJO, "titulo": "Cupom novo", "descricao": "Descricao do cupom.",
                                 "prefixo_codigo": "NOVO"},
         "/v1/catalogo-cupons/{modelo_id}": {"peso": 2},

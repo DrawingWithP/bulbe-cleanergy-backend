@@ -727,6 +727,11 @@ def _atendimento_para_dict(a: Atendimento, cliente_nome: str) -> dict:
         "status": a.status,
         "criado_em": _iso(a.criado_em),
         "resolvido_em": _iso(a.resolvido_em),
+        # Chat do app (None nos atendimentos ficticios)
+        "id_app": a.id_app,
+        "status_app": a.status_app,
+        "atendente_nome": a.atendente_nome,
+        "atualizado_em": _iso(a.atualizado_em),
     }
 
 
@@ -737,6 +742,17 @@ def _filtros_atendimento(cliente_id: str | None, status: str | None) -> list[Any
     if status:
         filtros.append(Atendimento.status == status)
     return filtros
+
+
+def obter_atendimento(atendimento_id: int) -> dict | None:
+    """Um atendimento com o nome do cliente, ou None."""
+    with obter_sessao() as sessao:
+        linha = sessao.execute(
+            select(Atendimento, Cliente.nome)
+            .join(Cliente, Cliente.id == Atendimento.cliente_id)
+            .where(Atendimento.id == atendimento_id)
+        ).first()
+        return _atendimento_para_dict(*linha) if linha else None
 
 
 def listar_atendimentos(cliente_id: str | None = None, status: str | None = None,
