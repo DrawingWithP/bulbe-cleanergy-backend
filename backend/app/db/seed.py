@@ -31,6 +31,7 @@ from app.db.models import (
     AdesaoModel,
     AtivacaoModel,
     BandeiraTarifariaModel,
+    CupomCatalogoModel,
     CartaModel,
     ClienteModel,
     CupomModel,
@@ -491,6 +492,47 @@ def _popular_adesao(
     )
 
 
+# Catalogo de cupons sorteados nas cartas normais (ids fixos: seed idempotente).
+CATALOGO_CUPONS = (
+    ("c1a0f3e2-0001-4b6c-9a11-000000000001", ID_ARAUJO, "PARCERIA DROGARIA ARAÚJO",
+     "15% de desconto na Araújo", "Use o cupom em qualquer loja física ou no app da Araújo.", "BULBE15", 3),
+    ("c1a0f3e2-0002-4b6c-9a11-000000000002", ID_ARAUJO, "PARCERIA DROGARIA ARAÚJO",
+     "10% de desconto na Araújo", "Use o cupom em qualquer loja física ou no app da Araújo.", "BULBE10", 2),
+    ("c1a0f3e2-0003-4b6c-9a11-000000000003", ID_INTER, "PARCERIA BANCO INTER",
+     "Cashback dobrado no Inter", "Compras no débito ou crédito Inter com cashback em dobro por 30 dias.", "INTERCASH", 2),
+    ("c1a0f3e2-0004-4b6c-9a11-000000000004", ID_LIVELO, "PARCERIA LIVELO",
+     "500 pontos Livelo", "Use o cupom no app ou site da Livelo para liberar 500 pontos.", "BULBELIV", 2),
+)
+
+
+def _popular_catalogo(
+    session: Session,
+) -> int:
+    inseridos = 0
+
+    for modelo_id, parceiro_id, tag, titulo, descricao, prefixo, peso in CATALOGO_CUPONS:
+        if session.get(ParceiroModel, parceiro_id) is None:
+            continue
+        inseridos += int(
+            _inserir_por_id(
+                session,
+                CupomCatalogoModel,
+                modelo_id,
+                parceiro_id=parceiro_id,
+                tag=tag,
+                titulo=titulo,
+                descricao=descricao,
+                prefixo_codigo=prefixo,
+                validade_dias=14,
+                peso=peso,
+                ativo=True,
+                criado_em="2026-05-20T12:00:00Z",
+            )
+        )
+
+    return inseridos
+
+
 def _popular_bandeira(
     session: Session,
 ) -> int:
@@ -527,6 +569,8 @@ def popular(
         inseridos += _popular_clube_bulbe(session)
         inseridos += _popular_adesao(session)
         inseridos += _popular_bandeira(session)
+        session.flush()
+        inseridos += _popular_catalogo(session)
 
         session.commit()
 

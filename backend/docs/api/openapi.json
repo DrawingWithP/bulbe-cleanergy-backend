@@ -2432,6 +2432,259 @@
         ]
       }
     },
+    "/v1/catalogo-cupons": {
+      "get": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Listar o catalogo",
+        "operationId": "listar_catalogo_v1_catalogo_cupons_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "parceiro_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 36
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parceiro Id"
+            }
+          },
+          {
+            "name": "apenas_ativos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Apenas Ativos"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CupomCatalogo"
+                  },
+                  "title": "Response Listar Catalogo V1 Catalogo Cupons Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Cadastrar cupom no catalogo",
+        "operationId": "criar_modelo_v1_catalogo_cupons_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CupomCatalogoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/catalogo-cupons/{modelo_id}": {
+      "get": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Consultar cupom do catalogo",
+        "operationId": "buscar_modelo_v1_catalogo_cupons__modelo_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modelo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Modelo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Alterar cupom do catalogo",
+        "operationId": "atualizar_modelo_v1_catalogo_cupons__modelo_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modelo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Modelo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CupomCatalogoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Remover cupom do catalogo",
+        "operationId": "remover_modelo_v1_catalogo_cupons__modelo_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modelo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Modelo Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -3776,6 +4029,18 @@
               }
             ],
             "title": "Usado Em"
+          },
+          "modelo_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo Id",
+            "description": "Modelo do catalogo que gerou o cupom"
           }
         },
         "type": "object",
@@ -3791,6 +4056,275 @@
         ],
         "title": "Cupom",
         "description": "Representação completa do cupom.\n\nGET /v1/cupons/{id}\nUS-22."
+      },
+      "CupomCatalogo": {
+        "properties": {
+          "parceiro_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Parceiro Id"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 5,
+            "title": "Descricao"
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 3,
+            "title": "Tag",
+            "description": "Etiqueta exibida no cupom",
+            "default": "PARCERIA BULBE"
+          },
+          "prefixo_codigo": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{3,12}$",
+            "title": "Prefixo Codigo",
+            "description": "Inicio do codigo (letras maiusculas e numeros); o resto e gerado"
+          },
+          "validade_dias": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Validade Dias",
+            "default": 14
+          },
+          "peso": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Peso",
+            "description": "Chance relativa no sorteio (1 a 10)",
+            "default": 1
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "parceiro_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parceiro Nome"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parceiro_id",
+          "titulo",
+          "descricao",
+          "prefixo_codigo",
+          "id",
+          "criado_em"
+        ],
+        "title": "CupomCatalogo"
+      },
+      "CupomCatalogoCreate": {
+        "properties": {
+          "parceiro_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Parceiro Id"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 5,
+            "title": "Descricao"
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 3,
+            "title": "Tag",
+            "description": "Etiqueta exibida no cupom",
+            "default": "PARCERIA BULBE"
+          },
+          "prefixo_codigo": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{3,12}$",
+            "title": "Prefixo Codigo",
+            "description": "Inicio do codigo (letras maiusculas e numeros); o resto e gerado"
+          },
+          "validade_dias": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Validade Dias",
+            "default": 14
+          },
+          "peso": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Peso",
+            "description": "Chance relativa no sorteio (1 a 10)",
+            "default": 1
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "parceiro_id",
+          "titulo",
+          "descricao",
+          "prefixo_codigo"
+        ],
+        "title": "CupomCatalogoCreate",
+        "description": "Corpo do POST /v1/catalogo-cupons."
+      },
+      "CupomCatalogoUpdate": {
+        "properties": {
+          "parceiro_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parceiro Id"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          },
+          "prefixo_codigo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9]{3,12}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prefixo Codigo"
+          },
+          "validade_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 90.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validade Dias"
+          },
+          "peso": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peso"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "CupomCatalogoUpdate",
+        "description": "Corpo do PATCH /v1/catalogo-cupons/{id}: todos os campos opcionais."
       },
       "CupomListaPaginada": {
         "properties": {

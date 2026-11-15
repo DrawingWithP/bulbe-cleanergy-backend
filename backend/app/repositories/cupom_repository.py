@@ -203,6 +203,7 @@ class SqlCupomRepository:
             dias_restantes=modelo.dias_restantes,
             criado_em=modelo.criado_em,
             usado_em=modelo.usado_em,
+            modelo_id=modelo.modelo_id,
         )
 
     @staticmethod

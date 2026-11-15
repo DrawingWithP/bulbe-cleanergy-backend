@@ -5,6 +5,7 @@ Camada de Serviço, CartaService e Clube Bulbe
 
 from datetime import timedelta
 import math
+import random
 import uuid
 
 from app.core import relogio
@@ -33,6 +34,10 @@ from app.repositories.cliente_repository import (
 from app.repositories.cupom_repository import (
     CupomRepository,
     cupom_repository,
+)
+from app.services.cupom_catalogo_service import (
+    CupomCatalogoService,
+    cupom_catalogo_service,
 )
 
 
@@ -68,10 +73,15 @@ class CartaService:
         repository: CartaRepository,
         clientes: ClienteRepository = cliente_repository,
         cupons: CupomRepository = cupom_repository,
+        catalogo: CupomCatalogoService | None = cupom_catalogo_service,
+        sorteio: random.Random | None = None,
     ) -> None:
         self._repository = repository
         self._clientes = clientes
         self._cupons = cupons
+        # catalogo=None: sem catalogo (testes unitarios), usa o cupom reserva.
+        self._catalogo = catalogo
+        self._sorteio = sorteio
 
     def _validar_cliente(self, cliente_id: str) -> None:
         """Verifica se o cliente informado existe."""
@@ -397,8 +407,61 @@ class CartaService:
             criado_em=relogio.instante_iso(agora),
         )
 
+    def _ultimo_modelo(self, cliente_id: str) -> str | None:
+        """Modelo do catalogo do cupom mais recente do cliente."""
+
+        cupons, _ = self._cupons.listar_por_cliente(cliente_id, 1, 100, None)
+        com_modelo = [c for c in cupons if c.modelo_id]
+        if not com_modelo:
+            return None
+        return max(com_modelo, key=lambda c: c.criado_em).modelo_id
+
     def _cupom_da_semana(self, carta: Carta, agora) -> Cupom:
-        """Carta normal: cupom de parceiro."""
+        """
+        Carta normal: sorteia um cupom do catalogo (com peso), sem repetir o
+        da semana anterior do mesmo cliente. Catalogo vazio: cupom reserva.
+        """
+
+        modelo = None
+        if self._catalogo is not None:
+            modelo = self._catalogo.sortear(
+                evitar_modelo_id=self._ultimo_modelo(carta.cliente_id),
+                sorteio=self._sorteio,
+            )
+
+        if modelo is not None:
+            parceiro = ParceiroResumoCupom(
+                id=modelo.parceiro_id,
+                nome=modelo.parceiro_nome or "Parceiro Bulbe",
+                categoria=self._categoria_parceiro(modelo.parceiro_id),
+            )
+            return Cupom(
+                id=str(uuid.uuid4()),
+                cliente_id=carta.cliente_id,
+                carta_id=carta.id,
+                tag=modelo.tag,
+                titulo=modelo.titulo,
+                descricao=modelo.descricao,
+                codigo=f"{modelo.prefixo_codigo}{uuid.uuid4().hex[:6].upper()}"[:30],
+                parceiro=parceiro,
+                situacao=SituacaoCupom.ativo,
+                valido_ate=(agora + timedelta(days=modelo.validade_dias)).strftime("%Y-%m-%d"),
+                dias_restantes=modelo.validade_dias,
+                criado_em=relogio.instante_iso(agora),
+                modelo_id=modelo.id,
+            )
+
+        return self._cupom_reserva(carta, agora)
+
+    @staticmethod
+    def _categoria_parceiro(parceiro_id: str) -> str:
+        from app.repositories.parceiro_repository import parceiro_repository
+
+        parceiro = parceiro_repository.buscar_por_id(parceiro_id)
+        return parceiro.categoria if parceiro else "Parceiro"
+
+    def _cupom_reserva(self, carta: Carta, agora) -> Cupom:
+        """Cupom usado quando o catalogo esta vazio."""
 
         valido_ate = agora + timedelta(days=VALIDADE_CUPOM_DIAS)
 

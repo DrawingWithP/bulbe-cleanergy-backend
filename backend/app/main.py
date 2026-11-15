@@ -26,6 +26,7 @@ MODULOS = (
     "carta",
     "bandeira",
     "demonstracao",
+    "cupom_catalogo",
 )
 
 # Modulos cujo servico declara ErroDeNegocio (auth usa o de usina).

@@ -764,6 +764,13 @@ class CupomModel(Base):
         nullable=True,
     )
 
+    # Modelo do catalogo que gerou o cupom (copia, sem FK: o cupom continua
+    # valido mesmo se o modelo for removido do catalogo).
+    modelo_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
+    )
+
 
 class OfensivaClubeModel(Base):
     """
@@ -816,4 +823,75 @@ class RelogioDemonstracaoModel(Base):
     atualizado_em: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
+    )
+
+
+class CupomCatalogoModel(Base):
+    """
+    Modelo de cupom do Clube Bulbe (catalogo). A cada carta normal aberta,
+    um modelo ativo e sorteado e vira um cupom do cliente com codigo unico.
+    """
+
+    __tablename__ = "cupons_catalogo"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+    )
+
+    parceiro_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "parceiros.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+        nullable=False,
+    )
+
+    titulo: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+
+    descricao: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False,
+    )
+
+    tag: Mapped[str] = mapped_column(
+        String(60),
+        nullable=False,
+    )
+
+    prefixo_codigo: Mapped[str] = mapped_column(
+        String(12),
+        nullable=False,
+    )
+
+    validade_dias: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    peso: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+
+    ativo: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    criado_em: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+    )
+
+    atualizado_em: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
     )

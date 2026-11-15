@@ -177,3 +177,34 @@ def avancar_relogio(dias: int) -> dict:
 
 def resetar_relogio() -> dict:
     return chamar("POST", "/v1/demonstracao/relogio/resetar")
+
+
+# Parceiros do Clube (CRUD do app)
+def criar_parceiro(dados: dict) -> dict:
+    return chamar("POST", "/v1/parceiros", dados)
+
+
+def atualizar_parceiro(parceiro_id: str, dados: dict) -> dict:
+    return chamar("PUT", f"/v1/parceiros/{_id(parceiro_id)}", dados)
+
+
+def remover_parceiro(parceiro_id: str) -> None:
+    chamar("DELETE", f"/v1/parceiros/{_id(parceiro_id)}")
+
+
+# Catalogo de cupons sorteados nas cartas
+def listar_catalogo(parceiro_id: str | None = None) -> list:
+    consulta = f"?parceiro_id={_id(parceiro_id)}" if parceiro_id else ""
+    return chamar("GET", f"/v1/catalogo-cupons{consulta}")
+
+
+def criar_modelo_cupom(dados: dict) -> dict:
+    return chamar("POST", "/v1/catalogo-cupons", dados)
+
+
+def atualizar_modelo_cupom(modelo_id: str, dados: dict) -> dict:
+    return chamar("PATCH", f"/v1/catalogo-cupons/{_id(modelo_id)}", dados)
+
+
+def remover_modelo_cupom(modelo_id: str) -> None:
+    chamar("DELETE", f"/v1/catalogo-cupons/{_id(modelo_id)}")

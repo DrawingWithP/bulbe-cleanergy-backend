@@ -68,6 +68,11 @@ CASOS = [
     ("GET", "/v1/demonstracao/relogio", 200),
     ("POST", "/v1/demonstracao/relogio/avancar", 200),
     ("POST", "/v1/demonstracao/relogio/resetar", 200),
+    ("GET", "/v1/catalogo-cupons", 200),
+    ("POST", "/v1/catalogo-cupons", 201),
+    ("GET", "/v1/catalogo-cupons/{modelo_id}", 200),
+    ("PATCH", "/v1/catalogo-cupons/{modelo_id}", 200),
+    ("DELETE", "/v1/catalogo-cupons/{modelo_id}", 204),
     ("GET", "/", 200),
 ]
 ESQUEMA = app.openapi()
@@ -91,12 +96,17 @@ PROTEGIDAS = {
     ("PUT", "/v1/bandeiras/{mes_referencia}"),
     ("POST", "/v1/demonstracao/relogio/avancar"),
     ("POST", "/v1/demonstracao/relogio/resetar"),
+    ("GET", "/v1/catalogo-cupons"),
+    ("POST", "/v1/catalogo-cupons"),
+    ("GET", "/v1/catalogo-cupons/{modelo_id}"),
+    ("PATCH", "/v1/catalogo-cupons/{modelo_id}"),
+    ("DELETE", "/v1/catalogo-cupons/{modelo_id}"),
 }
 
 
 def test_inventario_e_autenticacao_dos_contratos():
     assert set(ROTAS) == {(m, p) for m, p, _ in CASOS}
-    assert len(CASOS) == len(ROTAS) == 55
+    assert len(CASOS) == len(ROTAS) == 60
     assert {rota for rota, op in ROTAS.items() if op.get("security")} == PROTEGIDAS
 
 
@@ -104,7 +114,8 @@ def _url(caminho):
     ids = {"usina_id": 1, "adesao_id": 1, "dica_id": 1, "indicacao_id": 1,
            "cliente_id": ID_MARCOS, "parceiro_id": ID_ARAUJO,
            "cupom_id": ID_CUPOM_MARCOS, "carta_id": ID_CARTA_MARCOS,
-           "mes_referencia": "2026-11"}
+           "mes_referencia": "2026-11",
+           "modelo_id": "c1a0f3e2-0001-4b6c-9a11-000000000001"}
     return caminho.format(**ids)
 
 
@@ -140,6 +151,9 @@ def contratos(client, session_factory, adesao_valida, cliente_valido, usina_vali
         "/v1/cupons/{cupom_id}": {"situacao": "salvo"},
         "/v1/bandeiras/{mes_referencia}": {"bandeira": "amarela"},
         "/v1/demonstracao/relogio/avancar": {"dias": 1},
+        "/v1/catalogo-cupons": {"parceiro_id": ID_ARAUJO, "titulo": "Cupom novo", "descricao": "Descricao do cupom.",
+                                "prefixo_codigo": "NOVO"},
+        "/v1/catalogo-cupons/{modelo_id}": {"peso": 2},
     }
 
 
