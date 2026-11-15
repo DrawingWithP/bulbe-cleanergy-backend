@@ -4971,6 +4971,18 @@
             "type": "string",
             "title": "Expira Em",
             "description": "Data/hora de expiração do código no padrão ISO 8601"
+          },
+          "codigo_demonstracao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Demonstracao",
+            "description": "Somente fora de produção: o código gerado, porque o envio real por SMS/e-mail não faz parte do projeto. Em produção (BULBE_AMBIENTE=producao) vem sempre vazio."
           }
         },
         "type": "object",

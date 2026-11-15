@@ -88,6 +88,16 @@ class VerificacaoResponse(BaseModel):
         ),
     )
 
+    codigo_demonstracao: str | None = Field(
+        default=None,
+        description=(
+            "Somente fora de produção: o código gerado, "
+            "porque o envio real por SMS/e-mail não faz "
+            "parte do projeto. Em produção "
+            "(BULBE_AMBIENTE=producao) vem sempre vazio."
+        ),
+    )
+
 
 class ConfirmacaoRequest(BaseModel):
     """
