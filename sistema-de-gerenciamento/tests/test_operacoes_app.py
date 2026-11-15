@@ -220,3 +220,39 @@ def test_series_mensais(cliente_http, cab_atendimento):
     assert len(series["meses"]) == 6
     assert len(series["economia"]) == len(series["clientes_novos"]) == len(series["adesoes"]) == 6
     assert sum(series["economia"]) > 0
+
+
+def test_adesoes_so_do_app(cliente_http, cab_atendimento):
+    from app.database.modelos import Adesao
+
+    with conexao.obter_sessao() as sessao:
+        sessao.add(Adesao(id="ades-teste-filtro", nome="Rita App", email="rita@ex.com", situacao="enviada",
+                          origem="app", id_app="99", importado_do_app=True))
+    try:
+        todas = cliente_http.get("/v1/painel/adesoes?por_pagina=100", headers=cab_atendimento).json()
+        do_app = cliente_http.get("/v1/painel/adesoes?apenas_app=true", headers=cab_atendimento).json()
+        assert do_app["total"] == 1 < todas["total"]
+        assert do_app["data"][0]["id_app"] == "99"
+    finally:
+        with conexao.obter_sessao() as sessao:
+            sessao.delete(sessao.get(Adesao, "ades-teste-filtro"))
+
+
+def test_buscar_atendimentos_novos_sincroniza(cliente_http, cab_atendimento, monkeypatch):
+    chamadas = []
+    monkeypatch.setattr(sincronizacao, "sincronizar_sem_erro", lambda: chamadas.append(1) or {"ok": True})
+    resposta = cliente_http.post("/v1/painel/atendimentos/atualizacao", headers=cab_atendimento)
+    assert resposta.status_code == 200
+    assert resposta.json() == {"sincronizado": True}
+    assert chamadas == [1]
+    assert cliente_http.post("/v1/painel/atendimentos/atualizacao").status_code == 401
+
+
+def test_front_do_painel_carrega_os_modulos(cliente_http):
+    import re
+
+    html = cliente_http.get("/painel/painel.html").text
+    scripts = re.findall(r'<script src="(/painel/[^"]+)"', html)
+    assert "/painel/js/app.js" in scripts and len(scripts) >= 10
+    for caminho in scripts + ["/painel/painel.css", "/painel/icones-dicas/geladeira.svg"]:
+        assert cliente_http.get(caminho).status_code == 200, caminho

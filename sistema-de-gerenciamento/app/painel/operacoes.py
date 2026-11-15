@@ -227,6 +227,13 @@ def _id_app_atendimento(atendimento: dict) -> str:
     return atendimento["id_app"]
 
 
+@router.post("/atendimentos/atualizacao", dependencies=[Depends(funcionario_logado)])
+def atualizar_atendimentos() -> dict:
+    """Busca no app os atendimentos novos agora (sem esperar a sincronizacao periodica)."""
+    resultado = sincronizacao.sincronizar_sem_erro()
+    return {"sincronizado": resultado is not None}
+
+
 @router.get("/atendimentos/{atendimento_id}/conversa", dependencies=[Depends(funcionario_logado)])
 def conversa(atendimento_id: int, depois_de: int = 0) -> dict:
     """

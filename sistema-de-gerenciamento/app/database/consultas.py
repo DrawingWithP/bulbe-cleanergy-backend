@@ -845,6 +845,7 @@ def _adesao_para_dict(a: Adesao) -> dict:
         "origem": a.origem,
         "cliente_id": a.cliente_id,
         "criado_em": _iso(a.criado_em),
+        "id_app": a.id_app,
     }
 
 
@@ -859,12 +860,18 @@ def listar_adesoes(situacao: str | None = None, limite: int = 20) -> list[dict]:
         return [_adesao_para_dict(a) for a in sessao.scalars(consulta)]
 
 
-def listar_adesoes_paginado(situacao: str | None = None, pagina: int = 1, por_pagina: int = 20) -> dict:
-    """Adesoes no formato paginado padrao (mais recentes primeiro)."""
+def listar_adesoes_paginado(situacao: str | None = None, pagina: int = 1, por_pagina: int = 20,
+                            apenas_app: bool = False) -> dict:
+    """
+    Adesoes no formato paginado padrao (mais recentes primeiro).
+    apenas_app=True: so as adesoes feitas no app (as unicas que podem ser aprovadas/recusadas).
+    """
     pagina, por_pagina = _paginacao(pagina, por_pagina)
     if not _texto_valido(situacao, SITUACOES_ADESAO):
         return _resultado_paginado([], pagina, por_pagina, 0)
     filtros = [Adesao.situacao == situacao] if situacao else []
+    if apenas_app:
+        filtros.append(Adesao.id_app.is_not(None))
     with obter_sessao() as sessao:
         total = sessao.scalar(select(func.count()).select_from(Adesao).where(*filtros)) or 0
         consulta = (

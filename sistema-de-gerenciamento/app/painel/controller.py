@@ -331,13 +331,14 @@ def resumo_ativacoes() -> dict:
 @router.get("/adesoes", dependencies=PROTEGIDO)
 def listar_adesoes(
     situacao: str | None = Query(None, max_length=20, description="rascunho, enviada, aprovada ou recusada"),
+    apenas_app: bool = Query(False, description="So as adesoes feitas no app (podem ser aprovadas ou recusadas)"),
     pagina: int = Query(1, ge=1, le=100_000),
     por_pagina: int | None = Query(None, ge=1, le=100),
     limite: int | None = Query(None, ge=1, le=100, deprecated=True, description="Use por_pagina (mantido da v1)"),
 ) -> dict:
     """Adesoes (pedidos de assinatura), paginadas."""
     return consultas.listar_adesoes_paginado(situacao=situacao or None, pagina=pagina,
-                                             por_pagina=por_pagina or limite or 20)
+                                             por_pagina=por_pagina or limite or 20, apenas_app=apenas_app)
 
 
 @router.get("/atendimentos", dependencies=PROTEGIDO)
