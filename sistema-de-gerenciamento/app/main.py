@@ -20,8 +20,12 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+import asyncio
+
 from app.chatbot.controller import router as chatbot_router
 from app.database.conexao import inicializar_banco
+from app.integracao import sincronizacao
+from app.integracao.config import obter_config
 from app.erros import ErroDeNegocio
 from app.painel.controller import router as painel_router
 
@@ -45,17 +49,43 @@ def _expurgar_dados_antigos() -> None:
         logger.exception("Nao foi possivel aplicar a retencao de dados ao subir o servidor.")
 
 
+async def _sincronizar_periodicamente(intervalo: int) -> None:
+    """Traz os dados do app para o painel a cada `intervalo` segundos (em uma thread, sem travar a API)."""
+    while True:
+        await asyncio.sleep(intervalo)
+        await asyncio.to_thread(sincronizacao.sincronizar_sem_erro)
+
+
 @asynccontextmanager
 async def ciclo_de_vida(app: FastAPI):
-    """Cria as tabelas, popula o banco ficticio na primeira execucao e aplica a retencao de dados."""
+    """
+    Cria as tabelas, popula o banco ficticio na primeira execucao, aplica a retencao de dados
+    e liga a integracao com o app (sincronizacao ao subir e a cada INTEGRACAO_INTERVALO_SEGUNDOS).
+    """
     inicializar_banco()
     _expurgar_dados_antigos()
-    yield
+
+    tarefa = None
+    config = obter_config()
+    if config.ativa:
+        await asyncio.to_thread(sincronizacao.sincronizar_sem_erro)
+        if config.intervalo_segundos > 0:
+            tarefa = asyncio.create_task(_sincronizar_periodicamente(config.intervalo_segundos))
+    else:
+        logger.info("Integracao com o app desligada: %s", config.motivo_desligada)
+    try:
+        yield
+    finally:
+        if tarefa is not None:
+            tarefa.cancel()
 
 
 app = FastAPI(
     title="Bulbe Energia, Sistema de Gerenciamento",
-    description="Painel de gestao interno com chatbot (Claude Haiku) sobre um banco de dados ficticio.",
+    description=(
+        "Painel de gestao interno com chatbot (Claude Haiku). Os dados do app (pasta backend/) sao "
+        "sincronizados com o banco do painel, que completa com dados ficticios de faturas e atendimentos."
+    ),
     version="2.0.0",
     lifespan=ciclo_de_vida,
 )

@@ -1,0 +1,3 @@
+# Dependencias das duas partes do projeto, num ambiente so (usado pelo iniciar.py).
+-r backend/requirements.txt
+-r sistema-de-gerenciamento/requirements-dev.txt

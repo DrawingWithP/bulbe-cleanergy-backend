@@ -1020,3 +1020,17 @@ code {
   .menu-lateral, .painel-chat, .chat-flutuante, .barra-topo-acoes, .filtros { display: none !important; }
   .layout { display: block; }
 }
+
+/* ------------------------------------------------------------
+   Integração com o app
+   ------------------------------------------------------------ */
+.selo-origem { margin-left: 6px; vertical-align: middle; }
+.integracao-aviso { margin-bottom: 16px; }
+.tela-cabecalho-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.form-etapa {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
+  margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--cinza-claro);
+}
+.form-etapa .campo-largo { flex: 1 1 220px; }
+.etapa-resultado { flex-basis: 100%; }
+.etapa-nota { margin-top: 12px; }

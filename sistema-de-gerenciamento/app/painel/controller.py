@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.database import consultas
+from app.integracao import api_app, sincronizacao
 from app.painel import alertas
 from app.painel.auth import criar_token, exigir_admin, funcionario_logado
 
@@ -31,7 +32,8 @@ PROTEGIDO = [Depends(funcionario_logado)]
 
 PADRAO_CHAT_RETENCAO_DIAS = 180
 PADRAO_AUDITORIA_RETENCAO_DIAS = 730
-ACOES_AUDITORIA = ("login_ok", "login_falha", "login_bloqueado", "alerta_email", "ver_ficha", "ver_auditoria", "expurgo")
+ACOES_AUDITORIA = ("login_ok", "login_falha", "login_bloqueado", "alerta_email", "ver_ficha", "ver_auditoria", "expurgo",
+                   "sincronizar_app", "alterar_ativacao")
 
 
 class LoginRequisicao(BaseModel):
@@ -46,6 +48,12 @@ class FuncionarioPublico(BaseModel):
     nome: str
     email: str
     perfil: str
+
+
+class AlterarAtivacaoRequisicao(BaseModel):
+    """Nova etapa da jornada de ativacao, enviada ao app."""
+    etapa_atual: int = Field(..., ge=1, le=5, description="Etapa de 1 a 5")
+    observacao: str | None = Field(None, max_length=255, description="Observacao opcional (aparece no historico)")
 
 
 class LoginResposta(BaseModel):
@@ -228,6 +236,68 @@ def ficha_cliente(
         "notificacoes": consultas.listar_notificacoes(cliente_id),
         "atendimentos": consultas.listar_atendimentos(cliente_id=cliente_id),
     }
+
+
+@router.patch("/clientes/{cliente_id}/ativacao")
+def alterar_ativacao(
+    dados: AlterarAtivacaoRequisicao,
+    request: Request,
+    cliente_id: str = Path(..., min_length=1, max_length=64),
+    funcionario: dict = Depends(funcionario_logado),
+) -> dict:
+    """
+    Altera a etapa de ativacao no app (PATCH /v1/clientes/{id}/ativacao do backend) e sincroniza o painel.
+    So vale para clientes vinculados ao app (id_app preenchido). Grava "alterar_ativacao" na auditoria.
+    """
+    cliente = consultas.obter_cliente(cliente_id)
+    if cliente is None:
+        raise _erro("CLIENTE_NAO_ENCONTRADO", f"Cliente com id {cliente_id} nao foi encontrado.",
+                    status.HTTP_404_NOT_FOUND)
+    if not cliente.get("id_app"):
+        raise _erro(
+            "CLIENTE_SEM_VINCULO_APP",
+            "Este cliente existe so no banco ficticio do painel. A etapa so pode ser alterada "
+            "para clientes do app.",
+            status.HTTP_409_CONFLICT,
+        )
+    observacao = _limpar(dados.observacao)
+    try:
+        resposta_app = api_app.alterar_etapa_ativacao(cliente["id_app"], dados.etapa_atual, observacao)
+    except api_app.ErroApiApp as erro:
+        raise _erro(erro.code, erro.message, erro.status) from erro
+
+    _auditar("alterar_ativacao", funcionario_id=funcionario.get("id"), recurso_tipo="cliente",
+             recurso_id=cliente_id, ip=_ip(request),
+             detalhe=json.dumps({"etapa_atual": dados.etapa_atual, "observacao": observacao},
+                                ensure_ascii=False)[:500])
+    # Traz a mudanca de volta para o painel na hora (sem esperar o intervalo da sincronizacao).
+    sincronizacao.sincronizar_sem_erro()
+    return {"ativacao": consultas.obter_ativacao(cliente_id), "app": resposta_app}
+
+
+# ---------------------------------------------------------------------------
+# Integracao com o app
+# ---------------------------------------------------------------------------
+@router.get("/integracao", dependencies=PROTEGIDO)
+def estado_integracao() -> dict:
+    """Estado da integracao com o app: configuracao (sem segredos) e ultima sincronizacao."""
+    return sincronizacao.estado()
+
+
+@router.post("/admin/sincronizar")
+def sincronizar_app(request: Request, admin: dict = Depends(exigir_admin)) -> dict:
+    """Sincroniza agora os dados do app com o painel (somente admin). Grava "sincronizar_app"."""
+    try:
+        resultado = sincronizacao.sincronizar()
+    except sincronizacao.IntegracaoIndisponivel as erro:
+        raise _erro("INTEGRACAO_INDISPONIVEL", str(erro), status.HTTP_503_SERVICE_UNAVAILABLE) from erro
+    except Exception as erro:  # noqa: BLE001
+        logger.exception("Falha na sincronizacao manual com o app.")
+        raise _erro("INTEGRACAO_FALHOU", "A sincronizacao com o app falhou. Veja o log do servidor.",
+                    status.HTTP_502_BAD_GATEWAY) from erro
+    _auditar("sincronizar_app", funcionario_id=admin.get("id"), ip=_ip(request),
+             detalhe=json.dumps(resultado.get("contagens", {}), ensure_ascii=False)[:500])
+    return resultado
 
 
 @router.get("/ativacoes/resumo", dependencies=PROTEGIDO)

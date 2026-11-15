@@ -1,13 +1,19 @@
 """
-Verifica CSS/assets originais, HTML e escopo preservado.
+Verifica se o frontend original foi preservado: CSS/assets identicos (SHA-256)
+e o HTML so com a inclusao de config.js e api.js.
 
 Sem dependencias extras.
+
+Historico: na revisao da integracao frontend-backend (commit base 86e8777) este
+script tambem exigia que backend/migrations e sistema-de-gerenciamento/ ficassem
+iguais ao commit base. Essa trava valia so para aquela revisao: depois dela, as
+migrations e o sistema de gerenciamento evoluem normalmente (nova migration e
+integracao do painel com o app), entao a verificacao foi retirada.
 """
 
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,8 +21,6 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = Path(__file__).with_name(
     "frontend-source-sha256.json"
 )
-
-COMMIT_BASE = "86e8777040bb7733e13d3c325c5bd2c3de49d099"
 
 ARQUIVOS_IGNORADOS = {
     "final.html",
@@ -27,12 +31,6 @@ SCRIPTS_ADICIONADOS = (
     b'  <script src="config.js"></script>\n'
     b'  <script src="api.js"></script>\n'
 )
-
-ESCOPO_PRESERVADO = (
-    "backend/migrations",
-    "sistema-de-gerenciamento",
-)
-
 
 def calcular_sha256(
     caminho: Path,
@@ -138,43 +136,6 @@ def verificar_html(
     )
 
 
-def verificar_escopo_preservado() -> None:
-    """
-    Confirma que migrations e o sistema independente
-    permanecem iguais ao commit base.
-
-    backend/app nao faz parte desta verificacao porque
-    contem alteracoes intencionais da integracao.
-    """
-
-    comando = [
-        "git",
-        "diff",
-        COMMIT_BASE,
-        "--name-only",
-        "--",
-        *ESCOPO_PRESERVADO,
-    ]
-
-    resultado = subprocess.run(
-        comando,
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-
-    arquivos_alterados = (
-        resultado.stdout.strip()
-    )
-
-    assert not arquivos_alterados, (
-        "Foram encontradas alteracoes no "
-        "escopo que deveria permanecer preservado:\n"
-        f"{arquivos_alterados}"
-    )
-
-
 def main() -> None:
     """
     Executa todas as verificacoes.
@@ -192,13 +153,10 @@ def main() -> None:
         manifesto
     )
 
-    verificar_escopo_preservado()
-
     print(
         "PASS: "
         f"{total_verificados} arquivos originais "
-        "identicos; HTML somente adiciona scripts; "
-        "migrations e sistema independente preservados"
+        "identicos; HTML somente adiciona scripts"
     )
 
 

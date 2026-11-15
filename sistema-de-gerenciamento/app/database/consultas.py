@@ -215,6 +215,7 @@ def _cliente_resumo(cli: Cliente) -> dict:
         "uf": cli.uf,
         "status": cli.status,
         "etapa_ativacao": cli.ativacao.etapa_atual if cli.ativacao else None,
+        "origem": "app" if cli.id_app else "ficticio",
         "criado_em": _iso(cli.criado_em),
     }
 
@@ -318,6 +319,9 @@ def obter_cliente(cliente_id: str) -> dict | None:
             "codigo_indicacao": cli.codigo_indicacao,
             "app_acesso_habilitado": cli.app_acesso_habilitado,
             "ultimo_login_app": _iso(cli.ultimo_login_app),
+            # Integracao com o app: id do cliente no backend (None = so existe no banco ficticio).
+            "id_app": cli.id_app,
+            "origem": "app" if cli.id_app else "ficticio",
             "criado_em": _iso(cli.criado_em),
             "atualizado_em": _iso(cli.atualizado_em),
         }
