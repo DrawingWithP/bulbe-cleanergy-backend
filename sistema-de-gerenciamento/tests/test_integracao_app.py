@@ -382,3 +382,19 @@ def test_credenciais_erradas_no_app(api_falsa, cliente_http, cab_atendimento, mo
                                   headers=cab_atendimento)
     assert resposta.status_code == 502
     assert resposta.json()["error"]["code"] == "APP_CREDENCIAIS_INVALIDAS"
+
+
+def test_indicacao_cancelada_no_app_vira_expirada_no_painel(banco_app):
+    with sqlite3.connect(banco_app) as con:
+        con.execute(
+            "UPDATE indicacoes SET situacao = 'cancelada' WHERE id = 1"
+        )
+
+    sincronizacao.sincronizar()
+
+    indicacoes = consultas.listar_indicacoes(ID_NOVA_APP)["data"]
+
+    assert [
+        (i["nome_indicado"], i["situacao"])
+        for i in indicacoes
+    ] == [("Paula Reis", "expirada")]
