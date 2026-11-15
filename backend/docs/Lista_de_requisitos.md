@@ -40,7 +40,7 @@ Os requisitos abaixo foram levantados a partir da análise das funcionalidades j
 
 | ID | Onde está | Situação |
 |---|---|---|
-| RF-01 | `POST /v1/auth/registrar` e `POST /v1/auth/login` (operadores); `POST /v1/clientes` (cliente) | Implementado. O app ainda não tem login de cliente: o frontend usa um cliente de demonstração (`BULBE_FRONTEND_CLIENTE_ID`) |
+| RF-01 | `POST /v1/auth/registrar` e `POST /v1/auth/login` (operadores); `POST /v1/adesoes` e telas Abrir conta / Entrar / Primeiro acesso (cliente) | Implementado. O cliente entra com CPF + código; é identificação (sem token de cliente na API) |
 | RF-02 | `POST /v1/primeiro-acesso/verificacoes` e `/confirmacoes` | Implementado (o envio real de SMS/e-mail fica fora do escopo) |
 | RF-03 | `POST /v1/simulacoes` + `/v1/bandeiras` | Implementado: a economia usa a bandeira tarifária do mês, cadastrada pelo operador |
 | RF-04 | `GET /v1/clientes/{id}/ativacao` e `/etapas`; `PATCH` (operador e painel interno) | Implementado |

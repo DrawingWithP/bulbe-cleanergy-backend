@@ -34,18 +34,63 @@ window.BulbeAPI = (() => {
     );
   }
 
+  /*
+   * Sessão do cliente no app.
+   * Quem entra pelas telas Entrar / Primeiro acesso fica guardado
+   * no navegador (localStorage). Sem sessão, vale o cliente de
+   * demonstração de BULBE_FRONTEND_CLIENTE_ID (config.js).
+   * É identificação, não autenticação: a API ainda não emite token
+   * para clientes (veja INTEGRATION.md).
+   */
+  const CHAVE_SESSAO = "bulbe_cliente_id";
+
+  function lerSessao() {
+    try {
+      return window.localStorage.getItem(CHAVE_SESSAO);
+    } catch {
+      return null;
+    }
+  }
+
+  const sessao = {
+    clienteId() {
+      return lerSessao() || null;
+    },
+    entrar(clienteId) {
+      try {
+        window.localStorage.setItem(CHAVE_SESSAO, clienteId);
+      } catch {
+        /* sem armazenamento: a sessão dura até recarregar */
+      }
+      sessao._memoria = clienteId;
+    },
+    sair() {
+      try {
+        window.localStorage.removeItem(CHAVE_SESSAO);
+      } catch {
+        /* ignora */
+      }
+      sessao._memoria = null;
+    },
+    _memoria: null,
+  };
+
+  function clienteId() {
+    return sessao.clienteId() || sessao._memoria || config.clienteId || null;
+  }
+
   function clientePath() {
-    if (!config.clienteId) {
+    const id = clienteId();
+
+    if (!id) {
       throw new Error(
-        "Configure um cliente de teste em "
-        + "BULBE_FRONTEND_CLIENTE_ID. "
-        + "O frontend original não possui formulário de login.",
+        "Entre na sua conta para ver estes dados.",
       );
     }
 
     return (
       "/v1/clientes/"
-      + encodeURIComponent(config.clienteId)
+      + encodeURIComponent(id)
     );
   }
 
@@ -105,6 +150,7 @@ window.BulbeAPI = (() => {
       );
 
       error.status = response.status;
+      error.code = body?.error?.code || null;
 
       throw error;
     }
@@ -382,6 +428,8 @@ window.BulbeAPI = (() => {
   return {
     request,
     clientePath,
+    clienteId,
+    sessao,
     report,
     money,
     escape,

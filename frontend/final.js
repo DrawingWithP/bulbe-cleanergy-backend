@@ -22,6 +22,9 @@ function navigateTo(screenId) {
   if (!next) { BulbeAPI.report(new Error('Esta tela não está implementada no frontend original.')); return; }
   if (next === current) return;
 
+  // Preparação síncrona da tela (antes de aparecer), usada pelas telas do telas.js
+  window._antesDeMostrar?.(screenId);
+
   if (current) {
     history.push(current.id);
     current.classList.add('slide-out');
@@ -45,6 +48,7 @@ function navigateTo(screenId) {
     if (screenId === 'screen-carta')            window._onCarta?.();
     if (screenId === 'screen-recompensa-carta') window._onRecompensa?.();
     if (screenId === 'screen-trilha')           window._onTrilha?.();
+    if (screenId === 'screen-indicacoes')       window._onIndicacoes?.();
   }, 290);
 }
 
@@ -68,6 +72,7 @@ function navigateBack() {
   if (previousId === 'screen-status' || previousId === 'screen-detalhes') window._onAtivacao?.();
   if (previousId === 'screen-vantagens') window._onVantagens?.();
   if (previousId === 'screen-dicas') window._onDicas?.();
+  if (previousId === 'screen-indicacoes') window._onIndicacoes?.();
 }
 
 document.addEventListener('click', (e) => {
@@ -638,7 +643,7 @@ window._onAtivacao = async function () {
     let simulacao;
     try {
       simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
-        valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos, cliente_id: (window.BULBE_CONFIG && window.BULBE_CONFIG.clienteId) || undefined
+        valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos, cliente_id: BulbeAPI.clienteId() || undefined
       }) });
       if (revision !== slogRevision) return;
       valorConta = simulacao.valor_atual; meses = simulacao.periodo_meses; amigos = simulacao.indicacoes;
@@ -892,10 +897,8 @@ window._onAtivacao = async function () {
   });
 }());
 
-// Entrar preserva a navegação original, sem apagar dados do cliente
-document.querySelector('.primary-button[data-nav="screen-status"]').addEventListener('click', () => {
-  // Entrar continua sendo navegação: o protótipo não possui formulário de autenticação.
-});
+// Entrar: o destino (tela de login ou área do cliente) é definido pelo telas.js,
+// conforme exista ou não uma sessão de cliente.
 
 // ============================================================
 // TELA: TRILHA

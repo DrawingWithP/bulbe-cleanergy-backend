@@ -7,7 +7,7 @@ O projeto tem três partes que funcionam juntas:
 | Parte | Pasta | O que é |
 |---|---|---|
 | **App (API)** | [`backend/`](backend/) | FastAPI em camadas (controllers, services, repositories, domain), SQLAlchemy 2 + Alembic, autenticação JWT de operadores |
-| **App (frontend)** | [`frontend/`](frontend/) | Protótipo do Projeto Ciência de Dados I, ligado à API (`frontend/final.html`) |
+| **App (frontend)** | [`frontend/`](frontend/) | Protótipo do Projeto Ciência de Dados I, ligado à API (`frontend/final.html`), com as telas novas de Entrar, Primeiro acesso, Abrir conta e Indicações (`telas.css` e `telas.js`) |
 | **Sistema de gerenciamento** | [`sistema-de-gerenciamento/`](sistema-de-gerenciamento/) | Painel web para os funcionários da Bulbe, com chatbot (Claude Haiku 5.5). Lê os dados do app e altera a etapa de ativação pela API |
 
 ## Sobre o projeto
@@ -129,6 +129,8 @@ iniciar.py              sobe app e painel juntos
    | Sistema de gerenciamento | <http://127.0.0.1:8001/painel/> |
 
    Usuários de demonstração: operador da API `admin@bulbe.com.br` (senha no docstring de [`backend/app/db/seed.py`](backend/app/db/seed.py)) e funcionários do painel em [`sistema-de-gerenciamento/docs/guia-do-painel.md`](sistema-de-gerenciamento/docs/guia-do-painel.md).
+
+   No app, **Entrar** pede o CPF de um cliente do seed (constantes `CPF_MARCOS` e `CPF_ANA` em `backend/app/db/seed.py`, dados fictícios). Fora de produção a tela mostra o código de 6 dígitos, porque não há envio real de SMS.
 
 Para rodar cada parte separadamente, veja [`QuickCommandIfError.txt`](QuickCommandIfError.txt), [`backend/docs/banco-de-dados.md`](backend/docs/banco-de-dados.md) e o [`README`](sistema-de-gerenciamento/README.md) do sistema de gerenciamento.
 

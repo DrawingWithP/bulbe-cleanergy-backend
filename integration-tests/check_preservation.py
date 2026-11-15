@@ -32,6 +32,37 @@ SCRIPTS_ADICIONADOS = (
     b'  <script src="api.js"></script>\n'
 )
 
+# Acrescimos da finalizacao (telas Entrar, Primeiro acesso, Abrir conta e
+# Indicacoes): o CSS e o JS proprios e um unico bloco de telas, delimitado
+# por comentarios. Fora disso, o HTML tem que ser identico ao original.
+ACRESCIMOS_EXATOS = (
+    b'  <link rel="stylesheet" href="telas.css">\n',
+    b'  <script src="telas.js"></script>\n',
+)
+
+INICIO_BLOCO_TELAS = b"  <!-- BULBE-TELAS-NOVAS: inicio -->\n"
+FIM_BLOCO_TELAS = b"  <!-- BULBE-TELAS-NOVAS: fim -->\n\n"
+
+
+def remover_acrescimos(html: bytes) -> bytes:
+    """
+    Tira do HTML tudo o que foi acrescentado de proposito, cada item
+    exatamente uma vez (um acrescimo repetido ou fora do lugar falha).
+    """
+
+    for trecho in (SCRIPTS_ADICIONADOS, *ACRESCIMOS_EXATOS):
+        assert html.count(trecho) == 1, f"Acrescimo esperado uma vez: {trecho!r}"
+        html = html.replace(trecho, b"")
+
+    assert html.count(INICIO_BLOCO_TELAS) == 1 and html.count(FIM_BLOCO_TELAS) == 1, (
+        "Bloco BULBE-TELAS-NOVAS ausente ou duplicado em final.html"
+    )
+    inicio = html.index(INICIO_BLOCO_TELAS)
+    fim = html.index(FIM_BLOCO_TELAS) + len(FIM_BLOCO_TELAS)
+    assert inicio < fim, "Bloco BULBE-TELAS-NOVAS fora de ordem"
+    return html[:inicio] + html[fim:]
+
+
 def calcular_sha256(
     caminho: Path,
 ) -> str:
@@ -101,8 +132,8 @@ def verificar_html(
 ) -> None:
     """
     Confirma que o HTML original foi preservado,
-    permitindo apenas a inclusao dos scripts
-    config.js e api.js.
+    permitindo apenas a inclusao de config.js e api.js
+    e os acrescimos das telas novas (remover_acrescimos).
     """
 
     caminho_html = (
@@ -117,9 +148,8 @@ def verificar_html(
 
     html = caminho_html.read_bytes()
 
-    html_sem_scripts = html.replace(
-        SCRIPTS_ADICIONADOS,
-        b"",
+    html_sem_scripts = remover_acrescimos(
+        html
     )
 
     digest_atual = hashlib.sha256(
@@ -132,7 +162,8 @@ def verificar_html(
 
     assert digest_atual == digest_esperado, (
         "final.html possui alteracoes alem "
-        "da inclusao de config.js e api.js"
+        "dos acrescimos declarados (config.js, api.js "
+        "e o bloco BULBE-TELAS-NOVAS)"
     )
 
 
@@ -156,7 +187,8 @@ def main() -> None:
     print(
         "PASS: "
         f"{total_verificados} arquivos originais "
-        "identicos; HTML somente adiciona scripts"
+        "identicos; HTML original preservado "
+        "(so os acrescimos declarados)"
     )
 
 

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="final.css">
+  <link rel="stylesheet" href="telas.css">
 </head>
 
 <body>
@@ -1398,9 +1399,342 @@
   </div>
   <!-- ===================== FIM: TRILHA ===================== -->
 
+  <!-- BULBE-TELAS-NOVAS: inicio -->
+  <!-- ===================== TELA: ENTRAR ===================== -->
+  <div class="screen" id="screen-entrar" data-acesso="entrar">
+
+    <header class="sim-topo-bar">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <img src="icons_final/bulbe.svg" alt="Bulbe" class="sim-logo-img">
+    </header>
+
+    <div class="sim-scroll">
+      <div class="sim-titulo-sec">
+        <span class="sim-dot-laranja" aria-hidden="true"></span>
+        <h1>Entrar</h1>
+      </div>
+      <p class="acs-subtitulo">Informe o CPF do titular da conta de luz. Enviamos um código para o telefone cadastrado.</p>
+
+      <form class="cad-card" data-passo="cpf" novalidate>
+        <label class="cad-campo">
+          <span class="cad-label">CPF</span>
+          <input class="cad-input" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14" required>
+        </label>
+        <p class="cad-erro" role="alert" hidden></p>
+        <button type="submit" class="cad-botao">Receber código</button>
+      </form>
+
+      <form class="cad-card oculto" data-passo="codigo" novalidate>
+        <p class="acs-enviado">Enviamos um código de 6 dígitos para <strong data-campo="destino">seu telefone</strong>.</p>
+        <p class="acs-demo oculto">Ambiente de demonstração: o código é <strong data-campo="codigo-demo"></strong></p>
+        <label class="cad-campo">
+          <span class="cad-label">Código</span>
+          <input class="cad-input acs-codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="6" required>
+        </label>
+        <p class="cad-erro" role="alert" hidden></p>
+        <button type="submit" class="cad-botao">Entrar</button>
+        <button type="button" class="link-button acs-link" data-acao="trocar-cpf">Usar outro CPF</button>
+      </form>
+
+      <div class="acs-rodape">
+        <span>Primeira vez por aqui?</span>
+        <button type="button" class="link-button" data-nav="screen-primeiro-acesso">Criar meu acesso</button>
+      </div>
+    </div>
+
+  </div>
+  <!-- ===================== FIM: ENTRAR ===================== -->
+
+  <!-- ===================== TELA: PRIMEIRO ACESSO ===================== -->
+  <div class="screen" id="screen-primeiro-acesso" data-acesso="primeiro-acesso">
+
+    <header class="sim-topo-bar">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <img src="icons_final/bulbe.svg" alt="Bulbe" class="sim-logo-img">
+    </header>
+
+    <div class="sim-scroll">
+      <div class="sim-titulo-sec">
+        <span class="sim-dot-laranja" aria-hidden="true"></span>
+        <h1>Primeiro acesso</h1>
+      </div>
+      <p class="acs-subtitulo">Já é cliente Bulbe? Confirme seu CPF para liberar o app e acompanhar sua conexão, o Clube e suas indicações.</p>
+
+      <form class="cad-card" data-passo="cpf" novalidate>
+        <label class="cad-campo">
+          <span class="cad-label">CPF do titular</span>
+          <input class="cad-input" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14" required>
+        </label>
+        <p class="cad-erro" role="alert" hidden></p>
+        <button type="submit" class="cad-botao">Continuar</button>
+      </form>
+
+      <form class="cad-card oculto" data-passo="codigo" novalidate>
+        <p class="acs-enviado">Enviamos um código de 6 dígitos para <strong data-campo="destino">seu telefone</strong>. Ele vale por 15 minutos.</p>
+        <p class="acs-demo oculto">Ambiente de demonstração: o código é <strong data-campo="codigo-demo"></strong></p>
+        <label class="cad-campo">
+          <span class="cad-label">Código</span>
+          <input class="cad-input acs-codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="6" required>
+        </label>
+        <p class="cad-erro" role="alert" hidden></p>
+        <button type="submit" class="cad-botao">Confirmar código</button>
+        <button type="button" class="link-button acs-link" data-acao="trocar-cpf">Usar outro CPF</button>
+      </form>
+
+      <section class="cad-card acs-sucesso oculto" data-passo="sucesso" aria-live="polite">
+        <div class="acs-sucesso-icone"><img src="icons_final/st-check.svg" alt=""></div>
+        <h2>Acesso liberado!</h2>
+        <p>Pronto, seu app está ativo. Agora você acompanha cada etapa da conexão com a CEMIG e já participa do Clube Bulbe.</p>
+        <button type="button" class="cad-botao" data-nav="screen-status">Ir para minha conta</button>
+      </section>
+
+      <div class="acs-rodape" data-passo-rodape>
+        <span>Ainda não é cliente?</span>
+        <button type="button" class="link-button" data-nav="screen-abrir-conta">Abrir conta de luz com a Bulbe</button>
+      </div>
+    </div>
+
+  </div>
+  <!-- ===================== FIM: PRIMEIRO ACESSO ===================== -->
+
+  <!-- ===================== TELA: ABRIR CONTA (ADESÃO) ===================== -->
+  <div class="screen" id="screen-abrir-conta">
+
+    <header class="sim-topo-bar">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <img src="icons_final/bulbe.svg" alt="Bulbe" class="sim-logo-img">
+    </header>
+
+    <div class="sim-scroll">
+      <div class="sim-titulo-sec">
+        <span class="sim-dot-laranja" aria-hidden="true"></span>
+        <h1>Abrir conta de luz</h1>
+      </div>
+
+      <div class="ade-progresso" id="ade-progresso">
+        <div class="ade-progresso-texto">
+          <span>Passo <strong id="ade-passo-num">1</strong> de 3</span>
+          <span id="ade-passo-nome">Seus dados</span>
+        </div>
+        <div class="ade-progresso-barra" role="progressbar" aria-label="Progresso da adesão" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1">
+          <div class="ade-progresso-preenchido" id="ade-progresso-preenchido"></div>
+        </div>
+      </div>
+
+      <!-- PASSO 1: DADOS -->
+      <form class="cad-card" data-ade-passo="1" data-nome="Seus dados" novalidate>
+        <h2 class="cad-card-titulo">Quem é o titular da conta?</h2>
+        <label class="cad-campo">
+          <span class="cad-label">Nome completo</span>
+          <input class="cad-input" name="nome" autocomplete="name" maxlength="100" required>
+        </label>
+        <label class="cad-campo">
+          <span class="cad-label">E-mail</span>
+          <input class="cad-input" name="email" type="email" autocomplete="email" maxlength="100" required>
+        </label>
+        <label class="cad-campo">
+          <span class="cad-label">CPF</span>
+          <input class="cad-input" name="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required>
+        </label>
+        <label class="cad-campo">
+          <span class="cad-label">Celular com DDD</span>
+          <input class="cad-input" name="telefone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(31) 99999-9999" maxlength="15" required>
+        </label>
+        <p class="cad-erro" role="alert" hidden></p>
+        <div class="cad-acoes cad-acoes-unica">
+          <button type="submit" class="cad-botao">Continuar</button>
+        </div>
+      </form>
+
+      <!-- PASSO 2: ENDEREÇO -->
+      <form class="cad-card oculto" data-ade-passo="2" data-nome="Endereço" novalidate>
+        <h2 class="cad-card-titulo">Endereço da conta de luz</h2>
+        <div class="cad-linha cad-linha-estreita">
+          <label class="cad-campo">
+            <span class="cad-label">CEP</span>
+            <input class="cad-input" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9" required>
+          </label>
+          <label class="cad-campo">
+            <span class="cad-label">Número</span>
+            <input class="cad-input" name="numero" inputmode="numeric" maxlength="6" required>
+          </label>
+        </div>
+        <label class="cad-campo">
+          <span class="cad-label">Rua / Avenida</span>
+          <input class="cad-input" name="logradouro" autocomplete="address-line1" maxlength="100" required>
+        </label>
+        <label class="cad-campo">
+          <span class="cad-label">Bairro</span>
+          <input class="cad-input" name="bairro" maxlength="40" required>
+        </label>
+        <div class="cad-linha cad-linha-estreita">
+          <label class="cad-campo">
+            <span class="cad-label">Cidade</span>
+            <input class="cad-input" name="cidade" autocomplete="address-level2" maxlength="40" required>
+          </label>
+          <label class="cad-campo">
+            <span class="cad-label">UF</span>
+            <input class="cad-input" name="uf" autocomplete="address-level1" maxlength="2" value="MG" required>
+          </label>
+        </div>
+        <p class="cad-erro" role="alert" hidden></p>
+        <div class="cad-acoes">
+          <button type="button" class="cad-botao-secundario" data-acao="ade-voltar">Voltar</button>
+          <button type="submit" class="cad-botao">Continuar</button>
+        </div>
+      </form>
+
+      <!-- PASSO 3: CONTA DE LUZ -->
+      <form class="cad-card oculto" data-ade-passo="3" data-nome="Conta de luz" novalidate>
+        <h2 class="cad-card-titulo">Sua conta de luz</h2>
+        <label class="cad-campo">
+          <span class="cad-label">Distribuidora</span>
+          <select class="cad-input" name="distribuidora" required>
+            <option value="CEMIG" selected>CEMIG</option>
+          </select>
+          <span class="cad-ajuda">Por enquanto a Bulbe atende clientes da CEMIG, em Minas Gerais.</span>
+        </label>
+        <label class="cad-campo">
+          <span class="cad-label">Número da instalação</span>
+          <input class="cad-input" name="numero_instalacao" inputmode="numeric" maxlength="20" required>
+          <span class="cad-ajuda">Fica no canto superior da sua conta da CEMIG.</span>
+        </label>
+        <label class="cad-campo">
+          <span class="cad-label">Valor médio da conta (R$)</span>
+          <input class="cad-input" name="valor_conta_atual" inputmode="decimal" placeholder="250,00" maxlength="10" required>
+        </label>
+        <div class="ade-estimativa oculto" id="ade-estimativa">
+          <img src="icons_final/sim-dinheiro.svg" alt="">
+          <p>Você deve economizar cerca de <strong id="ade-estimativa-valor">R$ 0,00</strong> por mês com 15% de desconto.</p>
+        </div>
+        <p class="cad-erro" role="alert" hidden></p>
+        <div class="cad-acoes">
+          <button type="button" class="cad-botao-secundario" data-acao="ade-voltar">Voltar</button>
+          <button type="submit" class="cad-botao">Enviar adesão</button>
+        </div>
+      </form>
+
+      <!-- SUCESSO -->
+      <section class="cad-card acs-sucesso oculto" data-ade-passo="sucesso" aria-live="polite">
+        <div class="acs-sucesso-icone"><img src="icons_final/st-check.svg" alt=""></div>
+        <h2>Recebemos sua adesão!</h2>
+        <p class="ade-protocolo">Protocolo <strong id="ade-protocolo">#0</strong></p>
+        <ul class="ade-proximos">
+          <li><span class="ade-proximos-num">1</span><span>A Bulbe confere seus dados e a conta de luz.</span></li>
+          <li><span class="ade-proximos-num">2</span><span>Pedimos a conexão à CEMIG. O prazo é de até 90 dias.</span></li>
+          <li><span class="ade-proximos-num">3</span><span>Quando você virar cliente, use o primeiro acesso para acompanhar tudo pelo app.</span></li>
+        </ul>
+        <button type="button" class="cad-botao" data-acao="ade-inicio">Voltar ao início</button>
+      </section>
+    </div>
+
+  </div>
+  <!-- ===================== FIM: ABRIR CONTA (ADESÃO) ===================== -->
+
+  <!-- ===================== TELA: INDICAÇÕES ===================== -->
+  <div class="screen" id="screen-indicacoes">
+
+    <header class="st-header">
+      <button class="st-btn-menu" type="button" data-open-menu aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="st-logo">
+        <img src="icons_final/st-logo.svg" alt="Bulbe" />
+      </div>
+      <div class="st-header-acoes">
+        <div class="st-sino-wrapper">
+          <button type="button" class="st-btn-icone" aria-label="Notificações">
+            <img src="icons_final/st-bell.svg" alt="" />
+          </button>
+        </div>
+        <div>
+          <button type="button" class="st-btn-perfil" aria-label="Perfil"></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="ind-main">
+
+      <section class="ind-hero">
+        <div class="ind-hero-icone"><img src="icons_final/amigos.svg" alt=""></div>
+        <div>
+          <h1>Indique e ganhe</h1>
+          <p>Cada amigo que virar cliente vale <em>R$ 50</em> de desconto na sua fatura. E ele ganha também!</p>
+        </div>
+      </section>
+
+      <section class="ind-sem-login cad-card oculto" id="ind-sem-login">
+        <p>Entre na sua conta para indicar amigos e acompanhar seus bônus.</p>
+        <button type="button" class="cad-botao" data-nav="screen-entrar">Entrar</button>
+      </section>
+
+      <div id="ind-conteudo">
+        <section class="ind-resumo" aria-label="Resumo das indicações">
+          <div class="ind-resumo-item"><strong id="ind-total">0</strong><span>indicações</span></div>
+          <div class="ind-resumo-item"><strong id="ind-aderiram">0</strong><span>viraram clientes</span></div>
+          <div class="ind-resumo-item ind-resumo-ganho"><strong id="ind-ganho">R$ 0</strong><span>de bônus</span></div>
+        </section>
+
+        <form class="cad-card" id="ind-form" novalidate>
+          <h2 class="cad-card-titulo">Indicar um amigo</h2>
+          <label class="cad-campo">
+            <span class="cad-label">Nome do amigo</span>
+            <input class="cad-input" name="nome" autocomplete="off" maxlength="100" required>
+          </label>
+          <label class="cad-campo">
+            <span class="cad-label">E-mail ou WhatsApp</span>
+            <input class="cad-input" name="contato" autocomplete="off" placeholder="amigo@email.com ou (31) 99999-9999" maxlength="100" required>
+          </label>
+          <p class="cad-erro" role="alert" hidden></p>
+          <p class="ind-sucesso oculto" id="ind-sucesso" role="status"></p>
+          <button type="submit" class="cad-botao">Enviar indicação</button>
+          <a class="ind-whatsapp" id="ind-whatsapp" target="_blank" rel="noopener noreferrer"
+             href="https://wa.me/?text=Estou%20economizando%20na%20conta%20de%20luz%20com%20a%20Bulbe%2C%20energia%20solar%20sem%20obra.%20Conhe%C3%A7a%3A%20https%3A%2F%2Fbulbeenergia.com.br">
+            Convidar pelo WhatsApp
+          </a>
+        </form>
+
+        <h2 class="ind-lista-titulo">Suas indicações</h2>
+        <ul class="ind-lista" id="ind-lista" aria-live="polite"></ul>
+      </div>
+
+    </main>
+
+    <footer class="st-footer">
+      <nav class="st-nav">
+        <button type="button" class="st-nav-item" data-nav="screen-dicas">
+          <img src="icons_final/st-dicas.svg" alt="" />
+          <div>Dicas</div>
+        </button>
+        <button type="button" class="st-nav-item st-nav-ativo" data-nav="screen-indicacoes">
+          <img src="icons_final/st-indicacoes.svg" alt="" />
+          <div>Indicações</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-status">
+          <img src="icons_final/st-conexao.svg" alt="" />
+          <div>Conexão</div>
+        </button>
+        <button type="button" class="st-nav-item" data-nav="screen-vantagens">
+          <img src="icons_final/st-vantagens.svg" alt="" />
+          <div>Vantagens</div>
+        </button>
+      </nav>
+    </footer>
+
+  </div>
+  <!-- ===================== FIM: INDICAÇÕES ===================== -->
+  <!-- BULBE-TELAS-NOVAS: fim -->
+
   <script src="config.js"></script>
   <script src="api.js"></script>
   <script src="final.js"></script>
+  <script src="telas.js"></script>
 
   <div class="phone-chrome" aria-hidden="true">
     <div class="phone-home-bar"></div>
