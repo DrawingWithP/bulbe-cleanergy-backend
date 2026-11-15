@@ -34,6 +34,21 @@ def _rodar(comando: list[str], pasta: Path, env: dict[str, str]) -> None:
         raise SystemExit(f"Falhou: {' '.join(comando)}")
 
 
+def _banco_do_app() -> str:
+    """
+    URL do banco do app para o painel: a mesma BULBE_DATABASE_URL do backend.
+    Um SQLite relativo (ex.: sqlite:///./bulbe.db) e resolvido a partir de backend/,
+    porque o painel roda em outra pasta.
+    """
+    url = os.environ.get("BULBE_DATABASE_URL") or "sqlite:///./bulbe.db"
+    prefixo = "sqlite:///"
+    if url.startswith(prefixo):
+        caminho = Path(url[len(prefixo):])
+        if not caminho.is_absolute():
+            return prefixo + (BACKEND / caminho).resolve().as_posix()
+    return url
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sobe o app da Bulbe e o sistema de gerenciamento juntos.")
     parser.add_argument("--porta-app", type=int, default=8000)
@@ -48,7 +63,7 @@ def main() -> None:
         **os.environ,
         "INTEGRACAO_APP_API_URL": f"http://127.0.0.1:{args.porta_app}",
     }
-    env_painel.setdefault("INTEGRACAO_APP_DB_URL", "sqlite:///" + (BACKEND / "bulbe.db").as_posix())
+    env_painel.setdefault("INTEGRACAO_APP_DB_URL", _banco_do_app())
 
     _rodar([python, "-m", "alembic", "upgrade", "head"], BACKEND, env_app)
     if not args.sem_seed:
