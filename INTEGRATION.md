@@ -391,7 +391,7 @@ Executados no Windows 11, Python 3.14, no ambiente único da raiz (`requirements
 | `alembic upgrade head` + `alembic check` + `downgrade base` + `upgrade head` | sem diferenças entre modelos e migrations |
 | `pytest` em `backend/` | 218 aprovados, 0 warnings (1 aviso de depreciação do `httpx` aparece no ambiente só do backend) |
 | `pytest` em `sistema-de-gerenciamento/` | 198 aprovados |
-| `integration-tests/check_preservation.py` | 72 arquivos originais idênticos; HTML só acrescenta `config.js` e `api.js` |
+| `integration-tests/check_preservation.py` | 76 arquivos originais idênticos (inclui os 4 ícones da tela Bônus extra, recuperados do commit `fb18142` do frontend original); HTML só com os acréscimos declarados |
 | `integration-tests/test_browser.py` (Playwright/Chromium) | 8 de 8 verificações aprovadas (inclui login pela tela Entrar, indicação e adesão pelas telas novas), em 4 execuções seguidas |
 | `integration-tests/test_sistemas_integrados.py` | aprovado (sincronização app → painel e etapa painel → app) |
 | `iniciar.py` + navegador | app e painel no ar juntos; etapa alterada na ficha do painel confirmada na API do app |
