@@ -120,6 +120,26 @@ const ClubeBulbe = BulbeAPI.clube;
   let currentIndex = 0;
 
   let economias = [];
+
+  // Icone pronto escolhido no sistema de gerenciamento (lista fechada da API).
+  const ICONES_DICA = {
+    lampada_led: 'screens/dicas/icons/light_lamp.svg',
+    lampada_apagada: 'screens/dicas/icons/dark_lamp.svg',
+    chuveiro: 'screens/dicas/icons/shower.svg',
+    maquina_lavar: 'screens/dicas/icons/laundry.svg',
+    cofrinho: 'screens/dicas/icons/piggybank.svg',
+    geladeira: 'icons_final/dicas/geladeira.svg',
+    ar_condicionado: 'icons_final/dicas/ar_condicionado.svg',
+    tomada: 'icons_final/dicas/tomada.svg',
+    televisao: 'icons_final/dicas/televisao.svg',
+    ferro_passar: 'icons_final/dicas/ferro_passar.svg',
+    sol: 'icons_final/dicas/sol.svg',
+    ventilador: 'icons_final/dicas/ventilador.svg',
+  };
+  function iconeDaDica(d) {
+    return ICONES_DICA[d.icone] || ICONES_DICA.lampada_led;
+  }
+
   window._onDicas = async function () {
     ul.replaceChildren(); indicators.replaceChildren();
     document.querySelector('.dc-mensal span').textContent = '—';
@@ -132,7 +152,7 @@ const ClubeBulbe = BulbeAPI.clube;
         const li = document.createElement('li');
         const article = document.createElement('article'); article.className = 'dc-card';
         const img = document.createElement('img'); img.alt = '';
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(d.imagem_svg);
+        img.src = iconeDaDica(d);
         const h2 = document.createElement('h2'); h2.textContent = d.titulo;
         const p = document.createElement('p'); p.textContent = d.descricao;
         article.append(img, h2, p); li.append(article); ul.append(li);

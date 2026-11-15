@@ -29,6 +29,7 @@ CASOS = [
     ("PATCH", "/v1/adesoes/{adesao_id}", 200),
     ("DELETE", "/v1/adesoes/{adesao_id}", 204),
     ("GET", "/v1/dicas", 200),
+    ("PUT", "/v1/dicas/vitrine", 200),
     ("POST", "/v1/dicas", 201),
     ("GET", "/v1/dicas/{dica_id}", 200),
     ("PUT", "/v1/dicas/{dica_id}", 200),
@@ -87,6 +88,7 @@ PROTEGIDAS = {
     ("PATCH", "/v1/adesoes/{adesao_id}"),
     ("DELETE", "/v1/adesoes/{adesao_id}"),
     ("POST", "/v1/dicas"),
+    ("PUT", "/v1/dicas/vitrine"),
     ("PUT", "/v1/dicas/{dica_id}"),
     ("DELETE", "/v1/dicas/{dica_id}"),
     ("DELETE", "/v1/indicacoes/{indicacao_id}"),
@@ -106,12 +108,12 @@ PROTEGIDAS = {
 
 def test_inventario_e_autenticacao_dos_contratos():
     assert set(ROTAS) == {(m, p) for m, p, _ in CASOS}
-    assert len(CASOS) == len(ROTAS) == 60
+    assert len(CASOS) == len(ROTAS) == 61
     assert {rota for rota, op in ROTAS.items() if op.get("security")} == PROTEGIDAS
 
 
 def _url(caminho):
-    ids = {"usina_id": 1, "adesao_id": 1, "dica_id": 1, "indicacao_id": 1,
+    ids = {"usina_id": 1, "adesao_id": 1, "dica_id": 6, "indicacao_id": 1,
            "cliente_id": ID_MARCOS, "parceiro_id": ID_ARAUJO,
            "cupom_id": ID_CUPOM_MARCOS, "carta_id": ID_CARTA_MARCOS,
            "mes_referencia": "2026-11",
@@ -151,6 +153,7 @@ def contratos(client, session_factory, adesao_valida, cliente_valido, usina_vali
         "/v1/cupons/{cupom_id}": {"situacao": "salvo"},
         "/v1/bandeiras/{mes_referencia}": {"bandeira": "amarela"},
         "/v1/demonstracao/relogio/avancar": {"dias": 1},
+        "/v1/dicas/vitrine": {"dicas": [1, 2, 3, 4, 5]},
         "/v1/catalogo-cupons": {"parceiro_id": ID_ARAUJO, "titulo": "Cupom novo", "descricao": "Descricao do cupom.",
                                 "prefixo_codigo": "NOVO"},
         "/v1/catalogo-cupons/{modelo_id}": {"peso": 2},

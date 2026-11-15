@@ -5,6 +5,7 @@ Camada de Apresentacao, DicaController (APIRouter).
 from fastapi import (
     APIRouter,
     Depends,
+    Query,
     status,
 )
 
@@ -13,6 +14,7 @@ from app.domain.dica import (
     Dica,
     DicaCreate,
     DicaUpdate,
+    VitrineDicas,
 )
 from app.domain.usuario import Usuario
 from app.services.dica_service import dica_service
@@ -28,12 +30,37 @@ router = APIRouter(
     "",
     response_model=list[Dica],
 )
-def listar_dicas() -> list[Dica]:
+def listar_dicas(
+    todas: bool = Query(
+        default=False,
+        description="true: o acervo inteiro; padrao: so as 5 dicas da vitrine do app",
+    ),
+) -> list[Dica]:
     """
-    Lista todas as dicas cadastradas.
+    Dicas exibidas no app (vitrine, na ordem do carrossel) ou o acervo inteiro.
     """
 
-    return dica_service.listar()
+    return dica_service.listar(todas=todas)
+
+
+@router.put(
+    "/vitrine",
+    response_model=list[Dica],
+    summary="Definir as 5 dicas exibidas no app",
+)
+def definir_vitrine(
+    dados: VitrineDicas,
+    _usuario: Usuario = Depends(
+        obter_usuario_atual
+    ),
+) -> list[Dica]:
+    """
+    Troca as 5 dicas do carrossel do app de uma vez, na ordem informada.
+
+    Requer autenticacao.
+    """
+
+    return dica_service.definir_vitrine(dados.dicas)
 
 
 @router.get(

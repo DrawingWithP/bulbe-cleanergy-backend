@@ -151,3 +151,51 @@ def atualizar_modelo_cupom(modelo_id: str, dados: ModeloCupomAlteracao, admin: d
 @router.delete("/catalogo-cupons/{modelo_id}", status_code=204)
 def remover_modelo_cupom(modelo_id: str, admin: dict = Depends(exigir_admin)) -> None:
     no_app(api_app.remover_modelo_cupom, modelo_id, sincronizar=False)
+
+
+# ---------------------------------------------------------------------------
+# Dicas do app: acervo, vitrine de 5 (o que aparece no app) e cadastro
+# ---------------------------------------------------------------------------
+ICONES_DICA = (
+    "lampada_led", "lampada_apagada", "chuveiro", "maquina_lavar", "cofrinho", "geladeira",
+    "ar_condicionado", "tomada", "televisao", "ferro_passar", "sol", "ventilador",
+)
+PADRAO_ICONE = "^(" + "|".join(ICONES_DICA) + ")$"
+
+
+class DicaEntrada(BaseModel):
+    titulo: str = Field(..., min_length=3, max_length=100)
+    descricao: str = Field(..., min_length=3, max_length=250)
+    economia: float = Field(..., gt=0, le=10_000)
+    icone: str = Field("lampada_led", pattern=PADRAO_ICONE)
+
+
+class VitrineEntrada(BaseModel):
+    dicas: list[int] = Field(..., min_length=5, max_length=5)
+
+
+@router.get("/app/dicas", dependencies=[Depends(funcionario_logado)])
+def listar_dicas_app() -> dict:
+    """Acervo de dicas do app, com a vitrine (em_exibicao/ordem) e os icones disponiveis."""
+    return {"dicas": no_app(api_app.listar_dicas_app, sincronizar=False), "icones": list(ICONES_DICA)}
+
+
+@router.put("/app/dicas/vitrine")
+def definir_vitrine(dados: VitrineEntrada, admin: dict = Depends(exigir_admin)) -> list:
+    """Confirma as 5 dicas do carrossel do app, na ordem (somente admin)."""
+    return no_app(api_app.definir_vitrine_dicas, dados.dicas)
+
+
+@router.post("/app/dicas", status_code=201)
+def criar_dica(dados: DicaEntrada, admin: dict = Depends(exigir_admin)) -> dict:
+    return no_app(api_app.criar_dica, dados.model_dump())
+
+
+@router.put("/app/dicas/{dica_id}")
+def atualizar_dica(dica_id: int, dados: DicaEntrada, admin: dict = Depends(exigir_admin)) -> dict:
+    return no_app(api_app.atualizar_dica, dica_id, dados.model_dump())
+
+
+@router.delete("/app/dicas/{dica_id}", status_code=204)
+def remover_dica(dica_id: int, admin: dict = Depends(exigir_admin)) -> None:
+    no_app(api_app.remover_dica, dica_id)

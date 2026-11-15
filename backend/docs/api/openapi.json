@@ -592,19 +592,43 @@
           "Dicas"
         ],
         "summary": "Listar Dicas",
-        "description": "Lista todas as dicas cadastradas.",
+        "description": "Dicas exibidas no app (vitrine, na ordem do carrossel) ou o acervo inteiro.",
         "operationId": "listar_dicas_v1_dicas_get",
+        "parameters": [
+          {
+            "name": "todas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true: o acervo inteiro; padrao: so as 5 dicas da vitrine do app",
+              "default": false,
+              "title": "Todas"
+            },
+            "description": "true: o acervo inteiro; padrao: so as 5 dicas da vitrine do app"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Dica"
                   },
-                  "type": "array",
                   "title": "Response Listar Dicas V1 Dicas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -618,15 +642,20 @@
         "summary": "Criar Dica",
         "description": "Cria uma nova dica.\n\nRequer autenticacao.",
         "operationId": "criar_dica_v1_dicas_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DicaCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -635,6 +664,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Dica"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dicas/vitrine": {
+      "put": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Definir as 5 dicas exibidas no app",
+        "description": "Troca as 5 dicas do carrossel do app de uma vez, na ordem informada.\n\nRequer autenticacao.",
+        "operationId": "definir_vitrine_v1_dicas_vitrine_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VitrineDicas"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Dica"
+                  },
+                  "type": "array",
+                  "title": "Response Definir Vitrine V1 Dicas Vitrine Put"
                 }
               }
             }
@@ -4391,11 +4466,23 @@
             "title": "Economia",
             "description": "Economia mensal da dica"
           },
+          "icone": {
+            "$ref": "#/components/schemas/IconeDica",
+            "description": "Icone pronto exibido no app",
+            "default": "lampada_led"
+          },
           "imagem_svg": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Imagem Svg",
-            "description": "Código XML/Texto puro do arquivo SVG"
+            "description": "Obsoleto: o app usa o campo icone. Mantido so por compatibilidade com clientes antigos da API."
           },
           "id": {
             "type": "integer",
@@ -4405,6 +4492,22 @@
             "type": "string",
             "format": "date",
             "title": "Data Ativacao"
+          },
+          "em_exibicao": {
+            "type": "boolean",
+            "title": "Em Exibicao",
+            "default": false
+          },
+          "ordem": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordem"
           }
         },
         "type": "object",
@@ -4412,7 +4515,6 @@
           "titulo",
           "descricao",
           "economia",
-          "imagem_svg",
           "id",
           "data_ativacao"
         ],
@@ -4441,19 +4543,30 @@
             "title": "Economia",
             "description": "Economia mensal da dica"
           },
+          "icone": {
+            "$ref": "#/components/schemas/IconeDica",
+            "description": "Icone pronto exibido no app",
+            "default": "lampada_led"
+          },
           "imagem_svg": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Imagem Svg",
-            "description": "Código XML/Texto puro do arquivo SVG"
+            "description": "Obsoleto: o app usa o campo icone. Mantido so por compatibilidade com clientes antigos da API."
           }
         },
         "type": "object",
         "required": [
           "titulo",
           "descricao",
-          "economia",
-          "imagem_svg"
+          "economia"
         ],
         "title": "DicaCreate",
         "description": "Campos exigidos para criar uma dica (POST)."
@@ -4509,6 +4622,16 @@
               }
             ],
             "title": "Imagem Svg"
+          },
+          "icone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IconeDica"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4752,6 +4875,25 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IconeDica": {
+        "type": "string",
+        "enum": [
+          "lampada_led",
+          "lampada_apagada",
+          "chuveiro",
+          "maquina_lavar",
+          "cofrinho",
+          "geladeira",
+          "ar_condicionado",
+          "tomada",
+          "televisao",
+          "ferro_passar",
+          "sol",
+          "ventilador"
+        ],
+        "title": "IconeDica",
+        "description": "Icones prontos das dicas (o app mostra o desenho correspondente).\nOs 5 primeiros sao os icones originais do protótipo."
       },
       "Indicacao": {
         "properties": {
@@ -5673,6 +5815,26 @@
         ],
         "title": "VerificacaoResponse",
         "description": "Resposta ao solicitar o envio do código\nde confirmação (202 Accepted)."
+      },
+      "VitrineDicas": {
+        "properties": {
+          "dicas": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "minItems": 5,
+            "title": "Dicas",
+            "description": "Ids das 5 dicas, na ordem do carrossel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dicas"
+        ],
+        "title": "VitrineDicas",
+        "description": "Corpo do PUT /v1/dicas/vitrine: as 5 dicas exibidas no app, na ordem."
       }
     },
     "securitySchemes": {

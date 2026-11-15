@@ -208,3 +208,24 @@ def atualizar_modelo_cupom(modelo_id: str, dados: dict) -> dict:
 
 def remover_modelo_cupom(modelo_id: str) -> None:
     chamar("DELETE", f"/v1/catalogo-cupons/{_id(modelo_id)}")
+
+
+# Dicas do app (acervo, vitrine e cadastro)
+def listar_dicas_app() -> list:
+    return chamar("GET", "/v1/dicas?todas=true", autenticado=False)
+
+
+def definir_vitrine_dicas(ids: list[int]) -> list:
+    return chamar("PUT", "/v1/dicas/vitrine", {"dicas": ids})
+
+
+def criar_dica(dados: dict) -> dict:
+    return chamar("POST", "/v1/dicas", dados)
+
+
+def atualizar_dica(dica_id: int, dados: dict) -> dict:
+    return chamar("PUT", f"/v1/dicas/{int(dica_id)}", dados)
+
+
+def remover_dica(dica_id: int) -> None:
+    chamar("DELETE", f"/v1/dicas/{int(dica_id)}")

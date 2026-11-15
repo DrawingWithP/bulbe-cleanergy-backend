@@ -25,6 +25,7 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
+    false as sa_false,
     Boolean,
     Date,
     DateTime,
@@ -133,9 +134,29 @@ class DicaModel(Base):
         nullable=False,
     )
 
-    imagem_svg: Mapped[str] = mapped_column(
+    imagem_svg: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    icone: Mapped[str] = mapped_column(
+        String(30),
         nullable=False,
+        default="lampada_led",
+        server_default="lampada_led",
+    )
+
+    # Vitrine do app: exatamente 5 dicas em exibicao, com ordem 1..5.
+    em_exibicao: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa_false(),
+    )
+
+    ordem: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
     )
 
     data_ativacao: Mapped[date] = mapped_column(

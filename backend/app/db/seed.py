@@ -60,15 +60,6 @@ CPF_MARCOS = "52998224725"
 CPF_ANA = "11144477735"
 CPF_ADESAO = "16899535009"
 
-SVG_LAMPADA = (
-    '<svg xmlns="http://www.w3.org/2000/svg" '
-    'viewBox="0 0 24 24">'
-    '<path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 '
-    '12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>'
-    "</svg>"
-)
-
-
 def _inserir_por_id(
     session: Session,
     modelo_cls: type,
@@ -184,31 +175,30 @@ def _popular_usinas(
     return inseridos
 
 
+# Dicas: (titulo, descricao, economia mensal, icone). As 5 primeiras formam a
+# vitrine inicial do app; as 4 primeiras sao as dicas originais do protótipo.
+DICAS = (
+    ("Troque por LED", "Lâmpadas LED duram mais e gastam menos energia.", 8.0, "lampada_led"),
+    ("Banhos rápidos", "Além de economizar água, você economiza energia.", 25.0, "chuveiro"),
+    ("Cestos cheios", "Use a máquina de lavar só quando estiver cheia: menos ciclos, menos energia.", 15.0,
+     "maquina_lavar"),
+    ("Cômodos em uso", "Deixe acesas só as luzes dos cômodos em que você está.", 10.0, "lampada_apagada"),
+    ("Desligue o stand-by", "Tire da tomada aparelhos que ficam em stand-by.", 12.5, "tomada"),
+    ("Banho mais curto", "Reduza o banho de chuveiro elétrico em 5 minutos.", 25.0, "chuveiro"),
+    ("Geladeira longe do fogão", "Calor por perto faz o motor da geladeira trabalhar mais.", 9.0, "geladeira"),
+    ("Ar-condicionado em 23 °C", "Cada grau a menos aumenta o consumo; portas e janelas fechadas.", 30.0,
+     "ar_condicionado"),
+    ("Junte as roupas para passar", "Passe tudo de uma vez: o ferro gasta mais para esquentar.", 7.0, "ferro_passar"),
+    ("Aproveite a luz do sol", "Abra cortinas e janelas durante o dia e apague as lâmpadas.", 6.0, "sol"),
+)
+
+
 def _popular_dicas(
     session: Session,
 ) -> int:
     inseridos = 0
 
-    dicas = [
-        (
-            "Desligue o stand-by",
-            (
-                "Tire da tomada aparelhos que ficam "
-                "em stand-by."
-            ),
-            12.5,
-        ),
-        (
-            "Banho mais curto",
-            (
-                "Reduza o banho de chuveiro eletrico "
-                "em 5 minutos."
-            ),
-            25.0,
-        ),
-    ]
-
-    for titulo, descricao, economia in dicas:
+    for titulo, descricao, economia, icone in DICAS:
         inseridos += _inserir_se_nao_existir(
             session,
             DicaModel,
@@ -216,9 +206,26 @@ def _popular_dicas(
             titulo=titulo,
             descricao=descricao,
             economia=economia,
-            imagem_svg=SVG_LAMPADA,
+            icone=icone,
+            imagem_svg=None,
             data_ativacao=date(2026, 4, 1),
         )
+
+    session.flush()
+
+    # Bancos antigos: dicas criadas antes dos icones ficam com o padrao.
+    icones = {titulo: icone for titulo, _, _, icone in DICAS}
+    for dica in session.scalars(select(DicaModel)).all():
+        if dica.titulo in icones and dica.icone in (None, "lampada_led") and icones[dica.titulo] != dica.icone:
+            dica.icone = icones[dica.titulo]
+
+    # Vitrine inicial: so se ninguem montou a vitrine ainda.
+    if not session.scalars(select(DicaModel).where(DicaModel.em_exibicao.is_(True))).first():
+        for ordem, (titulo, *_resto) in enumerate(DICAS[:5], start=1):
+            dica = session.scalars(select(DicaModel).where(DicaModel.titulo == titulo)).first()
+            if dica is not None:
+                dica.em_exibicao = True
+                dica.ordem = ordem
 
     return inseridos
 

@@ -21,6 +21,9 @@ from app.domain.dica import (
 
 
 class DicaRepository(Protocol):
+    def definir_vitrine(self, ids: list[int]) -> None:
+        ...
+
     def listar(self) -> list[Dica]:
         ...
 
@@ -118,6 +121,13 @@ class InMemoryDicaRepository:
         del self._dicas[dica_id]
 
         return True
+
+    def definir_vitrine(self, ids: list[int]) -> None:
+        for dica_id, dica in list(self._dicas.items()):
+            ordem = ids.index(dica_id) + 1 if dica_id in ids else None
+            self._dicas[dica_id] = dica.model_copy(
+                update={"em_exibicao": ordem is not None, "ordem": ordem}
+            )
 
 
 class SqlDicaRepository:
@@ -223,6 +233,19 @@ class SqlDicaRepository:
             session.commit()
 
             return True
+
+
+    def definir_vitrine(self, ids: list[int]) -> None:
+        """Grava a vitrine numa transacao: tira todas e coloca as 5 na ordem."""
+        with self._session_factory() as session:
+            for modelo in session.scalars(select(DicaModel)).all():
+                if modelo.id in ids:
+                    modelo.em_exibicao = True
+                    modelo.ordem = ids.index(modelo.id) + 1
+                else:
+                    modelo.em_exibicao = False
+                    modelo.ordem = None
+            session.commit()
 
 
 dica_repository: DicaRepository = (
