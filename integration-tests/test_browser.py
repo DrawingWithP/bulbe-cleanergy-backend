@@ -485,13 +485,13 @@ def executar(
                     pagina.locator(
                         "#dc-dicas-list li"
                     )
-                ).to_have_count(2)
+                ).to_have_count(5)  # vitrine: exatamente 5 dicas
 
                 expect(
                     pagina.locator(
                         ".dc-mensal span"
                     )
-                ).to_have_text("R$ 12,50")
+                ).to_have_text("R$ 8,00")
 
                 pagina.locator(
                     "#dc-dicas-indicators li"
@@ -537,13 +537,25 @@ def executar(
                     "#carta-btn-abrir"
                 ).click()
 
+                # O cupom da semana e sorteado do catalogo (Clube Bulbe):
+                # qualquer um dos cupons ativos do seed vale. Espera o
+                # codigo gerado pela API substituir o texto de exemplo do HTML.
                 expect(
                     pagina.locator(
-                        "#rc-titulo"
+                        "#rc-cupom-codigo"
                     )
-                ).to_have_text(
-                    "500 pontos Livelo"
-                )
+                ).to_have_text(re.compile(r"^BULBE"))
+
+                titulo_sorteado = pagina.locator(
+                    "#rc-titulo"
+                ).inner_text().strip()
+
+                assert titulo_sorteado in {
+                    "15% de desconto na Araújo",
+                    "10% de desconto na Araújo",
+                    "Cashback dobrado no Inter",
+                    "500 pontos Livelo",
+                }, titulo_sorteado
 
                 codigo_cupom = pagina.locator(
                     "#rc-cupom-codigo"
@@ -604,7 +616,7 @@ def executar(
                         "#van-container-cupons"
                     )
                 ).to_contain_text(
-                    "500 pontos Livelo"
+                    titulo_sorteado
                 )
 
                 resultado_abertura = api.post(
@@ -629,7 +641,7 @@ def executar(
                 pagina.locator(
                     "#van-container-cupons li"
                 ).filter(
-                    has_text="500 pontos Livelo"
+                    has_text=titulo_sorteado
                 ).click()
 
                 expect(
