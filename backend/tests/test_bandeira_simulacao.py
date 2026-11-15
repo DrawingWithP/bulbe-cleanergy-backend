@@ -141,3 +141,15 @@ def test_patch_de_adesao_atualiza_parcialmente(client, headers_auth, adesao_vali
     assert resposta.status_code == 200
     assert resposta.json()["cidade"] == "Contagem"
     assert resposta.json()["nome"] == criada["nome"]
+
+
+def test_bandeira_de_mes_nao_cadastrado_usa_verde(client):
+    resposta = client.get("/v1/bandeiras/2030-01")
+
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert corpo["mes_referencia"] == "2030-01"
+    assert corpo["bandeira"] == "verde"
+    assert corpo["definida"] is False
+    assert corpo["adicional_por_kwh"] == 0.0
+    
