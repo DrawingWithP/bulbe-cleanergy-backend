@@ -10,6 +10,7 @@ from fastapi import (
 
 from app.core.dependencies import obter_usuario_atual
 from app.domain.adesao import (
+    AdesaoAprovada,
     Adesao,
     AdesaoCreate,
     AdesaoUpdate,
@@ -116,3 +117,40 @@ def remover_adesao(
     adesao_service.remover(
         adesao_id
     )
+
+
+@router.post(
+    "/{adesao_id}/aprovacao",
+    response_model=AdesaoAprovada,
+    summary="Aprovar adesao e criar o cliente",
+)
+def aprovar_adesao(
+    adesao_id: int,
+    _usuario: Usuario = Depends(
+        obter_usuario_atual
+    ),
+) -> AdesaoAprovada:
+    """
+    Aprova a adesao e cria o cliente com os dados dela; a jornada de
+    ativacao comeca na etapa 1. O cliente passa a usar o primeiro acesso
+    do app com o CPF. Requer autenticacao.
+    """
+
+    adesao, cliente_id = adesao_service.aprovar(adesao_id)
+    return AdesaoAprovada(adesao=adesao, cliente_id=cliente_id)
+
+
+@router.post(
+    "/{adesao_id}/recusa",
+    response_model=Adesao,
+    summary="Recusar adesao",
+)
+def recusar_adesao(
+    adesao_id: int,
+    _usuario: Usuario = Depends(
+        obter_usuario_atual
+    ),
+) -> Adesao:
+    """Recusa a adesao. Requer autenticacao."""
+
+    return adesao_service.recusar(adesao_id)

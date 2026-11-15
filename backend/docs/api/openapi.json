@@ -586,6 +586,102 @@
         }
       }
     },
+    "/v1/adesoes/{adesao_id}/aprovacao": {
+      "post": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Aprovar adesao e criar o cliente",
+        "description": "Aprova a adesao e cria o cliente com os dados dela; a jornada de\nativacao comeca na etapa 1. O cliente passa a usar o primeiro acesso\ndo app com o CPF. Requer autenticacao.",
+        "operationId": "aprovar_adesao_v1_adesoes__adesao_id__aprovacao_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdesaoAprovada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/adesoes/{adesao_id}/recusa": {
+      "post": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Recusar adesao",
+        "description": "Recusa a adesao. Requer autenticacao.",
+        "operationId": "recusar_adesao_v1_adesoes__adesao_id__recusa_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adesao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/dicas": {
       "get": {
         "tags": [
@@ -3337,6 +3433,24 @@
         ],
         "title": "Adesao",
         "description": "Representação completa de uma adesão,\ncomo a API devolve."
+      },
+      "AdesaoAprovada": {
+        "properties": {
+          "adesao": {
+            "$ref": "#/components/schemas/Adesao"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "adesao",
+          "cliente_id"
+        ],
+        "title": "AdesaoAprovada",
+        "description": "Resposta do POST /v1/adesoes/{id}/aprovacao: a adesao aprovada\ne o cliente criado a partir dela."
       },
       "AdesaoCreate": {
         "properties": {

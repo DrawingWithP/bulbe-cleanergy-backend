@@ -253,3 +253,34 @@ def responder(atendimento_id: int, dados: RespostaEntrada,
 def encerrar(atendimento_id: int, funcionario: dict = Depends(funcionario_logado)) -> dict:
     """Encerra a conversa no app (o cliente ve 'Conversa encerrada')."""
     return no_app(api_app.encerrar_atendimento, _id_app_atendimento(_atendimento(atendimento_id)))
+
+
+# ---------------------------------------------------------------------------
+# Adesoes: aprovar (cria o cliente no app) ou recusar
+# ---------------------------------------------------------------------------
+def _id_app_adesao(adesao_id: str) -> str:
+    from app.database.conexao import obter_sessao
+    from app.database.modelos import Adesao
+
+    with obter_sessao() as sessao:
+        adesao = sessao.get(Adesao, adesao_id)
+        if adesao is None:
+            raise HTTPException(404, detail={"error": {"code": "ADESAO_NAO_ENCONTRADA",
+                                                        "message": "Adesao nao encontrada.", "status": 404}})
+        if not adesao.id_app:
+            raise HTTPException(409, detail={"error": {
+                "code": "ADESAO_SEM_VINCULO_APP",
+                "message": "Esta adesao e do historico ficticio do painel; so as adesoes feitas pelo app podem ser analisadas.",
+                "status": 409}})
+        return adesao.id_app
+
+
+@router.post("/adesoes/{adesao_id}/aprovacao")
+def aprovar_adesao(adesao_id: str, funcionario: dict = Depends(funcionario_logado)) -> dict:
+    """Aprova a adesao no app: cria o cliente, que comeca a jornada de ativacao."""
+    return no_app(api_app.aprovar_adesao, _id_app_adesao(adesao_id))
+
+
+@router.post("/adesoes/{adesao_id}/recusa")
+def recusar_adesao(adesao_id: str, funcionario: dict = Depends(funcionario_logado)) -> dict:
+    return no_app(api_app.recusar_adesao, _id_app_adesao(adesao_id))

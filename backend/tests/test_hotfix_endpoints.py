@@ -28,6 +28,8 @@ CASOS = [
     ("PUT", "/v1/adesoes/{adesao_id}", 200),
     ("PATCH", "/v1/adesoes/{adesao_id}", 200),
     ("DELETE", "/v1/adesoes/{adesao_id}", 204),
+    ("POST", "/v1/adesoes/{adesao_id}/aprovacao", 200),
+    ("POST", "/v1/adesoes/{adesao_id}/recusa", 200),
     ("GET", "/v1/dicas", 200),
     ("PUT", "/v1/dicas/vitrine", 200),
     ("POST", "/v1/dicas", 201),
@@ -94,6 +96,8 @@ PROTEGIDAS = {
     ("PUT", "/v1/adesoes/{adesao_id}"),
     ("PATCH", "/v1/adesoes/{adesao_id}"),
     ("DELETE", "/v1/adesoes/{adesao_id}"),
+    ("POST", "/v1/adesoes/{adesao_id}/aprovacao"),
+    ("POST", "/v1/adesoes/{adesao_id}/recusa"),
     ("POST", "/v1/dicas"),
     ("PUT", "/v1/dicas/vitrine"),
     ("PUT", "/v1/dicas/{dica_id}"),
@@ -117,7 +121,7 @@ PROTEGIDAS = {
 
 def test_inventario_e_autenticacao_dos_contratos():
     assert set(ROTAS) == {(m, p) for m, p, _ in CASOS}
-    assert len(CASOS) == len(ROTAS) == 68
+    assert len(CASOS) == len(ROTAS) == 70
     assert {rota for rota, op in ROTAS.items() if op.get("security")} == PROTEGIDAS
 
 

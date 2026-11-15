@@ -243,3 +243,12 @@ def responder_atendimento(atendimento_id: str, texto: str, atendente: str) -> di
 
 def encerrar_atendimento(atendimento_id: str) -> dict:
     return chamar("POST", f"/v1/atendimentos/{_id(atendimento_id)}/encerramento", {}, autenticado=False)
+
+
+# Adesoes: analise do pedido de contratacao
+def aprovar_adesao(adesao_id_app: str) -> dict:
+    return chamar("POST", f"/v1/adesoes/{_id(adesao_id_app)}/aprovacao")
+
+
+def recusar_adesao(adesao_id_app: str) -> dict:
+    return chamar("POST", f"/v1/adesoes/{_id(adesao_id_app)}/recusa")

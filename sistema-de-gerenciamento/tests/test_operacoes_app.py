@@ -173,3 +173,23 @@ def test_atendimento_ficticio_nao_tem_chat(cliente_http, cab_atendimento, api, a
     assert resposta.status_code == 409
     assert resposta.json()["error"]["code"] == "ATENDIMENTO_SEM_CHAT"
     assert cliente_http.get("/v1/painel/atendimentos/999999/conversa", headers=cab_atendimento).status_code == 404
+
+
+def test_aprovar_adesao_do_app(cliente_http, cab_atendimento, api):
+    from app.database.modelos import Adesao
+
+    chamadas, respostas = api
+    respostas[("POST", "/v1/adesoes/7/aprovacao")] = {"adesao": {"status": "aprovada"}, "cliente_id": "novo"}
+    with conexao.obter_sessao() as sessao:
+        sessao.add(Adesao(id="ades-teste-app", nome="Joana Prado", email="joana@ex.com", situacao="enviada",
+                          origem="app", id_app="7", importado_do_app=True))
+        ficticia = sessao.query(Adesao).filter(Adesao.id_app.is_(None)).first().id
+    try:
+        resposta = cliente_http.post("/v1/painel/adesoes/ades-teste-app/aprovacao", headers=cab_atendimento)
+        assert resposta.status_code == 200
+        assert chamadas[-1][:2] == ("POST", "/v1/adesoes/7/aprovacao")
+        sem_vinculo = cliente_http.post(f"/v1/painel/adesoes/{ficticia}/recusa", headers=cab_atendimento)
+        assert sem_vinculo.status_code == 409
+    finally:
+        with conexao.obter_sessao() as sessao:
+            sessao.delete(sessao.get(Adesao, "ades-teste-app"))
