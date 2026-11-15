@@ -8,6 +8,7 @@ import re
 import secrets
 import uuid
 
+from app.core import config
 from app.domain.primeiro_acesso import (
     ConfirmacaoRequest,
     ConfirmacaoResponse,
@@ -207,6 +208,13 @@ class PrimeiroAcessoService:
             ),
             expira_em=nova_verificacao.expira_em.strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
+            ),
+            # Sem SMS/e-mail real: fora de producao o codigo volta na
+            # resposta para a demonstracao do app conseguir confirmar.
+            codigo_demonstracao=(
+                None
+                if config.AMBIENTE == "producao"
+                else nova_verificacao.codigo
             ),
         )
 

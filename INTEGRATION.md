@@ -16,7 +16,7 @@ Documentos, slides, caches, segredos e dados de produção não fazem parte da i
 
 Durante a revisão, arquivos em `backend/app/` foram atualizados intencionalmente para padronização, correção de contratos, validações e compatibilidade entre frontend e backend.
 
-As migrations existentes e `sistema-de-gerenciamento/` permanecem fora do escopo dessas alterações.
+Nesta revisão da integração, as migrations existentes e `sistema-de-gerenciamento/` ficaram fora do escopo. Depois dela, na finalização do projeto (branch `chore/finalizacao-projeto`), entraram uma migration nova e a integração do sistema de gerenciamento com o app; veja [Atualizações da finalização](#atualizações-da-finalização).
 
 `backend/dev_frontend.py` fornece uma entrada opcional para desenvolvimento, servindo frontend e API na mesma origem. A aplicação principal continua disponível por `app.main:app`.
 
@@ -34,9 +34,12 @@ Não há deploy, merge automático ou alteração automática de ambiente de pro
 | Selecionar cupom | `GET /v1/cupons/{id}` | Recupera o cupom selecionado |
 | Salvar cupom | `PATCH /v1/cupons/{id}` | Envia `situacao=salvo` |
 | Usar cupom | `PATCH /v1/cupons/{id}` | Envia `situacao=usado` |
-| Simuladores aberto e logado | `POST /v1/simulacoes` | Persiste `valor_atual`, `valor_proposto`, `periodo_meses` e `indicacoes` |
+| Simuladores aberto e logado | `POST /v1/simulacoes` | Persiste `valor_atual`, `valor_proposto`, `periodo_meses` e `indicacoes`; o logado envia também `cliente_id` |
+| Entrar e Primeiro acesso (telas novas) | `POST /v1/primeiro-acesso/verificacoes` e `/confirmacoes` | CPF → código de 6 dígitos → sessão do cliente no navegador |
+| Abrir conta (tela nova) | `POST /v1/adesoes` | Adesão em 3 passos (dados, endereço, conta de luz) com protocolo |
+| Indicações (tela nova) | `GET /v1/clientes/{id}/indicacoes` e `POST /v1/indicacoes` | Resumo, formulário e lista das indicações do cliente |
 
-O backend de simulações valida e persiste os valores recebidos. O cálculo visual de economia continua sendo realizado pelo frontend existente.
+O backend de simulações valida, calcula a economia com a bandeira tarifária vigente (RF-03) e persiste. O frontend exibe `economia_mensal` e `economia_total` devolvidos pela API (com bandeira verde, os valores são os mesmos do cálculo original do protótipo).
 
 Os simuladores utilizam debounce de 350 ms para evitar uma gravação a cada evento intermediário de entrada.
 
@@ -74,27 +77,23 @@ Esse valor somente identifica o cliente fictício utilizado na demonstração. E
 
 As operações administrativas que possuem autenticação continuam utilizando JWT.
 
-As operações de carta e cupom consumidas diretamente pelo frontend permanecem de acordo com o contrato público utilizado pela integração atual. Isso não representa uma política adequada de autorização para uma aplicação de consumidor final em produção.
+As operações de carta e cupom consumidas diretamente pelo frontend permanecem de acordo com o contrato público utilizado pela integração atual. Isso não representa uma política adequada de autorização para uma aplicação de consumidor final em produção. O descarte de cupom (`DELETE /v1/cupons/{id}`), que o frontend não usa, passou a exigir token de operador.
 
 ## Incompatibilidades e limites mantidos
 
 ### Login do aplicativo
 
-O botão Entrar do frontend original apenas navega para outra tela.
+Na finalização foram criadas as telas **Entrar** e **Primeiro acesso** (`frontend/telas.*`). As duas usam o fluxo de primeiro acesso da API: CPF → código de 6 dígitos → `cliente_id`, guardado no navegador (`localStorage`, chave `bulbe_cliente_id`). O botão Entrar leva à tela de login quando não há sessão e direto à área do cliente quando há; o menu lateral ganha "Sair da conta".
 
-Não existem campos de e-mail e senha no frontend recebido.
+O código não é enviado por SMS/e-mail (fora do escopo). Fora de produção a API devolve `codigo_demonstracao` e a tela o mostra; com `BULBE_AMBIENTE=producao` o campo vem vazio.
 
-Também não existe atualmente vínculo entre o usuário retornado por `/v1/auth/me` e um cliente de `/v1/clientes`.
-
-Não foi criada autenticação fictícia para ocultar essa incompatibilidade.
+Limite que continua: isso é **identificação**, não autenticação. A API ainda não emite token para clientes, e as rotas do cliente seguem públicas. Sem sessão, a área do cliente usa `BULBE_FRONTEND_CLIENTE_ID` (demonstração).
 
 ### Primeiro acesso, adesão e indicações
 
-A API possui endpoints para primeiro acesso, adesões e indicações.
+A API possui endpoints para primeiro acesso, adesões e indicações. As indicações usam o UUID do cliente (com FK), então ficam ligadas ao cliente real.
 
-Entretanto, os destinos correspondentes do frontend consolidado não possuem os formulários necessários para executar essas jornadas completas.
-
-Criar novas telas ou solicitar novos campos modificaria o escopo visual recebido.
+Na finalização foram criadas as telas que faltavam: **Primeiro acesso**, **Abrir conta** (adesão em 3 passos) e **Indicações** (resumo, formulário e lista). Elas ficam num bloco marcado de `final.html` (`BULBE-TELAS-NOVAS`) com CSS e JS próprios (`telas.css`, `telas.js`), seguindo as variáveis do `:root` do `final.css`; o restante do HTML original segue intacto (verificado pelo `check_preservation.py`).
 
 ### Zero indicações
 
@@ -145,6 +144,8 @@ PATCH /v1/clientes/{cliente_id}/ativacao
 Os controles de demonstração existentes no frontend não utilizam esse endpoint.
 
 Avançar/voltar etapas no protótipo não modifica silenciosamente os dados reais do backend.
+
+A etapa real pode ser alterada pelo sistema de gerenciamento (ficha do cliente → **Atualizar no app**), que chama esse endpoint com um token de operador; o frontend mostra a nova etapa na próxima consulta.
 
 ### Controles de demonstração
 
@@ -300,6 +301,7 @@ O inventário abaixo corresponde aos controllers revisados.
 | POST | `/v1/adesoes` | Não |
 | GET | `/v1/adesoes/{adesao_id}` | Não |
 | PUT | `/v1/adesoes/{adesao_id}` | Sim |
+| PATCH | `/v1/adesoes/{adesao_id}` | Sim |
 | DELETE | `/v1/adesoes/{adesao_id}` | Sim |
 | GET | `/v1/dicas` | Não |
 | POST | `/v1/dicas` | Sim |
@@ -329,11 +331,15 @@ O inventário abaixo corresponde aos controllers revisados.
 | GET | `/v1/clientes/{cliente_id}/cupons` | Não |
 | GET | `/v1/cupons/{cupom_id}` | Não |
 | PATCH | `/v1/cupons/{cupom_id}` | Não |
-| DELETE | `/v1/cupons/{cupom_id}` | Não |
+| DELETE | `/v1/cupons/{cupom_id}` | Sim |
 | GET | `/v1/clientes/{cliente_id}/clube` | Não |
 | GET | `/v1/clientes/{cliente_id}/cartas` | Não |
 | GET | `/v1/cartas/{carta_id}` | Não |
 | POST | `/v1/cartas/{carta_id}/abertura` | Não |
+| GET | `/v1/bandeiras` | Não |
+| GET | `/v1/bandeiras/atual` | Não |
+| GET | `/v1/bandeiras/{mes_referencia}` | Não |
+| PUT | `/v1/bandeiras/{mes_referencia}` | Sim |
 | GET | `/` | Não |
 
 Além desses endpoints, FastAPI disponibiliza normalmente:
@@ -376,15 +382,32 @@ Somente após uma nova execução bem-sucedida devem ser registrados números co
 - resultado da comparação de screenshot;
 - quantidade final de arquivos modificados/adicionados.
 
-Até essa nova execução, este documento não afirma aprovação do estado final revisado.
+### Resultados observados (finalização, 15/11/2026)
+
+Executados no Windows 11, Python 3.14, no ambiente único da raiz (`requirements.txt`), no estado final da branch `chore/finalizacao-projeto`:
+
+| Validação | Resultado |
+|---|---|
+| `alembic upgrade head` + `alembic check` + `downgrade base` + `upgrade head` | sem diferenças entre modelos e migrations |
+| `pytest` em `backend/` | 218 aprovados, 0 warnings (1 aviso de depreciação do `httpx` aparece no ambiente só do backend) |
+| `pytest` em `sistema-de-gerenciamento/` | 198 aprovados |
+| `integration-tests/check_preservation.py` | 76 arquivos originais idênticos (inclui os 4 ícones da tela Bônus extra, recuperados do commit `fb18142` do frontend original); HTML só com os acréscimos declarados |
+| `integration-tests/test_browser.py` (Playwright/Chromium) | 8 de 8 verificações aprovadas (inclui login pela tela Entrar, indicação e adesão pelas telas novas), em 4 execuções seguidas |
+| `integration-tests/test_sistemas_integrados.py` | aprovado (sincronização app → painel e etapa painel → app) |
+| `iniciar.py` + navegador | app e painel no ar juntos; etapa alterada na ficha do painel confirmada na API do app |
+
+A comparação de screenshot com o frontend original (`--reference`) não foi executada, porque exige uma cópia local do repositório de origem.
 
 ## Preservação
 
 `integration-tests/check_preservation.py` verifica:
 
 - hashes SHA-256 dos CSS/assets originais;
-- preservação do HTML original, descontando apenas as referências explicitamente adicionadas para `config.js` e `api.js`;
-- ausência de mudanças no escopo configurado como preservado, incluindo migrations e `sistema-de-gerenciamento`.
+- preservação do HTML original, descontando apenas os acréscimos declarados: as referências para `config.js`, `api.js`, `telas.css` e `telas.js` e o bloco `BULBE-TELAS-NOVAS` (cada um exatamente uma vez).
+
+A verificação de "escopo preservado" (migrations e `sistema-de-gerenciamento` iguais ao commit base `86e8777`) valia só para esta revisão e foi retirada na finalização, quando essas pastas passaram a evoluir.
+
+O `.gitattributes` desliga a conversão de quebra de linha em `frontend/`: com `core.autocrlf=true` (padrão no Windows) o checkout trocava LF por CRLF e o hash do `final.css` deixava de bater, mesmo sem alteração.
 
 `backend/app/` não é tratado como intocado, pois contém alterações intencionais realizadas durante esta revisão.
 
@@ -396,10 +419,14 @@ integration-tests/frontend-source-sha256.json
 
 continua sendo a referência para os hashes do frontend original.
 
+## Atualizações da finalização
+
+- **Banco:** migration `a3c9e1f4b2d7` (código de verificação com 6 caracteres, indicações com FK para o cliente, simulações com bandeira e economia, tabela `bandeiras_tarifarias`).
+- **API:** `/v1/bandeiras` (RF-03), `PATCH /v1/adesoes/{id}` (US-07), `DELETE /v1/cupons/{id}` com token, indicações e simulações validando o cliente; `BULBE_SECRET_KEY` obrigatória com `BULBE_AMBIENTE=producao`.
+- **Frontend:** os simuladores exibem a economia calculada pela API; o logado envia `cliente_id`. Telas novas Entrar, Primeiro acesso, Abrir conta e Indicações, com sessão do cliente no navegador.
+- **Sistema de gerenciamento:** integrado ao app (veja [`sistema-de-gerenciamento/docs/integracao-com-o-app.md`](sistema-de-gerenciamento/docs/integracao-com-o-app.md)).
+- **Execução:** `iniciar.py` na raiz sobe app e painel juntos; CI em `.github/workflows/testes.yml`.
+
 ## Próxima etapa
-
-Executar a suíte completa de testes no estado final do repositório.
-
-Após a execução, atualizar somente a seção de resultados deste documento com os valores realmente observados.
 
 Merge e implantação continuam dependendo exclusivamente de revisão e decisão dos desenvolvedores responsáveis.

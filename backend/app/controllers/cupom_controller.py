@@ -7,9 +7,13 @@ Endpoints de Cupons de Desconto do Clube Bulbe
 
 from fastapi import (
     APIRouter,
+    Depends,
     Query,
     status,
 )
+
+from app.core.dependencies import obter_usuario_atual
+from app.domain.usuario import Usuario
 
 from app.domain.cupom import (
     Cupom,
@@ -106,10 +110,16 @@ def atualizar_situacao_cupom(
 )
 def descartar_cupom(
     cupom_id: str,
+    _usuario: Usuario = Depends(
+        obter_usuario_atual
+    ),
 ) -> None:
     """
     Descarta logicamente o cupom
     da carteira do cliente.
+
+    Requer autenticacao: o app ainda nao tem login de cliente,
+    entao o descarte fica restrito aos operadores.
     """
 
     cupom_service.descartar(

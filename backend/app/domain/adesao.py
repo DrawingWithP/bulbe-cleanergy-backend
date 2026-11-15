@@ -148,6 +148,66 @@ class AdesaoUpdate(BaseModel):
         description="Telefone do cliente",
     )
 
+    # Endereco e conta: permitem continuar uma adesao em andamento (US-07).
+    cep: str | None = Field(
+        default=None,
+        min_length=8,
+        max_length=8,
+        description="CEP do cliente",
+    )
+
+    logradouro: str | None = Field(
+        default=None,
+        min_length=4,
+        max_length=100,
+        description="Logradouro do endereço do cliente",
+    )
+
+    numero: int | None = Field(
+        default=None,
+        gt=0,
+        description="Número do endereço do cliente",
+    )
+
+    bairro: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=40,
+        description="Bairro do cliente",
+    )
+
+    cidade: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=40,
+        description="Cidade do cliente",
+    )
+
+    uf: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=2,
+        description="Unidade federativa do cliente",
+    )
+
+    distribuidora: str | None = Field(
+        default=None,
+        min_length=4,
+        max_length=15,
+        description="Distribuidora do cliente",
+    )
+
+    numero_instalacao: str | None = Field(
+        default=None,
+        description="Número da instalação do cliente",
+    )
+
+    valor_conta_atual: float | None = Field(
+        default=None,
+        gt=0,
+        description="Valor da conta de luz atual do cliente",
+    )
+
     status: StatusAdesao | None = None
 
 

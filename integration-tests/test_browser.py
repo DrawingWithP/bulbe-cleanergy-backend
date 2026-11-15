@@ -22,6 +22,7 @@ import argparse
 import contextlib
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import subprocess
@@ -407,8 +408,40 @@ def executar(
                     "real (200/401)"
                 )
 
+                # Entrar: CPF -> código -> área do cliente.
+                # O CPF é o do cliente fictício do seed (Marcos);
+                # fora de produção a API devolve o código de
+                # demonstração, que a tela mostra.
                 pagina.locator(
                     ".primary-button"
+                ).click()
+
+                tela_entrar = pagina.locator(
+                    "#screen-entrar"
+                )
+
+                tela_entrar.locator(
+                    "[name=cpf]"
+                ).fill("52998224725")
+
+                tela_entrar.locator(
+                    "[data-passo=cpf] button[type=submit]"
+                ).click()
+
+                codigo_demo = tela_entrar.locator(
+                    "[data-campo=codigo-demo]"
+                )
+
+                expect(codigo_demo).to_have_text(
+                    re.compile(r"^\d{6}$")
+                )
+
+                tela_entrar.locator(
+                    "[name=codigo]"
+                ).fill(codigo_demo.inner_text())
+
+                tela_entrar.locator(
+                    "[data-passo=codigo] button[type=submit]"
                 ).click()
 
                 expect(
@@ -436,6 +469,10 @@ def executar(
                 pagina.locator(
                     "#screen-detalhes [data-nav-back]"
                 ).click()
+
+                # Espera a animação de saída (280 ms) para a tela
+                # Detalhes não interceptar o próximo clique.
+                pagina.wait_for_timeout(350)
 
                 pagina.locator(
                     (
@@ -714,6 +751,83 @@ def executar(
                     "persistência real"
                 )
 
+                # Telas novas: indicação e adesão, gravadas de verdade.
+                pagina.evaluate(
+                    "navigateTo('screen-indicacoes')"
+                )
+
+                tela_indicacoes = pagina.locator(
+                    "#screen-indicacoes"
+                )
+
+                tela_indicacoes.locator(
+                    "#ind-form [name=nome]"
+                ).fill("Paula Reis")
+
+                tela_indicacoes.locator(
+                    "#ind-form [name=contato]"
+                ).fill("paula.reis@example.com")
+
+                tela_indicacoes.locator(
+                    "#ind-form button[type=submit]"
+                ).click()
+
+                expect(
+                    tela_indicacoes.locator(
+                        "#ind-lista .ind-item"
+                    )
+                ).to_have_count(1)
+
+                expect(
+                    tela_indicacoes.locator("#ind-total")
+                ).to_have_text("1")
+
+                pagina.evaluate(
+                    "navigateTo('screen-abrir-conta')"
+                )
+
+                tela_adesao = pagina.locator(
+                    "#screen-abrir-conta"
+                )
+
+                campos_adesao = {
+                    "nome": "Joana Prado",
+                    "email": "joana.prado@example.com",
+                    "cpf": "39053344705",
+                    "telefone": "31977776666",
+                    "cep": "30130010",
+                    "numero": "45",
+                    "logradouro": "Rua da Bahia",
+                    "bairro": "Centro",
+                    "cidade": "Belo Horizonte",
+                    "numero_instalacao": "3009876543",
+                    "valor_conta_atual": "320,00",
+                }
+
+                for passo, nomes in (
+                    ("1", ("nome", "email", "cpf", "telefone")),
+                    ("2", ("cep", "numero", "logradouro", "bairro", "cidade")),
+                    ("3", ("numero_instalacao", "valor_conta_atual")),
+                ):
+                    for nome in nomes:
+                        tela_adesao.locator(
+                            f"[name={nome}]"
+                        ).fill(campos_adesao[nome])
+
+                    tela_adesao.locator(
+                        f"[data-ade-passo='{passo}'] "
+                        "button[type=submit]"
+                    ).click()
+
+                expect(
+                    tela_adesao.locator("#ade-protocolo")
+                ).to_have_text(re.compile(r"^#\d+$"))
+
+                print(
+                    "PASS: telas novas (entrar, indicações "
+                    "e abrir conta) gravando na API"
+                )
+
                 pagina_cliente_inexistente = (
                     navegador.new_page()
                 )
@@ -739,9 +853,11 @@ def executar(
                     """
                 )
 
-                pagina_cliente_inexistente.locator(
-                    ".primary-button"
-                ).click()
+                # Sem sessão, a área do cliente usa o cliente de
+                # BULBE_CONFIG (aqui, um id que não existe).
+                pagina_cliente_inexistente.evaluate(
+                    "navigateTo('screen-status')"
+                )
 
                 expect(
                     pagina_cliente_inexistente.locator(
@@ -775,6 +891,15 @@ def executar(
                     "session.scalars("
                     "select(SimulacaoModel)"
                     ").all()) >= 6; "
+                    "from app.db.models import "
+                    "AdesaoModel, IndicacaoModel; "
+                    "assert session.scalars(select(AdesaoModel)"
+                    ".where(AdesaoModel.cpf == '39053344705'))"
+                    ".first() is not None; "
+                    "assert session.scalars(select(IndicacaoModel)"
+                    ".where(IndicacaoModel.contato == "
+                    "'paula.reis@example.com')).first() "
+                    "is not None; "
                     f'assert session.get(CupomModel, '
                     f'"{cupom_gerado["id"]}")'
                     '.situacao == "salvo"; '

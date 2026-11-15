@@ -15,6 +15,7 @@ from app.db.database import SessionLocal
 from app.db.models import SimulacaoModel
 from app.domain.simulacao import (
     Simulacao,
+    SimulacaoCalculada,
     SimulacaoCreate,
 )
 
@@ -31,7 +32,7 @@ class SimulacaoRepository(Protocol):
 
     def criar(
         self,
-        dados: SimulacaoCreate,
+        dados: SimulacaoCreate | SimulacaoCalculada,
     ) -> Simulacao:
         ...
 
@@ -63,12 +64,12 @@ class InMemorySimulacaoRepository:
 
     def criar(
         self,
-        dados: SimulacaoCreate,
+        dados: SimulacaoCreate | SimulacaoCalculada,
     ) -> Simulacao:
         simulacao = Simulacao(
             id=self._proximo_id,
             data_ativacao=date.today(),
-            **dados.model_dump(),
+            **dados.model_dump(exclude_none=True),
         )
 
         self._simulacoes[
@@ -136,11 +137,14 @@ class SqlSimulacaoRepository:
 
     def criar(
         self,
-        dados: SimulacaoCreate,
+        dados: SimulacaoCreate | SimulacaoCalculada,
     ) -> Simulacao:
         with self._session_factory() as session:
             modelo = SimulacaoModel(
-                **dados.model_dump(mode="json"),
+                **dados.model_dump(
+                    mode="json",
+                    exclude_none=True,
+                ),
                 data_ativacao=date.today(),
             )
 

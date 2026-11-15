@@ -21,11 +21,12 @@ class StatusIndicacao(str, Enum):
 
 
 class IndicacaoBase(BaseModel):
-    cliente_id: int = Field(
+    cliente_id: str = Field(
         ...,
-        gt=0,
+        min_length=1,
+        max_length=36,
         description=(
-            "ID do cliente que realizou a indicacao"
+            "ID (UUID) do cliente que realizou a indicacao"
         ),
     )
 

@@ -1,0 +1,15 @@
+# Quebras de linha normalizadas no repositorio (LF).
+* text=auto
+
+# O frontend e copiado byte a byte do repositorio original e conferido por
+# SHA-256 (integration-tests/check_preservation.py). Sem conversao de quebra
+# de linha no checkout, para o hash ser o mesmo no Windows, Linux e macOS.
+frontend/** -text
+integration-tests/frontend-source-sha256.json -text
+
+# Binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pptx binary
+*.db binary

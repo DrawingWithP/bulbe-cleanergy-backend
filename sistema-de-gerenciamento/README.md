@@ -2,7 +2,7 @@
 
 Painel web interno para os funcionários da Bulbe. O funcionário faz login, vê as métricas da operação, busca clientes e abre a ficha completa de cada um. Também pode perguntar ao **assistente (Claude Haiku 5.5)** sobre qualquer cliente ou sobre o funcionamento do app.
 
-Os dados vêm de um **banco fictício** (SQLite + SQLAlchemy). Ele junta o que o app da Bulbe já tem (faturas, instalação, indicações, notificações, atendimentos) com as funcionalidades criadas pela squad no front-end: jornada de ativação em 5 etapas, Clube Bulbe com cartas e cupons, simulador sem login, adesão pelo app e dicas.
+Os dados vêm do **app da Bulbe** (pasta [`../backend`](../backend)), sincronizados a cada 30 segundos, e de um **banco fictício** (SQLite + SQLAlchemy) que completa o que só o painel tem: faturas, notificações, atendimentos e o histórico que alimenta métricas e o chatbot. Na ficha de um cliente do app, o funcionário também **altera a etapa de ativação**, que vai direto para o app.
 
 **Versão 2:**
 - **Chat:** respostas em streaming, conversas guardadas no servidor e ferramentas de gestão da ativação (clientes parados, resumo por etapa).
@@ -11,7 +11,12 @@ Os dados vêm de um **banco fictício** (SQLite + SQLAlchemy). Ele junta o que o
 - **Telas:** Ativações, Dicas, Usinas e Parceiros, com paginação nas listas.
 - **Testes:** suíte automatizada com `pytest`.
 
-Este sistema é independente do back-end do app (pasta [`../backend`](../backend)). A integração futura entre os dois será pelo banco de dados: quando o app gravar os dados reais, o painel e o chatbot passam a mostrá-los.
+**Versão 3 — integração com o app:**
+- **Sincronização app → painel:** clientes, ativação, Clube (cartas, cupons e ofensiva), indicações, simulações, adesões, parceiros, dicas e usinas, lidos do banco do app em modo somente leitura. Registros equivalentes (mesmo CPF/e-mail, mesmo nome) são vinculados, não duplicados.
+- **Painel → app:** botão **Atualizar no app** na ficha muda a etapa de ativação pela API do app (auditado).
+- **Interface:** selo **App** nos clientes do app, estado da integração na visão geral e botão **Sincronizar com o app** para o admin.
+
+Detalhes em [`docs/integracao-com-o-app.md`](docs/integracao-com-o-app.md). O sistema continua rodando sozinho: sem o banco do app (ou com `INTEGRACAO_APP_DB_URL` vazia) ele usa só o banco fictício.
 
 ## Estrutura
 
@@ -20,14 +25,18 @@ Este sistema é independente do back-end do app (pasta [`../backend`](../backend
 | `app/main.py` | Ponto de entrada: rotas, montagem do `/painel`, inicialização do banco e tratamento de erros |
 | `app/erros.py` | `ErroDeNegocio` no formato `{"error": {code, message, status}}` |
 | `app/database/` | Modelos (20 tabelas), conexão, seed fictício determinístico, consultas, conversas do chat, auditoria e retenção |
+| `app/integracao/` | Sincronização com o banco do app e cliente da API do app (alterar etapa de ativação) |
 | `app/chatbot/` | Integração com a API da Anthropic (tool use e streaming), 19 ferramentas, base de conhecimento, conversas e custo; avaliações em `app/chatbot/avaliacoes/` |
-| `app/painel/` | Autenticação, bloqueio e alerta de login (`alertas.py`), rotas `/v1/painel/*` e a interface web (HTML/CSS/JS puro) |
+| `app/painel/` | Autenticação, bloqueio e alerta de login (`alertas.py`), rotas `/v1/painel/*` (inclui `/integracao`, `/admin/sincronizar` e `PATCH /clientes/{id}/ativacao`) e a interface web (HTML/CSS/JS puro) |
+| `app/chatbot/` (rotas) | `/v1/painel/chat`, `/chat/stream`, `/chat/conversas` e `/chat/sugestoes` |
 | `tests/` | Testes automatizados (`pytest`) de todo o sistema |
 | `docs/` | Contratos, levantamento de funcionalidades, arquitetura, dicionário de dados, guia do painel e LGPD |
 
 ## Como rodar
 
-Todos os comandos são executados **dentro desta pasta** (`sistema-de-gerenciamento`).
+O jeito mais simples é subir **tudo junto** pela raiz do repositório (app + painel): `python iniciar.py` (veja o [README da raiz](../README.md#como-executar-o-projeto)). O painel fica em <http://127.0.0.1:8001/painel/>.
+
+Para rodar só o painel, todos os comandos são executados **dentro desta pasta** (`sistema-de-gerenciamento`).
 
 1. Criar o ambiente virtual e instalar as dependências:
 
@@ -44,9 +53,11 @@ Todos os comandos são executados **dentro desta pasta** (`sistema-de-gerenciame
    .venv\Scripts\python.exe -m uvicorn app.main:app --reload --reload-dir app
    ```
 
-4. Abrir <http://localhost:8000/painel>. Os usuários de demonstração estão em [`docs/guia-do-painel.md`](docs/guia-do-painel.md); a senha é o valor de `PAINEL_SENHA_DEMO` no `.env`.
+4. Abrir <http://localhost:8000/painel>. Os usuários de demonstração estão em [`docs/guia-do-painel.md`](docs/guia-do-painel.md); a senha é o valor de `PAINEL_SENHA_DEMO` no `.env` (vazio = senha padrão do seed).
 
-O banco é criado e populado automaticamente na primeira execução. Quem já tinha o banco da versão 1 deve recriá-lo, com o servidor parado:
+   Rodando só o painel na porta 8000, aponte a API do app para outro endereço (`INTEGRACAO_APP_API_URL`) ou desligue a integração (`INTEGRACAO_APP_DB_URL=` vazio).
+
+O banco é criado e populado automaticamente na primeira execução. Quem já tinha o banco da versão 1 ou 2 deve recriá-lo, com o servidor parado:
 
 ```bash
 .venv\Scripts\python.exe -m app.database.seed

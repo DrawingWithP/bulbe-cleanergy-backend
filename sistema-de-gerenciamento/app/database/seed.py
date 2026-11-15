@@ -368,7 +368,7 @@ class _GeradorFicticio:
 
     # ------------------------------------------------------------- tabelas fixas
     def criar_funcionarios(self) -> None:
-        senha = os.getenv("PAINEL_SENHA_DEMO", "bulbe@demo123")
+        senha = os.getenv("PAINEL_SENHA_DEMO") or "bulbe@demo123"
         for i, (nome, email, perfil) in enumerate(FUNCIONARIOS):
             funcionario = Funcionario(
                 nome=nome,

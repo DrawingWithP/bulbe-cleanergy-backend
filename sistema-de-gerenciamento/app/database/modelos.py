@@ -11,6 +11,9 @@ Convencoes:
   Demais tabelas: inteiro autoincremento.
 - Datas em date/datetime UTC "ingenuo" (sem tzinfo). Valores monetarios em float (2 casas).
 - Os "enums" sao String + CHECK constraint (funciona igual no SQLite e em outros bancos).
+- Integracao com o app (app/integracao): as tabelas que espelham dados do app tem `id_app`
+  (id do registro no banco do backend) e `importado_do_app` (True = linha criada pela
+  sincronizacao; False com id_app preenchido = linha ficticia vinculada ao registro do app).
 """
 import uuid
 from datetime import date, datetime, timezone
@@ -55,6 +58,7 @@ STATUS_ATENDIMENTO = ("aberto", "em_andamento", "resolvido")
 PAPEIS_CHAT = ("user", "assistant")
 ACOES_AUDITORIA = (
     "login_ok", "login_falha", "login_bloqueado", "alerta_email", "ver_ficha", "ver_auditoria", "expurgo",
+    "sincronizar_app", "alterar_ativacao",
 )
 
 # Tamanhos maximos de texto usados nas tabelas novas (a camada de consultas corta antes de gravar)
@@ -76,6 +80,13 @@ def _check_em(coluna: str, valores: tuple[str, ...], nome: str) -> CheckConstrai
     """Cria uma CHECK constraint do tipo coluna IN ('a', 'b', ...)."""
     lista = ", ".join(f"'{valor}'" for valor in valores)
     return CheckConstraint(f"{coluna} IN ({lista})", name=nome)
+
+
+class VinculoApp:
+    """Colunas de vinculo com o registro equivalente no banco do app (backend)."""
+
+    id_app: Mapped[Optional[str]] = mapped_column(String(64), index=True, default=None)
+    importado_do_app: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +211,7 @@ class AuditoriaAcesso(Base):
 # ---------------------------------------------------------------------------
 # Bulbe (ja existe no app/site)
 # ---------------------------------------------------------------------------
-class Usina(Base):
+class Usina(VinculoApp, Base):
     """Usina solar que gera os creditos de energia. Origem: Bulbe."""
 
     __tablename__ = "usinas"
@@ -219,7 +230,7 @@ class Usina(Base):
     clientes: Mapped[list["Cliente"]] = relationship(back_populates="usina")
 
 
-class Cliente(Base):
+class Cliente(VinculoApp, Base):
     """Cliente da Bulbe (assinante de energia solar). Origem: Bulbe."""
 
     __tablename__ = "clientes"
@@ -317,7 +328,7 @@ class Fatura(Base):
     cliente: Mapped["Cliente"] = relationship(back_populates="faturas")
 
 
-class Indicacao(Base):
+class Indicacao(VinculoApp, Base):
     """Indicacao feita por um cliente (Indique e Ganhe, R$ 50). Origem: Bulbe."""
 
     __tablename__ = "indicacoes"
@@ -385,7 +396,7 @@ class Atendimento(Base):
 # ---------------------------------------------------------------------------
 # Squad Cleanergy (funcionalidades novas) + adesao (squad pelo app, Bulbe pelo site)
 # ---------------------------------------------------------------------------
-class Adesao(Base):
+class Adesao(VinculoApp, Base):
     """Solicitacao de adesao (app da squad ou site da Bulbe)."""
 
     __tablename__ = "adesoes"
@@ -446,7 +457,7 @@ class AtivacaoEvento(Base):
     cliente: Mapped["Cliente"] = relationship(back_populates="eventos_ativacao")
 
 
-class Parceiro(Base):
+class Parceiro(VinculoApp, Base):
     """Parceiro do Clube Bulbe (ex.: Araujo, Inter, Livelo). Origem: squad."""
 
     __tablename__ = "parceiros"
@@ -480,7 +491,7 @@ class ClubeStatus(Base):
     cliente: Mapped["Cliente"] = relationship(back_populates="clube")
 
 
-class Carta(Base):
+class Carta(VinculoApp, Base):
     """Carta semanal do Clube Bulbe. Ao ser aberta gera um cupom. Origem: squad."""
 
     __tablename__ = "cartas"
@@ -506,7 +517,7 @@ class Carta(Base):
     cupom: Mapped[Optional["Cupom"]] = relationship(foreign_keys=[cupom_id], post_update=True)
 
 
-class Cupom(Base):
+class Cupom(VinculoApp, Base):
     """Cupom gerado pela abertura de uma carta (valido por 14 dias). Origem: squad."""
 
     __tablename__ = "cupons"
@@ -529,7 +540,7 @@ class Cupom(Base):
     parceiro: Mapped[Optional["Parceiro"]] = relationship(back_populates="cupons")
 
 
-class Dica(Base):
+class Dica(VinculoApp, Base):
     """Dica de economia de energia exibida no carrossel do app. Origem: squad."""
 
     __tablename__ = "dicas"
@@ -542,7 +553,7 @@ class Dica(Base):
     ordem: Mapped[int] = mapped_column(Integer, default=1)
 
 
-class Simulacao(Base):
+class Simulacao(VinculoApp, Base):
     """Registro de uso do simulador de economia (visitante sem login ou cliente). Origem: squad."""
 
     __tablename__ = "simulacoes"

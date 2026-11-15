@@ -67,6 +67,11 @@ def criar_adesao(
     return adesao_service.criar(dados)
 
 
+@router.patch(
+    "/{adesao_id}",
+    response_model=Adesao,
+    summary="Atualizar parcialmente uma adesao (US-07)",
+)
 @router.put(
     "/{adesao_id}",
     response_model=Adesao,
@@ -80,6 +85,8 @@ def atualizar_adesao(
 ) -> Adesao:
     """
     Atualiza os dados de uma adesao existente.
+    Todos os campos sao opcionais, entao PUT e PATCH
+    tem o mesmo efeito (US-07 usa PATCH).
 
     Requer autenticacao.
     """

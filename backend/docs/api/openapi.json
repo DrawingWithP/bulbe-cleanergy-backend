@@ -1,0 +1,5011 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bulbe Energia, API",
+    "description": "API do app da Bulbe Energia (squad Cleanergy): clientes, adesao, primeiro acesso, jornada de ativacao, simulador com bandeira tarifaria, indicacoes, Clube Bulbe (cartas e cupons), parceiros, dicas e usinas. Arquitetura em camadas, SQLAlchemy/Alembic e autenticacao JWT para operadores.",
+    "version": "1.1.0"
+  },
+  "paths": {
+    "/v1/auth/registrar": {
+      "post": {
+        "tags": [
+          "Autenticacao"
+        ],
+        "summary": "Registrar",
+        "description": "Cadastra um novo usuario do painel.",
+        "operationId": "registrar_v1_auth_registrar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usuario"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticacao"
+        ],
+        "summary": "Login",
+        "description": "Realiza a autenticacao do usuario.\n\nO campo username do OAuth2 representa\no email do usuario e password representa\na senha.\n\nRetorna um token JWT em caso de sucesso.",
+        "operationId": "login_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_v1_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Autenticacao"
+        ],
+        "summary": "Quem Sou Eu",
+        "description": "Retorna os dados do usuario autenticado\na partir do token JWT enviado.\n\nRequer autenticacao.",
+        "operationId": "quem_sou_eu_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usuario"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/usinas": {
+      "get": {
+        "tags": [
+          "Usinas"
+        ],
+        "summary": "Listar Usinas",
+        "description": "Lista todas as usinas cadastradas.",
+        "operationId": "listar_usinas_v1_usinas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Usina"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Usinas V1 Usinas Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Usinas"
+        ],
+        "summary": "Criar Usina",
+        "description": "Cria uma nova usina.\n\nRequer autenticacao.",
+        "operationId": "criar_usina_v1_usinas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsinaCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usina"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/usinas/{usina_id}": {
+      "get": {
+        "tags": [
+          "Usinas"
+        ],
+        "summary": "Buscar Usina",
+        "description": "Retorna os dados de uma usina especifica.",
+        "operationId": "buscar_usina_v1_usinas__usina_id__get",
+        "parameters": [
+          {
+            "name": "usina_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usina Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usina"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Usinas"
+        ],
+        "summary": "Atualizar Usina",
+        "description": "Atualiza os dados de uma usina existente.\n\nRequer autenticacao.",
+        "operationId": "atualizar_usina_v1_usinas__usina_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "usina_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usina Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsinaUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usina"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Usinas"
+        ],
+        "summary": "Remover Usina",
+        "description": "Remove uma usina.\n\nRequer autenticacao.",
+        "operationId": "remover_usina_v1_usinas__usina_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "usina_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usina Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/adesoes": {
+      "get": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Listar Adesoes",
+        "description": "Lista todas as adesoes cadastradas.",
+        "operationId": "listar_adesoes_v1_adesoes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Adesao"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Adesoes V1 Adesoes Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Criar Adesao",
+        "description": "Cria uma nova adesao.",
+        "operationId": "criar_adesao_v1_adesoes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdesaoCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adesao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/adesoes/{adesao_id}": {
+      "get": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Buscar Adesao",
+        "description": "Retorna os dados de uma adesao especifica.",
+        "operationId": "buscar_adesao_v1_adesoes__adesao_id__get",
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adesao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Atualizar Adesao",
+        "description": "Atualiza os dados de uma adesao existente.\nTodos os campos sao opcionais, entao PUT e PATCH\ntem o mesmo efeito (US-07 usa PATCH).\n\nRequer autenticacao.",
+        "operationId": "atualizar_adesao_v1_adesoes__adesao_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdesaoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adesao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Atualizar parcialmente uma adesao (US-07)",
+        "description": "Atualiza os dados de uma adesao existente.\nTodos os campos sao opcionais, entao PUT e PATCH\ntem o mesmo efeito (US-07 usa PATCH).\n\nRequer autenticacao.",
+        "operationId": "atualizar_adesao_v1_adesoes__adesao_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdesaoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adesao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Remover Adesao",
+        "description": "Remove uma adesao.\n\nRequer autenticacao.",
+        "operationId": "remover_adesao_v1_adesoes__adesao_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dicas": {
+      "get": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Listar Dicas",
+        "description": "Lista todas as dicas cadastradas.",
+        "operationId": "listar_dicas_v1_dicas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Dica"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Dicas V1 Dicas Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Criar Dica",
+        "description": "Cria uma nova dica.\n\nRequer autenticacao.",
+        "operationId": "criar_dica_v1_dicas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DicaCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dica"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/dicas/{dica_id}": {
+      "get": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Buscar Dica",
+        "description": "Retorna os dados de uma dica especifica.",
+        "operationId": "buscar_dica_v1_dicas__dica_id__get",
+        "parameters": [
+          {
+            "name": "dica_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dica Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dica"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Atualizar Dica",
+        "description": "Atualiza os dados de uma dica existente.\n\nRequer autenticacao.",
+        "operationId": "atualizar_dica_v1_dicas__dica_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dica_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dica Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DicaUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dica"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Remover Dica",
+        "description": "Remove uma dica especifica (US-30).\n\nRequer autenticacao.",
+        "operationId": "remover_dica_v1_dicas__dica_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dica_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dica Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulacoes": {
+      "post": {
+        "tags": [
+          "Simulacoes"
+        ],
+        "summary": "Criar nova simulacao",
+        "description": "Cria uma nova simulacao.",
+        "operationId": "criar_simulacao_v1_simulacoes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulacaoCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Simulacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/indicacoes": {
+      "post": {
+        "tags": [
+          "Indicacoes"
+        ],
+        "summary": "Criar Indicacao",
+        "description": "Cria uma nova indicacao.",
+        "operationId": "criar_indicacao_v1_indicacoes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IndicacaoCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Indicacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/indicacoes/{indicacao_id}": {
+      "get": {
+        "tags": [
+          "Indicacoes"
+        ],
+        "summary": "Consultar Indicacao",
+        "description": "Retorna uma indicacao especifica.",
+        "operationId": "consultar_indicacao_v1_indicacoes__indicacao_id__get",
+        "parameters": [
+          {
+            "name": "indicacao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Indicacao Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Indicacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Indicacoes"
+        ],
+        "summary": "Excluir Indicacao",
+        "description": "Exclui uma indicacao que ainda esteja pendente.\n\nRequer autenticacao.",
+        "operationId": "excluir_indicacao_v1_indicacoes__indicacao_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "indicacao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Indicacao Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/indicacoes": {
+      "get": {
+        "tags": [
+          "Indicacoes"
+        ],
+        "summary": "Consultar Indicacoes Cliente",
+        "description": "Lista todas as indicacoes realizadas\npor um cliente.",
+        "operationId": "consultar_indicacoes_cliente_v1_clientes__cliente_id__indicacoes_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Indicacao"
+                  },
+                  "title": "Response Consultar Indicacoes Cliente V1 Clientes  Cliente Id  Indicacoes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/primeiro-acesso/verificacoes": {
+      "post": {
+        "tags": [
+          "Primeiro Acesso"
+        ],
+        "summary": "Verificar CPF e enviar código no primeiro acesso (US-09)",
+        "description": "Inicia o fluxo de primeiro acesso ao aplicativo.\n\nVerifica se o CPF informado pertence a um cliente\npreviamente cadastrado na Bulbe e gera o código\nde confirmação para o canal escolhido.",
+        "operationId": "solicitar_verificacao_v1_primeiro_acesso_verificacoes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificacaoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/primeiro-acesso/confirmacoes": {
+      "post": {
+        "tags": [
+          "Primeiro Acesso"
+        ],
+        "summary": "Confirmar código e habilitar acesso do cliente (US-10)",
+        "description": "Confirma o código recebido pelo cliente\ne habilita seu acesso ao aplicativo Bulbe.",
+        "operationId": "confirmar_codigo_v1_primeiro_acesso_confirmacoes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Listar clientes com paginação (Uso administrativo)",
+        "description": "Retorna a listagem paginada de clientes da Bulbe.",
+        "operationId": "listar_clientes_v1_clientes_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número da página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número da página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Itens por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Itens por página"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StatusCliente"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro opcional por status",
+              "title": "Status"
+            },
+            "description": "Filtro opcional por status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteListaPaginada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Cadastrar novo cliente (US-31)",
+        "description": "Cria um novo cliente no sistema\napós a aprovação da adesão.",
+        "operationId": "criar_cliente_v1_clientes_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteCriadoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Buscar dados de um cliente específico (US-05)",
+        "description": "Retorna os dados cadastrais completos\nde um cliente.",
+        "operationId": "buscar_cliente_v1_clientes__cliente_id__get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cliente"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Atualizar dados cadastrais do cliente (US-34)",
+        "description": "Atualiza informações de perfil\nou endereço do cliente.\n\nRequer autenticação.",
+        "operationId": "atualizar_cliente_v1_clientes__cliente_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cliente"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Remover cliente",
+        "description": "Remove um cliente do sistema.\n\nRequer autenticação.",
+        "operationId": "remover_cliente_v1_clientes__cliente_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/ativacao": {
+      "get": {
+        "tags": [
+          "Ativacao"
+        ],
+        "summary": "Consultar status de ativação do cliente (US-11)",
+        "description": "Retorna o resumo da jornada de ativação\ndo cliente, incluindo percentual, etapa e prazos.",
+        "operationId": "obter_resumo_ativacao_v1_clientes__cliente_id__ativacao_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtivacaoResumoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Ativacao"
+        ],
+        "summary": "Atualizar etapa de ativação do cliente (US-12)",
+        "description": "Avança ou ajusta a etapa atual da jornada\nde ativação junto à concessionária.",
+        "operationId": "atualizar_etapa_ativacao_v1_clientes__cliente_id__ativacao_patch",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtivacaoUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtivacaoAtualizadaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/ativacao/etapas": {
+      "get": {
+        "tags": [
+          "Ativacao"
+        ],
+        "summary": "Listar as 5 etapas da jornada de ativação",
+        "description": "Lista as etapas da jornada de ativação\ne a situação individual de cada uma.",
+        "operationId": "listar_etapas_ativacao_v1_clientes__cliente_id__ativacao_etapas_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EtapasListaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/parceiros": {
+      "get": {
+        "tags": [
+          "Parceiros"
+        ],
+        "summary": "Listar parceiros do Clube Bulbe (US-02 e US-33)",
+        "description": "Lista os parceiros comerciais credenciados\nno Clube Bulbe.",
+        "operationId": "listar_parceiros_v1_parceiros_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número da página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número da página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Itens por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Itens por página"
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro opcional por categoria",
+              "title": "Categoria"
+            },
+            "description": "Filtro opcional por categoria"
+          },
+          {
+            "name": "ativo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro opcional por status ativo",
+              "title": "Ativo"
+            },
+            "description": "Filtro opcional por status ativo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParceiroListaPaginada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Parceiros"
+        ],
+        "summary": "Cadastrar novo parceiro (US-24)",
+        "description": "Cadastra uma nova empresa parceira\nno Clube Bulbe.",
+        "operationId": "criar_parceiro_v1_parceiros_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParceiroCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParceiroCriadoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/parceiros/{parceiro_id}": {
+      "get": {
+        "tags": [
+          "Parceiros"
+        ],
+        "summary": "Consultar dados de um parceiro específico (US-25)",
+        "description": "Retorna os detalhes de um parceiro\npelo seu identificador único.",
+        "operationId": "buscar_parceiro_v1_parceiros__parceiro_id__get",
+        "parameters": [
+          {
+            "name": "parceiro_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Parceiro Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Parceiro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Parceiros"
+        ],
+        "summary": "Atualizar dados de um parceiro",
+        "description": "Atualiza as informações cadastrais\nde um parceiro existente.",
+        "operationId": "atualizar_parceiro_v1_parceiros__parceiro_id__put",
+        "parameters": [
+          {
+            "name": "parceiro_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Parceiro Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParceiroUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Parceiro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Parceiros"
+        ],
+        "summary": "Remover parceiro do Clube Bulbe (US-26)",
+        "description": "Remove um parceiro credenciado do Clube.",
+        "operationId": "remover_parceiro_v1_parceiros__parceiro_id__delete",
+        "parameters": [
+          {
+            "name": "parceiro_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Parceiro Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/cupons": {
+      "get": {
+        "tags": [
+          "Cupons"
+        ],
+        "summary": "Listar cupons do cliente (US-03)",
+        "description": "Lista os cupons disponíveis ou salvos\nna carteira do cliente.",
+        "operationId": "listar_cupons_cliente_v1_clientes__cliente_id__cupons_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número da página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número da página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Itens por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Itens por página"
+          },
+          {
+            "name": "situacao",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SituacaoCupom"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro opcional por situação",
+              "title": "Situacao"
+            },
+            "description": "Filtro opcional por situação"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomListaPaginada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cupons/{cupom_id}": {
+      "get": {
+        "tags": [
+          "Cupons"
+        ],
+        "summary": "Consultar cupom por ID (US-22)",
+        "description": "Retorna os dados detalhados de um cupom\ncom seu código promocional.",
+        "operationId": "buscar_cupom_v1_cupons__cupom_id__get",
+        "parameters": [
+          {
+            "name": "cupom_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cupom Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cupom"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Cupons"
+        ],
+        "summary": "Atualizar situação do cupom (US-23)",
+        "description": "Atualiza a situação do cupom\npara salvo ou usado.",
+        "operationId": "atualizar_situacao_cupom_v1_cupons__cupom_id__patch",
+        "parameters": [
+          {
+            "name": "cupom_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cupom Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CupomUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cupom"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cupons"
+        ],
+        "summary": "Descartar cupom",
+        "description": "Descarta logicamente o cupom\nda carteira do cliente.\n\nRequer autenticacao: o app ainda nao tem login de cliente,\nentao o descarte fica restrito aos operadores.",
+        "operationId": "descartar_cupom_v1_cupons__cupom_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cupom_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cupom Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/clube": {
+      "get": {
+        "tags": [
+          "Clube Bulbe e Cartas"
+        ],
+        "summary": "Consultar situação do cliente no Clube Bulbe (US-18)",
+        "description": "Retorna a ofensiva de semanas do cliente\ne a disponibilidade da próxima carta.",
+        "operationId": "obter_situacao_clube_v1_clientes__cliente_id__clube_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubeSituacaoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/cartas": {
+      "get": {
+        "tags": [
+          "Clube Bulbe e Cartas"
+        ],
+        "summary": "Listar histórico de cartas do cliente (US-19)",
+        "description": "Lista o histórico de cartas semanais\ndo cliente no Clube Bulbe.",
+        "operationId": "listar_cartas_cliente_v1_clientes__cliente_id__cartas_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número da página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número da página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Itens por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Itens por página"
+          },
+          {
+            "name": "situacao",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SituacaoCarta"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por situação da carta",
+              "title": "Situacao"
+            },
+            "description": "Filtro por situação da carta"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartaListaPaginada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cartas/{carta_id}": {
+      "get": {
+        "tags": [
+          "Clube Bulbe e Cartas"
+        ],
+        "summary": "Consultar dados de uma carta específica (US-20)",
+        "description": "Retorna os dados de uma carta semanal\ndo Clube Bulbe.",
+        "operationId": "buscar_carta_v1_cartas__carta_id__get",
+        "parameters": [
+          {
+            "name": "carta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Carta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cartas/{carta_id}/abertura": {
+      "post": {
+        "tags": [
+          "Clube Bulbe e Cartas"
+        ],
+        "summary": "Abrir carta semanal e resgatar cupom (US-21)",
+        "description": "Abre a carta da semana e gera a recompensa.\n\nO cupom possui validade de 14 dias.\nAo completar 5 semanas consecutivas,\no cliente libera o bônus especial.\n\nA operação é idempotente: abrir novamente\numa carta já aberta retorna o mesmo cupom.",
+        "operationId": "abrir_carta_v1_cartas__carta_id__abertura_post",
+        "parameters": [
+          {
+            "name": "carta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Carta Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AberturaCartaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bandeiras": {
+      "get": {
+        "tags": [
+          "Bandeiras tarifarias"
+        ],
+        "summary": "Listar bandeiras cadastradas",
+        "description": "Lista as bandeiras cadastradas, do mes mais recente ao mais antigo.",
+        "operationId": "listar_bandeiras_v1_bandeiras_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BandeiraMes"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Bandeiras V1 Bandeiras Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bandeiras/atual": {
+      "get": {
+        "tags": [
+          "Bandeiras tarifarias"
+        ],
+        "summary": "Bandeira do mes atual",
+        "description": "Bandeira vigente no mes atual. Sem cadastro, devolve verde\ncom definida=false.",
+        "operationId": "consultar_bandeira_atual_v1_bandeiras_atual_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BandeiraMes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bandeiras/{mes_referencia}": {
+      "get": {
+        "tags": [
+          "Bandeiras tarifarias"
+        ],
+        "summary": "Bandeira de um mes",
+        "description": "Bandeira de um mes no formato AAAA-MM.",
+        "operationId": "consultar_bandeira_v1_bandeiras__mes_referencia__get",
+        "parameters": [
+          {
+            "name": "mes_referencia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Mes Referencia"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BandeiraMes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Bandeiras tarifarias"
+        ],
+        "summary": "Definir a bandeira de um mes",
+        "description": "Cadastra ou altera a bandeira de um mes.\n\nRequer autenticacao.",
+        "operationId": "definir_bandeira_v1_bandeiras__mes_referencia__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mes_referencia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Mes Referencia"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BandeiraUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BandeiraMes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Raiz",
+        "operationId": "raiz__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Raiz  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AberturaCartaResponse": {
+        "properties": {
+          "carta_id": {
+            "type": "string",
+            "title": "Carta Id"
+          },
+          "semanas_sequencia": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Semanas Sequencia"
+          },
+          "meta_sequencia": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Meta Sequencia",
+            "default": 5
+          },
+          "cupom": {
+            "$ref": "#/components/schemas/Cupom"
+          },
+          "proxima_carta_em": {
+            "type": "string",
+            "title": "Proxima Carta Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "carta_id",
+          "semanas_sequencia",
+          "cupom",
+          "proxima_carta_em"
+        ],
+        "title": "AberturaCartaResponse",
+        "description": "Resposta após abrir a carta e resgatar\no cupom (US-21)."
+      },
+      "Adesao": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome do cliente"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Email",
+            "description": "Endereço de email do cliente"
+          },
+          "cpf": {
+            "type": "string",
+            "maxLength": 11,
+            "minLength": 11,
+            "title": "Cpf",
+            "description": "CPF do cliente"
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 8,
+            "title": "Telefone",
+            "description": "Telefone do cliente"
+          },
+          "cep": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 8,
+            "title": "Cep",
+            "description": "CEP do cliente"
+          },
+          "logradouro": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 4,
+            "title": "Logradouro",
+            "description": "Logradouro do endereço do cliente"
+          },
+          "numero": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Numero",
+            "description": "Número do endereço do cliente"
+          },
+          "bairro": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 3,
+            "title": "Bairro",
+            "description": "Bairro do cliente"
+          },
+          "cidade": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 3,
+            "title": "Cidade",
+            "description": "Cidade do cliente"
+          },
+          "uf": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Uf",
+            "description": "Unidade federativa do cliente"
+          },
+          "distribuidora": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 4,
+            "title": "Distribuidora",
+            "description": "Distribuidora do cliente"
+          },
+          "numero_instalacao": {
+            "type": "string",
+            "title": "Numero Instalacao",
+            "description": "Número da instalação do cliente"
+          },
+          "valor_conta_atual": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Valor Conta Atual",
+            "description": "Valor da conta de luz atual do cliente"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusAdesao",
+            "default": "enviada"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "data_ativacao": {
+            "type": "string",
+            "format": "date",
+            "title": "Data Ativacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "cpf",
+          "telefone",
+          "cep",
+          "logradouro",
+          "numero",
+          "bairro",
+          "cidade",
+          "uf",
+          "distribuidora",
+          "numero_instalacao",
+          "valor_conta_atual",
+          "id",
+          "data_ativacao"
+        ],
+        "title": "Adesao",
+        "description": "Representação completa de uma adesão,\ncomo a API devolve."
+      },
+      "AdesaoCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome do cliente"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Email",
+            "description": "Endereço de email do cliente"
+          },
+          "cpf": {
+            "type": "string",
+            "maxLength": 11,
+            "minLength": 11,
+            "title": "Cpf",
+            "description": "CPF do cliente"
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 8,
+            "title": "Telefone",
+            "description": "Telefone do cliente"
+          },
+          "cep": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 8,
+            "title": "Cep",
+            "description": "CEP do cliente"
+          },
+          "logradouro": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 4,
+            "title": "Logradouro",
+            "description": "Logradouro do endereço do cliente"
+          },
+          "numero": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Numero",
+            "description": "Número do endereço do cliente"
+          },
+          "bairro": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 3,
+            "title": "Bairro",
+            "description": "Bairro do cliente"
+          },
+          "cidade": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 3,
+            "title": "Cidade",
+            "description": "Cidade do cliente"
+          },
+          "uf": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Uf",
+            "description": "Unidade federativa do cliente"
+          },
+          "distribuidora": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 4,
+            "title": "Distribuidora",
+            "description": "Distribuidora do cliente"
+          },
+          "numero_instalacao": {
+            "type": "string",
+            "title": "Numero Instalacao",
+            "description": "Número da instalação do cliente"
+          },
+          "valor_conta_atual": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Valor Conta Atual",
+            "description": "Valor da conta de luz atual do cliente"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusAdesao",
+            "default": "enviada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "cpf",
+          "telefone",
+          "cep",
+          "logradouro",
+          "numero",
+          "bairro",
+          "cidade",
+          "uf",
+          "distribuidora",
+          "numero_instalacao",
+          "valor_conta_atual"
+        ],
+        "title": "AdesaoCreate",
+        "description": "Campos exigidos para criar uma adesão (POST)."
+      },
+      "AdesaoUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome",
+            "description": "Nome do cliente"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Endereço de email do cliente"
+          },
+          "cpf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 11,
+                "minLength": 11
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpf",
+            "description": "CPF do cliente"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 12,
+                "minLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone",
+            "description": "Telefone do cliente"
+          },
+          "cep": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8,
+                "minLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cep",
+            "description": "CEP do cliente"
+          },
+          "logradouro": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logradouro",
+            "description": "Logradouro do endereço do cliente"
+          },
+          "numero": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero",
+            "description": "Número do endereço do cliente"
+          },
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bairro",
+            "description": "Bairro do cliente"
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cidade",
+            "description": "Cidade do cliente"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "Unidade federativa do cliente"
+          },
+          "distribuidora": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 15,
+                "minLength": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribuidora",
+            "description": "Distribuidora do cliente"
+          },
+          "numero_instalacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Instalacao",
+            "description": "Número da instalação do cliente"
+          },
+          "valor_conta_atual": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Conta Atual",
+            "description": "Valor da conta de luz atual do cliente"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusAdesao"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AdesaoUpdate",
+        "description": "Campos que podem ser atualizados.\nTodos são opcionais."
+      },
+      "AtivacaoAtualizadaResponse": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "etapa_atual": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Etapa Atual"
+          },
+          "percentual_concluido": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percentual Concluido"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id",
+          "etapa_atual",
+          "percentual_concluido",
+          "titulo",
+          "atualizado_em"
+        ],
+        "title": "AtivacaoAtualizadaResponse"
+      },
+      "AtivacaoResumoResponse": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "etapa_atual": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Etapa Atual"
+          },
+          "total_etapas": {
+            "type": "integer",
+            "title": "Total Etapas",
+            "default": 5
+          },
+          "percentual_concluido": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percentual Concluido"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "distribuidora": {
+            "type": "string",
+            "title": "Distribuidora"
+          },
+          "prazo_ativacao_dias": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Prazo Ativacao Dias"
+          },
+          "previsao_conclusao": {
+            "type": "string",
+            "title": "Previsao Conclusao"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id",
+          "etapa_atual",
+          "percentual_concluido",
+          "titulo",
+          "descricao",
+          "distribuidora",
+          "prazo_ativacao_dias",
+          "previsao_conclusao",
+          "atualizado_em"
+        ],
+        "title": "AtivacaoResumoResponse",
+        "description": "Resumo da ativação para a tela\nde Conexão/Status (US-11)."
+      },
+      "AtivacaoUpdateRequest": {
+        "properties": {
+          "etapa_atual": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Etapa Atual",
+            "description": "Número da nova etapa (1 a 5)"
+          },
+          "observacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacao",
+            "description": "Observação opcional da mudança"
+          }
+        },
+        "type": "object",
+        "required": [
+          "etapa_atual"
+        ],
+        "title": "AtivacaoUpdateRequest",
+        "description": "Corpo para avançar ou corrigir a etapa de ativação.\n\nPATCH /v1/clientes/{id}/ativacao\nUS-12."
+      },
+      "BandeiraMes": {
+        "properties": {
+          "mes_referencia": {
+            "type": "string",
+            "title": "Mes Referencia",
+            "description": "Mes de referencia no formato AAAA-MM"
+          },
+          "bandeira": {
+            "$ref": "#/components/schemas/BandeiraTarifaria"
+          },
+          "adicional_por_kwh": {
+            "type": "number",
+            "title": "Adicional Por Kwh",
+            "description": "Acrescimo da bandeira em R$ por kWh",
+            "default": 0.0
+          },
+          "definida": {
+            "type": "boolean",
+            "title": "Definida",
+            "description": "False quando o mes ainda nao foi cadastrado e a API usa a bandeira padrao (verde)",
+            "default": true
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mes_referencia",
+          "bandeira"
+        ],
+        "title": "BandeiraMes",
+        "description": "Bandeira vigente em um mes, como a API devolve."
+      },
+      "BandeiraTarifaria": {
+        "type": "string",
+        "enum": [
+          "verde",
+          "amarela",
+          "vermelha_1",
+          "vermelha_2"
+        ],
+        "title": "BandeiraTarifaria"
+      },
+      "BandeiraUpdate": {
+        "properties": {
+          "bandeira": {
+            "$ref": "#/components/schemas/BandeiraTarifaria"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bandeira"
+        ],
+        "title": "BandeiraUpdate",
+        "description": "Corpo do PUT /v1/bandeiras/{mes_referencia}."
+      },
+      "Body_login_v1_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_v1_auth_login_post"
+      },
+      "CanalVerificacao": {
+        "type": "string",
+        "enum": [
+          "whatsapp",
+          "sms",
+          "email"
+        ],
+        "title": "CanalVerificacao"
+      },
+      "Carta": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "semana": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Semana"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoCarta",
+            "default": "normal"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoCarta",
+            "default": "disponivel"
+          },
+          "disponivel_em": {
+            "type": "string",
+            "title": "Disponivel Em"
+          },
+          "aberta_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aberta Em"
+          },
+          "cupom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cupom Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "cliente_id",
+          "semana",
+          "disponivel_em"
+        ],
+        "title": "Carta"
+      },
+      "CartaListaPaginada": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Carta"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "page",
+          "total"
+        ],
+        "title": "CartaListaPaginada"
+      },
+      "Cliente": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "cpf": {
+            "type": "string",
+            "title": "Cpf"
+          },
+          "telefone": {
+            "type": "string",
+            "title": "Telefone"
+          },
+          "endereco": {
+            "$ref": "#/components/schemas/Endereco"
+          },
+          "distribuidora": {
+            "type": "string",
+            "title": "Distribuidora"
+          },
+          "numero_instalacao": {
+            "type": "string",
+            "title": "Numero Instalacao"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusCliente"
+          },
+          "acesso_habilitado": {
+            "type": "boolean",
+            "title": "Acesso Habilitado",
+            "default": false
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "cpf",
+          "telefone",
+          "endereco",
+          "distribuidora",
+          "numero_instalacao",
+          "status",
+          "criado_em"
+        ],
+        "title": "Cliente",
+        "description": "Representação completa do cliente.\n\nGET /v1/clientes/{id}\nUS-05."
+      },
+      "ClienteCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "cpf": {
+            "type": "string",
+            "maxLength": 14,
+            "minLength": 11,
+            "title": "Cpf",
+            "description": "CPF válido do cliente"
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 10,
+            "title": "Telefone"
+          },
+          "endereco": {
+            "$ref": "#/components/schemas/Endereco"
+          },
+          "distribuidora": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Distribuidora",
+            "default": "CEMIG"
+          },
+          "numero_instalacao": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 3,
+            "title": "Numero Instalacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "cpf",
+          "telefone",
+          "endereco",
+          "numero_instalacao"
+        ],
+        "title": "ClienteCreate",
+        "description": "Dados exigidos ao criar um cliente.\n\nPOST /v1/clientes\nUS-31."
+      },
+      "ClienteCriadoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusCliente"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "status",
+          "criado_em"
+        ],
+        "title": "ClienteCriadoResponse",
+        "description": "Resposta após a criação do cliente\n(201 Created)."
+      },
+      "ClienteListaPaginada": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ClienteResumo"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "page",
+          "total"
+        ],
+        "title": "ClienteListaPaginada"
+      },
+      "ClienteResumo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "cpf": {
+            "type": "string",
+            "title": "Cpf"
+          },
+          "telefone": {
+            "type": "string",
+            "title": "Telefone"
+          },
+          "cidade": {
+            "type": "string",
+            "title": "Cidade"
+          },
+          "uf": {
+            "type": "string",
+            "title": "Uf"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusCliente"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "cpf",
+          "telefone",
+          "cidade",
+          "uf",
+          "status",
+          "criado_em"
+        ],
+        "title": "ClienteResumo",
+        "description": "Item resumido utilizado na listagem de clientes."
+      },
+      "ClienteUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20,
+                "minLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "endereco": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnderecoUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "distribuidora": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribuidora"
+          },
+          "numero_instalacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Instalacao"
+          }
+        },
+        "type": "object",
+        "title": "ClienteUpdate",
+        "description": "Dados cadastrais atualizáveis.\n\nPUT /v1/clientes/{id}\nUS-34."
+      },
+      "ClubeSituacaoResponse": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "semanas_sequencia": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Semanas Sequencia",
+            "default": 0
+          },
+          "meta_sequencia": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Meta Sequencia",
+            "default": 5
+          },
+          "carta_disponivel": {
+            "type": "boolean",
+            "title": "Carta Disponivel",
+            "default": false
+          },
+          "bonus_especial_pendente": {
+            "type": "boolean",
+            "title": "Bonus Especial Pendente",
+            "default": false
+          },
+          "proxima_carta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProximaCartaInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "intervalo_dias": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Intervalo Dias",
+            "default": 7
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id"
+        ],
+        "title": "ClubeSituacaoResponse",
+        "description": "Situação geral do cliente no Clube Bulbe\n(US-18)."
+      },
+      "ConfirmacaoRequest": {
+        "properties": {
+          "verificacao_id": {
+            "type": "string",
+            "title": "Verificacao Id",
+            "description": "Identificador único retornado na etapa de verificação"
+          },
+          "codigo": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "pattern": "^\\d{6}$",
+            "title": "Codigo",
+            "description": "Código numérico de 6 dígitos recebido pelo cliente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verificacao_id",
+          "codigo"
+        ],
+        "title": "ConfirmacaoRequest",
+        "description": "Corpo da requisição para validar\no código de confirmação.\n\nPOST /v1/primeiro-acesso/confirmacoes\nUS-10."
+      },
+      "ConfirmacaoResponse": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id",
+            "description": "Identificador do cliente no sistema"
+          },
+          "acesso_habilitado": {
+            "type": "boolean",
+            "title": "Acesso Habilitado",
+            "description": "Indica se o acesso ao aplicativo foi habilitado com sucesso",
+            "default": true
+          },
+          "confirmado_em": {
+            "type": "string",
+            "title": "Confirmado Em",
+            "description": "Data/hora da confirmação no padrão ISO 8601"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id",
+          "confirmado_em"
+        ],
+        "title": "ConfirmacaoResponse",
+        "description": "Resposta após a confirmação válida\ndo código (201 Created)."
+      },
+      "Cupom": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id",
+            "description": "ID do cliente dono do cupom"
+          },
+          "carta_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carta Id",
+            "description": "ID da carta que gerou o cupom"
+          },
+          "tag": {
+            "type": "string",
+            "title": "Tag",
+            "description": "Tag de identificação da campanha",
+            "default": "PARCERIA BULBE"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 5,
+            "title": "Descricao"
+          },
+          "codigo": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 3,
+            "title": "Codigo"
+          },
+          "parceiro": {
+            "$ref": "#/components/schemas/ParceiroResumoCupom"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoCupom",
+            "default": "ativo"
+          },
+          "valido_ate": {
+            "type": "string",
+            "title": "Valido Ate",
+            "description": "Data limite de validade no padrão AAAA-MM-DD"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "dias_restantes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dias Restantes",
+            "default": 14
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "usado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id",
+          "titulo",
+          "descricao",
+          "codigo",
+          "parceiro",
+          "valido_ate",
+          "id",
+          "criado_em"
+        ],
+        "title": "Cupom",
+        "description": "Representação completa do cupom.\n\nGET /v1/cupons/{id}\nUS-22."
+      },
+      "CupomListaPaginada": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Cupom"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "page",
+          "total"
+        ],
+        "title": "CupomListaPaginada",
+        "description": "Listagem paginada de cupons do cliente\n(US-03)."
+      },
+      "CupomUpdate": {
+        "properties": {
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoCupom",
+            "description": "Nova situação: salvo ou usado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "situacao"
+        ],
+        "title": "CupomUpdate",
+        "description": "Atualização da situação do cupom.\n\nPATCH /v1/cupons/{id}\nUS-23."
+      },
+      "Dica": {
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Titulo",
+            "description": "Titulo da dica"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 250,
+            "minLength": 3,
+            "title": "Descricao",
+            "description": "Resumo do que fazer para a dica"
+          },
+          "economia": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Economia",
+            "description": "Economia mensal da dica"
+          },
+          "imagem_svg": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Imagem Svg",
+            "description": "Código XML/Texto puro do arquivo SVG"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "data_ativacao": {
+            "type": "string",
+            "format": "date",
+            "title": "Data Ativacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titulo",
+          "descricao",
+          "economia",
+          "imagem_svg",
+          "id",
+          "data_ativacao"
+        ],
+        "title": "Dica",
+        "description": "Representacao completa de uma dica,\ncomo a API devolve."
+      },
+      "DicaCreate": {
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Titulo",
+            "description": "Titulo da dica"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 250,
+            "minLength": 3,
+            "title": "Descricao",
+            "description": "Resumo do que fazer para a dica"
+          },
+          "economia": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Economia",
+            "description": "Economia mensal da dica"
+          },
+          "imagem_svg": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Imagem Svg",
+            "description": "Código XML/Texto puro do arquivo SVG"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titulo",
+          "descricao",
+          "economia",
+          "imagem_svg"
+        ],
+        "title": "DicaCreate",
+        "description": "Campos exigidos para criar uma dica (POST)."
+      },
+      "DicaUpdate": {
+        "properties": {
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 250,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "economia": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Economia"
+          },
+          "imagem_svg": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagem Svg"
+          }
+        },
+        "type": "object",
+        "title": "DicaUpdate",
+        "description": "Campos que podem ser atualizados.\nTodos são opcionais."
+      },
+      "Endereco": {
+        "properties": {
+          "cep": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 8,
+            "title": "Cep",
+            "description": "CEP no formato 00000-000 ou somente dígitos"
+          },
+          "logradouro": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Logradouro"
+          },
+          "numero": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Numero"
+          },
+          "complemento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complemento"
+          },
+          "bairro": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Bairro"
+          },
+          "cidade": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Cidade"
+          },
+          "uf": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Uf"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cep",
+          "logradouro",
+          "numero",
+          "bairro",
+          "cidade",
+          "uf"
+        ],
+        "title": "Endereco"
+      },
+      "EnderecoUpdate": {
+        "properties": {
+          "cep": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "minLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cep"
+          },
+          "logradouro": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logradouro"
+          },
+          "numero": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero"
+          },
+          "complemento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complemento"
+          },
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bairro"
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cidade"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf"
+          }
+        },
+        "type": "object",
+        "title": "EnderecoUpdate"
+      },
+      "EtapaDetalhe": {
+        "properties": {
+          "numero": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Numero"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoEtapa"
+          },
+          "concluida_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concluida Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "numero",
+          "nome",
+          "titulo",
+          "descricao",
+          "situacao"
+        ],
+        "title": "EtapaDetalhe"
+      },
+      "EtapasListaResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EtapaDetalhe"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 5
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EtapasListaResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Indicacao": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cliente Id",
+            "description": "ID (UUID) do cliente que realizou a indicacao"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome da pessoa indicada"
+          },
+          "contato": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 5,
+            "title": "Contato",
+            "description": "Email ou telefone da pessoa indicada"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/StatusIndicacao",
+            "default": "pendente"
+          },
+          "bonus": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Bonus",
+            "default": 50.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id",
+          "nome",
+          "contato",
+          "id"
+        ],
+        "title": "Indicacao",
+        "description": "Representacao completa de uma indicacao."
+      },
+      "IndicacaoCreate": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cliente Id",
+            "description": "ID (UUID) do cliente que realizou a indicacao"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome da pessoa indicada"
+          },
+          "contato": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 5,
+            "title": "Contato",
+            "description": "Email ou telefone da pessoa indicada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id",
+          "nome",
+          "contato"
+        ],
+        "title": "IndicacaoCreate",
+        "description": "Campos exigidos para criar uma indicacao (POST)."
+      },
+      "Parceiro": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Nome",
+            "description": "Nome da empresa parceira"
+          },
+          "categoria": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Categoria",
+            "description": "Categoria de atuação"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url",
+            "description": "URL do logotipo da marca parceira"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "description": "Indica se o parceiro está ativo no Clube",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "categoria",
+          "id",
+          "criado_em"
+        ],
+        "title": "Parceiro",
+        "description": "Representação completa de um parceiro\ndo Clube Bulbe."
+      },
+      "ParceiroCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Nome",
+            "description": "Nome da empresa parceira"
+          },
+          "categoria": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Categoria",
+            "description": "Categoria de atuação"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url",
+            "description": "URL do logotipo da marca parceira"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "description": "Indica se o parceiro está ativo no Clube",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "categoria"
+        ],
+        "title": "ParceiroCreate",
+        "description": "Campos exigidos ao cadastrar um novo parceiro.\n\nPOST /v1/parceiros\nUS-24."
+      },
+      "ParceiroCriadoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "categoria",
+          "ativo",
+          "criado_em"
+        ],
+        "title": "ParceiroCriadoResponse"
+      },
+      "ParceiroListaPaginada": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Parceiro"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "page",
+          "total"
+        ],
+        "title": "ParceiroListaPaginada"
+      },
+      "ParceiroResumoCupom": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "categoria"
+        ],
+        "title": "ParceiroResumoCupom"
+      },
+      "ParceiroUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "ParceiroUpdate",
+        "description": "Campos atualizáveis do parceiro.\n\nPUT /v1/parceiros/{id}."
+      },
+      "ProximaCartaInfo": {
+        "properties": {
+          "carta_id": {
+            "type": "string",
+            "title": "Carta Id"
+          },
+          "disponivel_em": {
+            "type": "string",
+            "title": "Disponivel Em"
+          },
+          "dias_restantes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dias Restantes",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "carta_id",
+          "disponivel_em"
+        ],
+        "title": "ProximaCartaInfo"
+      },
+      "Simulacao": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "valor_atual": {
+            "type": "number",
+            "title": "Valor Atual"
+          },
+          "valor_proposto": {
+            "type": "number",
+            "title": "Valor Proposto"
+          },
+          "periodo_meses": {
+            "type": "integer",
+            "title": "Periodo Meses"
+          },
+          "indicacoes": {
+            "type": "integer",
+            "title": "Indicacoes"
+          },
+          "data_ativacao": {
+            "type": "string",
+            "format": "date",
+            "title": "Data Ativacao"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "bandeira": {
+            "$ref": "#/components/schemas/BandeiraTarifaria",
+            "default": "verde"
+          },
+          "economia_mensal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Economia Mensal"
+          },
+          "economia_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Economia Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "valor_atual",
+          "valor_proposto",
+          "periodo_meses",
+          "indicacoes",
+          "data_ativacao"
+        ],
+        "title": "Simulacao",
+        "description": "Representacao completa de uma simulacao,\ncomo a API devolve."
+      },
+      "SimulacaoCreate": {
+        "properties": {
+          "valor_atual": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Valor Atual",
+            "description": "Valor atual da conta de energia"
+          },
+          "valor_proposto": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Valor Proposto",
+            "description": "Valor proposto após a simulação"
+          },
+          "periodo_meses": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Periodo Meses",
+            "description": "Período da simulação em meses"
+          },
+          "indicacoes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Indicacoes",
+            "description": "Quantidade de indicações consideradas"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id",
+            "description": "Cliente que simulou (simulador logado)"
+          },
+          "bandeira": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BandeiraTarifaria"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bandeira tarifaria usada no calculo. Vazio = bandeira vigente no mes atual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor_atual",
+          "valor_proposto",
+          "periodo_meses",
+          "indicacoes"
+        ],
+        "title": "SimulacaoCreate",
+        "description": "Campos exigidos para criar uma simulacao (POST).\n\ncliente_id e bandeira sao opcionais: o simulador aberto nao tem\ncliente, e sem bandeira a API usa a bandeira vigente no mes (RF-03)."
+      },
+      "SituacaoCarta": {
+        "type": "string",
+        "enum": [
+          "disponivel",
+          "aberta",
+          "bloqueada",
+          "expirada"
+        ],
+        "title": "SituacaoCarta"
+      },
+      "SituacaoCupom": {
+        "type": "string",
+        "enum": [
+          "ativo",
+          "salvo",
+          "usado",
+          "expirado",
+          "descartado"
+        ],
+        "title": "SituacaoCupom"
+      },
+      "SituacaoEtapa": {
+        "type": "string",
+        "enum": [
+          "concluida",
+          "atual",
+          "pendente"
+        ],
+        "title": "SituacaoEtapa"
+      },
+      "StatusAdesao": {
+        "type": "string",
+        "enum": [
+          "rascunho",
+          "enviada",
+          "aprovada",
+          "recusada"
+        ],
+        "title": "StatusAdesao"
+      },
+      "StatusCliente": {
+        "type": "string",
+        "enum": [
+          "ativo",
+          "em_ativacao",
+          "cancelado"
+        ],
+        "title": "StatusCliente"
+      },
+      "StatusIndicacao": {
+        "type": "string",
+        "enum": [
+          "pendente",
+          "aderiu",
+          "cancelada"
+        ],
+        "title": "StatusIndicacao"
+      },
+      "StatusUsina": {
+        "type": "string",
+        "enum": [
+          "ativa",
+          "em_manutencao",
+          "inativa"
+        ],
+        "title": "StatusUsina"
+      },
+      "TipoCarta": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "especial"
+        ],
+        "title": "TipoCarta"
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "Token",
+        "description": "Resposta retornada após autenticacao."
+      },
+      "Usina": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome da usina solar"
+          },
+          "localizacao": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Localizacao",
+            "description": "Cidade e estado, ex: Uberlandia, MG"
+          },
+          "capacidade_geracao_kwh": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Capacidade Geracao Kwh",
+            "description": "Capacidade de geracao em kWh"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusUsina",
+            "default": "ativa"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "data_ativacao": {
+            "type": "string",
+            "format": "date",
+            "title": "Data Ativacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "localizacao",
+          "capacidade_geracao_kwh",
+          "id",
+          "data_ativacao"
+        ],
+        "title": "Usina",
+        "description": "Representacao completa de uma usina,\ncomo a API devolve."
+      },
+      "UsinaCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome da usina solar"
+          },
+          "localizacao": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Localizacao",
+            "description": "Cidade e estado, ex: Uberlandia, MG"
+          },
+          "capacidade_geracao_kwh": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Capacidade Geracao Kwh",
+            "description": "Capacidade de geracao em kWh"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusUsina",
+            "default": "ativa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "localizacao",
+          "capacidade_geracao_kwh"
+        ],
+        "title": "UsinaCreate",
+        "description": "Campos exigidos para criar uma usina (POST)."
+      },
+      "UsinaUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "localizacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localizacao"
+          },
+          "capacidade_geracao_kwh": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacidade Geracao Kwh"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusUsina"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "UsinaUpdate",
+        "description": "Campos que podem ser atualizados.\nTodos sao opcionais."
+      },
+      "Usuario": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email"
+        ],
+        "title": "Usuario",
+        "description": "Representacao publica do usuario.\nNunca expoe a senha ou seu hash."
+      },
+      "UsuarioCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Email do usuario"
+          },
+          "senha": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "title": "Senha",
+            "description": "Senha do usuario com minimo de 8 e maximo de 72 caracteres"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "senha"
+        ],
+        "title": "UsuarioCreate",
+        "description": "Dados enviados para cadastrar um usuario."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerificacaoRequest": {
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "maxLength": 14,
+            "minLength": 11,
+            "title": "Cpf",
+            "description": "CPF do cliente cadastrado (com ou sem formatação)"
+          },
+          "canal": {
+            "$ref": "#/components/schemas/CanalVerificacao",
+            "description": "Canal escolhido para envio do código: whatsapp, sms ou email",
+            "default": "whatsapp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cpf"
+        ],
+        "title": "VerificacaoRequest",
+        "description": "Corpo da requisição para iniciar\na verificação de primeiro acesso.\n\nPOST /v1/primeiro-acesso/verificacoes\nUS-09."
+      },
+      "VerificacaoResponse": {
+        "properties": {
+          "verificacao_id": {
+            "type": "string",
+            "title": "Verificacao Id",
+            "description": "Identificador único da solicitação de verificação"
+          },
+          "canal": {
+            "type": "string",
+            "title": "Canal",
+            "description": "Canal utilizado para envio"
+          },
+          "destino_mascarado": {
+            "type": "string",
+            "title": "Destino Mascarado",
+            "description": "Telefone ou e-mail mascarado para onde o código foi enviado"
+          },
+          "expira_em": {
+            "type": "string",
+            "title": "Expira Em",
+            "description": "Data/hora de expiração do código no padrão ISO 8601"
+          },
+          "codigo_demonstracao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Demonstracao",
+            "description": "Somente fora de produção: o código gerado, porque o envio real por SMS/e-mail não faz parte do projeto. Em produção (BULBE_AMBIENTE=producao) vem sempre vazio."
+          }
+        },
+        "type": "object",
+        "required": [
+          "verificacao_id",
+          "canal",
+          "destino_mascarado",
+          "expira_em"
+        ],
+        "title": "VerificacaoResponse",
+        "description": "Resposta ao solicitar o envio do código\nde confirmação (202 Accepted)."
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/v1/auth/login"
+          }
+        }
+      }
+    }
+  }
+}

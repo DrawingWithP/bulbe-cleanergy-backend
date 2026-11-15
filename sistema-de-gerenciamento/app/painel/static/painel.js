@@ -28,11 +28,13 @@
 
   var ACOES_AUDITORIA = {
     login_ok: 'Login com sucesso', login_falha: 'Login com falha', login_bloqueado: 'Login bloqueado',
-    alerta_email: 'Alerta por e-mail', ver_ficha: 'Abriu ficha', ver_auditoria: 'Consultou auditoria', expurgo: 'Expurgo'
+    alerta_email: 'Alerta por e-mail', ver_ficha: 'Abriu ficha', ver_auditoria: 'Consultou auditoria', expurgo: 'Expurgo',
+    sincronizar_app: 'Sincronizou com o app', alterar_ativacao: 'Alterou etapa no app'
   };
   var TONS_AUDITORIA = {
     login_ok: 'ok', login_falha: 'alerta', login_bloqueado: 'erro', alerta_email: 'erro',
-    ver_ficha: 'info', ver_auditoria: 'neutro', expurgo: 'neutro'
+    ver_ficha: 'info', ver_auditoria: 'neutro', expurgo: 'neutro',
+    sincronizar_app: 'neutro', alterar_ativacao: 'info'
   };
 
   var NOMES_ETAPAS = ['Cadastro', 'Documentos', 'Solicitação à CEMIG', 'Análise CEMIG', 'Energia liberada'];
@@ -163,6 +165,10 @@
     return '<span class="selo selo-' + tom + '">' + esc(rotulo(v)) + '</span>';
   }
   function simNao(v) { return v ? 'Sim' : 'Não'; }
+  // Cliente que veio do app (backend), sincronizado pela integração.
+  function seloOrigem(origem) {
+    return origem === 'app' ? ' <span class="selo selo-info selo-origem" title="Dados sincronizados com o app">App</span>' : '';
+  }
   function iniciais(nome) {
     var partes = String(nome || '?').trim().split(/\s+/);
     var p = partes[0] ? partes[0].charAt(0) : '?';
@@ -312,7 +318,7 @@
     'dicas': { titulo: 'titulo-dicas', carregar: function () { carregarDicas(); } },
     'usinas': { titulo: 'titulo-usinas', carregar: function () { carregarUsinas(); } },
     'parceiros': { titulo: 'titulo-parceiros', carregar: function () { carregarParceiros(); } },
-    'auditoria': { titulo: 'titulo-auditoria', carregar: function () { carregarLista('auditoria'); }, sempre: true },
+    'auditoria': { titulo: 'titulo-auditoria', carregar: function () { carregarLista('auditoria'); carregarEstadoIntegracao('integracao-admin', true); }, sempre: true },
     'uso-assistente': { titulo: 'titulo-uso-assistente', carregar: function () { carregarUsoAssistente(); }, sempre: true }
   };
 
@@ -412,6 +418,7 @@
       ]);
       alvo.innerHTML = renderVisaoGeral(resultados[0] || {}, resultados[1], resultados[2]);
       aplicarLarguras(alvo);
+      carregarEstadoIntegracao('integracao-status', false);
     } catch (erro) {
       if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
     } finally {
@@ -640,7 +647,7 @@
     var linhas = lista.map(function (c) {
       var href = hashCliente(c.id);
       return '<tr class="linha-clicavel" data-href="' + esc(href) + '">' +
-        '<td><a class="link-linha" href="' + esc(href) + '">' + esc(c.nome) + '</a></td>' +
+        '<td><a class="link-linha" href="' + esc(href) + '">' + esc(c.nome) + '</a>' + seloOrigem(c.origem) + '</td>' +
         '<td>' + esc(ou(c.email)) + '</td>' +
         '<td class="col-nowrap">' + esc(cpf(c.cpf)) + '</td>' +
         '<td>' + esc(ou(c.cidade)) + (c.uf ? '/' + esc(c.uf) : '') + '</td>' +
@@ -711,7 +718,7 @@
       '<div class="ficha-identidade">' +
         '<div class="ficha-avatar" aria-hidden="true">' + esc(iniciais(c.nome)) + '</div>' +
         '<div><h1 class="ficha-nome" id="titulo-ficha" tabindex="-1">' + esc(ou(c.nome, 'Cliente')) + '</h1>' +
-        '<div class="ficha-meta">' + selo(c.status) +
+        '<div class="ficha-meta">' + selo(c.status) + seloOrigem(c.origem) +
           '<span>ID <code>' + esc(c.id) + '</code></span>' +
           '<span>Cliente desde ' + esc(data(c.criado_em)) + '</span></div></div>' +
       '</div>' +
@@ -816,7 +823,46 @@
         '</li>';
     }).join('') + '</ol>';
 
-    return '<div class="jornada">' + status + circulos + linhaTempo + '</div>';
+    return '<div class="jornada">' + status + circulos + linhaTempo + '</div>' + htmlAlterarEtapa(atual, cliente);
+  }
+
+  // Painel -> app: muda a etapa no backend (PATCH /v1/painel/clientes/{id}/ativacao).
+  function htmlAlterarEtapa(atual, cliente) {
+    if (!cliente || !cliente.id) return '';
+    if (!cliente.id_app) {
+      return '<p class="texto-suave etapa-nota">Cliente só do banco fictício do painel: a etapa é alterada apenas para clientes do app.</p>';
+    }
+    var opcoes = NOMES_ETAPAS.map(function (nome, i) {
+      var n = i + 1;
+      return '<option value="' + n + '"' + (n === atual ? ' selected' : '') + '>' + n + ' · ' + esc(nome) + '</option>';
+    }).join('');
+    return '<form class="form-etapa" data-form="etapa" data-cliente="' + esc(cliente.id) + '">' +
+      '<div class="campo"><label for="etapa-nova">Nova etapa</label><select id="etapa-nova" name="etapa">' + opcoes + '</select></div>' +
+      '<div class="campo campo-largo"><label for="etapa-observacao">Observação (opcional)</label>' +
+        '<input id="etapa-observacao" name="observacao" maxlength="255" autocomplete="off"></div>' +
+      '<button type="submit" class="botao botao-destaque botao-pequeno">Atualizar no app</button>' +
+      '<div id="etapa-resultado" class="etapa-resultado" aria-live="polite"></div>' +
+      '</form>';
+  }
+
+  async function enviarEtapa(form) {
+    var botao = form.querySelector('button[type="submit"]');
+    var alvo = $('etapa-resultado');
+    var etapa = Number(form.querySelector('[name="etapa"]').value);
+    var observacao = form.querySelector('[name="observacao"]').value.trim();
+    botao.disabled = true;
+    alvo.innerHTML = htmlCarregando('Enviando para o app...');
+    try {
+      await api('/v1/painel/clientes/' + encodeURIComponent(form.getAttribute('data-cliente')) + '/ativacao', {
+        metodo: 'PATCH', corpo: { etapa_atual: etapa, observacao: observacao || null }
+      });
+      await carregarFicha(form.getAttribute('data-cliente'));
+      var novo = $('etapa-resultado');
+      if (novo) novo.innerHTML = '<div class="aviso aviso-info" role="status">Etapa atualizada no app. O cliente já vê a mudança.</div>';
+    } catch (erro) {
+      if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
+      botao.disabled = false;
+    }
   }
 
   function destaque(rotuloTexto, valor, tom) {
@@ -1192,6 +1238,62 @@
       '<thead><tr><th scope="col">Quando</th><th scope="col">Ação</th><th scope="col">Funcionário</th>' +
       '<th scope="col">E-mail informado</th><th scope="col">Recurso</th><th scope="col">IP</th><th scope="col">Detalhe</th></tr></thead>' +
       '<tbody>' + linhas + '</tbody></table></div>';
+  }
+
+  /* ------------------------------------------------------------
+     INTEGRAÇÃO COM O APP
+     ------------------------------------------------------------ */
+  function renderEstadoIntegracao(r, detalhado) {
+    r = r || {};
+    if (!r.ativa) {
+      return '<div class="aviso aviso-alerta integracao-aviso">Integração com o app desligada' +
+        (r.motivo ? ': ' + esc(r.motivo) : '.') + ' Os dados abaixo são só do banco fictício do painel.</div>';
+    }
+    var quando = r.ultima_execucao ? dataHora(r.ultima_execucao) : 'ainda não sincronizado';
+    var texto = r.sucesso === false
+      ? 'Falha na última sincronização com o app (' + esc(quando) + '): ' + esc(ou(r.erro, 'erro desconhecido')) + '.'
+      : 'Dados do app sincronizados: ' + esc(quando) +
+        (ehNumero(r.intervalo_segundos) && r.intervalo_segundos > 0 ? ' · a cada ' + esc(numero(r.intervalo_segundos)) + ' s' : '') + '.';
+    var html = '<div class="aviso ' + (r.sucesso === false ? 'aviso-alerta' : 'aviso-info') + ' integracao-aviso" role="status">' + texto + '</div>';
+    if (detalhado && r.contagens && Object.keys(r.contagens).length) {
+      var linhas = Object.keys(r.contagens).map(function (nome) {
+        var c = r.contagens[nome] || {};
+        return '<tr><th scope="row">' + esc(rotulo(nome)) + '</th><td class="col-numero">' + esc(numero(c.criados)) + '</td>' +
+          '<td class="col-numero">' + esc(numero(c.atualizados)) + '</td><td class="col-numero">' + esc(numero(c.vinculados)) + '</td>' +
+          '<td class="col-numero">' + esc(numero(c.removidos)) + '</td><td class="col-numero">' + esc(numero(c.ignorados)) + '</td></tr>';
+      }).join('');
+      html += '<div class="tabela-rolagem"><table class="tabela">' +
+        '<caption class="visualmente-oculto">Resultado da última sincronização com o app</caption>' +
+        '<thead><tr><th scope="col">Dado</th><th scope="col" class="col-numero">Criados</th><th scope="col" class="col-numero">Atualizados</th>' +
+        '<th scope="col" class="col-numero">Vinculados</th><th scope="col" class="col-numero">Removidos</th><th scope="col" class="col-numero">Ignorados</th></tr></thead>' +
+        '<tbody>' + linhas + '</tbody></table></div>';
+    }
+    return html;
+  }
+
+  async function carregarEstadoIntegracao(idAlvo, detalhado) {
+    var alvo = $(idAlvo);
+    if (!alvo) return;
+    try {
+      alvo.innerHTML = renderEstadoIntegracao(await api('/v1/painel/integracao'), detalhado);
+    } catch (erro) {
+      if (erro.status !== 401) alvo.innerHTML = '';
+    }
+  }
+
+  async function sincronizarAgora() {
+    var botao = $('botao-sincronizar');
+    var alvo = $('integracao-admin');
+    botao.disabled = true;
+    alvo.innerHTML = htmlCarregando('Sincronizando com o app...');
+    try {
+      alvo.innerHTML = renderEstadoIntegracao(await api('/v1/painel/admin/sincronizar', { metodo: 'POST' }), true);
+      carregarLista('auditoria', 1);
+    } catch (erro) {
+      if (erro.status !== 401) alvo.innerHTML = htmlErro(erro);
+    } finally {
+      botao.disabled = false;
+    }
   }
 
   async function executarExpurgo() {
@@ -1861,6 +1963,13 @@
     $('filtro-auditoria-acao').addEventListener('change', aoFiltrar('auditoria'));
     $('filtro-auditoria-limite').addEventListener('change', aoFiltrar('auditoria'));
     $('botao-expurgo').addEventListener('click', executarExpurgo);
+    $('botao-sincronizar').addEventListener('click', sincronizarAgora);
+    $('conteudo').addEventListener('submit', function (e) {
+      var form = e.target.closest('form[data-form="etapa"]');
+      if (!form) return;
+      e.preventDefault();
+      enviarEtapa(form);
+    });
 
     // Ativações, parceiros e uso do assistente
     $('botao-atualizar-ativacoes').addEventListener('click', function () { carregarResumoAtivacoes(); carregarParados(); });

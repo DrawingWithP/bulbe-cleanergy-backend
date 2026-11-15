@@ -37,3 +37,8 @@
 | US-33	| Como aplicação frontend, quero listar os parceiros do Clube Bulbe via API, para que possam ser exibidos na vitrine de benefícios do aplicativo | 	GET /v1/parceiros |	Média |	2
 | US-34	| Como aplicação frontend, quero atualizar os dados cadastrais do cliente via API, para que as informações de perfil permaneçam atualizadas no sistema | PUT /v1/clientes/{id}	| Média |	3
 | US-35	| Como aplicação frontend, quero consultar as solicitações de adesão via API, para que seja possível listar e acompanhar as entradas no sistema | 	GET /v1/adesoes |	Baixa | 2
+| US-36 | Como aplicação frontend, quero que a simulação considere a bandeira tarifária do mês, para que a economia mostrada acompanhe o custo real da energia (RF-03) | POST /v1/simulacoes, GET /v1/bandeiras/atual | Média | a estimar |
+| US-37 | Como operador da Bulbe, quero cadastrar a bandeira tarifária de cada mês, para que o simulador use o valor vigente (RF-03) | PUT /v1/bandeiras/{mes} | Média | a estimar |
+| US-38 | Como funcionário da Bulbe, quero ver no painel interno os dados que os clientes geram no app e alterar a etapa de ativação, para acompanhar a jornada sem planilhas paralelas | Sistema de gerenciamento: GET /v1/painel/integracao, PATCH /v1/painel/clientes/{id}/ativacao | Alta | a estimar |
+
+> US-36 a US-38 entraram na fase final do projeto; os story points ficam para a equipe estimar.

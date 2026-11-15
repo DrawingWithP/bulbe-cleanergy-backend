@@ -1,13 +1,19 @@
 """
-Verifica CSS/assets originais, HTML e escopo preservado.
+Verifica se o frontend original foi preservado: CSS/assets identicos (SHA-256)
+e o HTML so com a inclusao de config.js e api.js.
 
 Sem dependencias extras.
+
+Historico: na revisao da integracao frontend-backend (commit base 86e8777) este
+script tambem exigia que backend/migrations e sistema-de-gerenciamento/ ficassem
+iguais ao commit base. Essa trava valia so para aquela revisao: depois dela, as
+migrations e o sistema de gerenciamento evoluem normalmente (nova migration e
+integracao do painel com o app), entao a verificacao foi retirada.
 """
 
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,8 +21,6 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = Path(__file__).with_name(
     "frontend-source-sha256.json"
 )
-
-COMMIT_BASE = "86e8777040bb7733e13d3c325c5bd2c3de49d099"
 
 ARQUIVOS_IGNORADOS = {
     "final.html",
@@ -28,10 +32,35 @@ SCRIPTS_ADICIONADOS = (
     b'  <script src="api.js"></script>\n'
 )
 
-ESCOPO_PRESERVADO = (
-    "backend/migrations",
-    "sistema-de-gerenciamento",
+# Acrescimos da finalizacao (telas Entrar, Primeiro acesso, Abrir conta e
+# Indicacoes): o CSS e o JS proprios e um unico bloco de telas, delimitado
+# por comentarios. Fora disso, o HTML tem que ser identico ao original.
+ACRESCIMOS_EXATOS = (
+    b'  <link rel="stylesheet" href="telas.css">\n',
+    b'  <script src="telas.js"></script>\n',
 )
+
+INICIO_BLOCO_TELAS = b"  <!-- BULBE-TELAS-NOVAS: inicio -->\n"
+FIM_BLOCO_TELAS = b"  <!-- BULBE-TELAS-NOVAS: fim -->\n\n"
+
+
+def remover_acrescimos(html: bytes) -> bytes:
+    """
+    Tira do HTML tudo o que foi acrescentado de proposito, cada item
+    exatamente uma vez (um acrescimo repetido ou fora do lugar falha).
+    """
+
+    for trecho in (SCRIPTS_ADICIONADOS, *ACRESCIMOS_EXATOS):
+        assert html.count(trecho) == 1, f"Acrescimo esperado uma vez: {trecho!r}"
+        html = html.replace(trecho, b"")
+
+    assert html.count(INICIO_BLOCO_TELAS) == 1 and html.count(FIM_BLOCO_TELAS) == 1, (
+        "Bloco BULBE-TELAS-NOVAS ausente ou duplicado em final.html"
+    )
+    inicio = html.index(INICIO_BLOCO_TELAS)
+    fim = html.index(FIM_BLOCO_TELAS) + len(FIM_BLOCO_TELAS)
+    assert inicio < fim, "Bloco BULBE-TELAS-NOVAS fora de ordem"
+    return html[:inicio] + html[fim:]
 
 
 def calcular_sha256(
@@ -103,8 +132,8 @@ def verificar_html(
 ) -> None:
     """
     Confirma que o HTML original foi preservado,
-    permitindo apenas a inclusao dos scripts
-    config.js e api.js.
+    permitindo apenas a inclusao de config.js e api.js
+    e os acrescimos das telas novas (remover_acrescimos).
     """
 
     caminho_html = (
@@ -119,9 +148,8 @@ def verificar_html(
 
     html = caminho_html.read_bytes()
 
-    html_sem_scripts = html.replace(
-        SCRIPTS_ADICIONADOS,
-        b"",
+    html_sem_scripts = remover_acrescimos(
+        html
     )
 
     digest_atual = hashlib.sha256(
@@ -134,44 +162,8 @@ def verificar_html(
 
     assert digest_atual == digest_esperado, (
         "final.html possui alteracoes alem "
-        "da inclusao de config.js e api.js"
-    )
-
-
-def verificar_escopo_preservado() -> None:
-    """
-    Confirma que migrations e o sistema independente
-    permanecem iguais ao commit base.
-
-    backend/app nao faz parte desta verificacao porque
-    contem alteracoes intencionais da integracao.
-    """
-
-    comando = [
-        "git",
-        "diff",
-        COMMIT_BASE,
-        "--name-only",
-        "--",
-        *ESCOPO_PRESERVADO,
-    ]
-
-    resultado = subprocess.run(
-        comando,
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-
-    arquivos_alterados = (
-        resultado.stdout.strip()
-    )
-
-    assert not arquivos_alterados, (
-        "Foram encontradas alteracoes no "
-        "escopo que deveria permanecer preservado:\n"
-        f"{arquivos_alterados}"
+        "dos acrescimos declarados (config.js, api.js "
+        "e o bloco BULBE-TELAS-NOVAS)"
     )
 
 
@@ -192,13 +184,11 @@ def main() -> None:
         manifesto
     )
 
-    verificar_escopo_preservado()
-
     print(
         "PASS: "
         f"{total_verificados} arquivos originais "
-        "identicos; HTML somente adiciona scripts; "
-        "migrations e sistema independente preservados"
+        "identicos; HTML original preservado "
+        "(so os acrescimos declarados)"
     )
 
 

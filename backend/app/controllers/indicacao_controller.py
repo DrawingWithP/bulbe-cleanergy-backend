@@ -58,7 +58,7 @@ def consultar_indicacao(
     response_model=list[Indicacao],
 )
 def consultar_indicacoes_cliente(
-    cliente_id: int,
+    cliente_id: str,
 ) -> list[Indicacao]:
     """
     Lista todas as indicacoes realizadas

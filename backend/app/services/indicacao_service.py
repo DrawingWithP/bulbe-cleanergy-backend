@@ -7,6 +7,10 @@ from app.domain.indicacao import (
     IndicacaoCreate,
     StatusIndicacao,
 )
+from app.repositories.cliente_repository import (
+    ClienteRepository,
+    cliente_repository,
+)
 from app.repositories.indicacao_repository import (
     IndicacaoRepository,
     indicacao_repository,
@@ -35,16 +39,34 @@ class IndicacaoService:
     def __init__(
         self,
         repository: IndicacaoRepository,
+        clientes: ClienteRepository = cliente_repository,
     ) -> None:
         self._repository = repository
+        self._clientes = clientes
+
+    def _validar_cliente(
+        self,
+        cliente_id: str,
+    ) -> None:
+        if self._clientes.buscar_por_id(cliente_id) is None:
+            raise ErroDeNegocio(
+                code="RECURSO_NAO_ENCONTRADO",
+                message=(
+                    f"Cliente com id '{cliente_id}' "
+                    "nao foi encontrado."
+                ),
+                status=404,
+            )
 
     def criar(
         self,
         dados: IndicacaoCreate,
     ) -> Indicacao:
         """
-        Cria uma nova indicacao.
+        Cria uma nova indicacao para um cliente existente.
         """
+
+        self._validar_cliente(dados.cliente_id)
 
         existente = self._repository.buscar_por_contato(
             dados.contato
@@ -88,11 +110,13 @@ class IndicacaoService:
 
     def listar_por_cliente(
         self,
-        cliente_id: int,
+        cliente_id: str,
     ) -> list[Indicacao]:
         """
         Lista as indicacoes de um cliente.
         """
+
+        self._validar_cliente(cliente_id)
 
         return self._repository.listar_por_cliente(
             cliente_id

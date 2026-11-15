@@ -52,6 +52,11 @@ AMBIENTE_TESTE: dict[str, str] = {
     "LOGIN_JANELA_MINUTOS": "15",
     "CHAT_RETENCAO_DIAS": "180",
     "AUDITORIA_RETENCAO_DIAS": "730",
+    # Integracao com o app desligada por padrao: o banco do backend nunca e lido sem querer.
+    # Os testes da integracao ligam a variavel com um banco do app temporario.
+    "INTEGRACAO_APP_DB_URL": "",
+    "INTEGRACAO_INTERVALO_SEGUNDOS": "0",
+    "INTEGRACAO_APP_API_URL": "http://127.0.0.1:9",
 }
 os.environ.update(AMBIENTE_TESTE)
 

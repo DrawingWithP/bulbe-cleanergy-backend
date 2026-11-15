@@ -113,7 +113,8 @@ class InMemoryAdesaoRepository:
 
         dados_atualizados.update(
             dados.model_dump(
-                exclude_unset=True
+                exclude_unset=True,
+                exclude_none=True,
             )
         )
 
@@ -220,9 +221,12 @@ class SqlAdesaoRepository:
             if modelo is None:
                 return None
 
+            # exclude_none: um campo enviado como null nao apaga
+            # uma coluna obrigatoria.
             dados_atualizados = dados.model_dump(
                 mode="json",
                 exclude_unset=True,
+                exclude_none=True,
             )
 
             for campo, valor in dados_atualizados.items():

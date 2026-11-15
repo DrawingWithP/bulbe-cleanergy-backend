@@ -88,6 +88,7 @@
             </div>
             <button type="button" class="botao botao-secundario botao-pequeno" id="botao-atualizar-metricas">Atualizar</button>
           </div>
+          <div id="integracao-status"></div>
           <div id="visao-geral-conteudo" aria-live="polite"></div>
         </section>
 
@@ -306,10 +307,14 @@
           <div class="tela-cabecalho">
             <div>
               <h1 class="tela-titulo" id="titulo-auditoria" tabindex="-1">Auditoria</h1>
-              <p class="tela-descricao">Logins, bloqueios, alertas, fichas abertas e expurgos. Consultar esta tela também fica registrado.</p>
+              <p class="tela-descricao">Logins, bloqueios, alertas, fichas abertas, expurgos e ações de integração com o app. Consultar esta tela também fica registrado.</p>
             </div>
-            <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-expurgo">Expurgar dados antigos</button>
+            <div class="tela-cabecalho-acoes">
+              <button type="button" class="botao botao-secundario botao-pequeno" id="botao-sincronizar">Sincronizar com o app</button>
+              <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-expurgo">Expurgar dados antigos</button>
+            </div>
           </div>
+          <div id="integracao-admin" aria-live="polite"></div>
           <div id="expurgo-resultado" aria-live="polite"></div>
           <form class="filtros" id="form-auditoria">
             <div class="campo">
@@ -323,6 +328,8 @@
                 <option value="ver_ficha">Abriu ficha</option>
                 <option value="ver_auditoria">Consultou auditoria</option>
                 <option value="expurgo">Expurgo</option>
+                <option value="sincronizar_app">Sincronizou com o app</option>
+                <option value="alterar_ativacao">Alterou etapa no app</option>
               </select>
             </div>
             <div class="campo campo-pequeno">

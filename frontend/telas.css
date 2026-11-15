@@ -1,0 +1,592 @@
+/* ============================================================
+   TELAS NOVAS (finalização do projeto)
+   Entrar, Primeiro acesso, Abrir conta e Indicações.
+
+   Segue o padrão do final.css: só as variáveis do :root
+   (cores, fonte, tamanhos de texto e --radius-card) e um
+   prefixo por tela:
+     cad-  campos de formulário compartilhados
+     acs-  Entrar e Primeiro acesso
+     ade-  Abrir conta (adesão)
+     ind-  Indicações
+   O cabeçalho, a rolagem e o título reaproveitam as classes
+   do simulador (sim-topo-bar, sim-scroll, sim-titulo-sec) e
+   a barra inferior reaproveita a da tela Status (st-*).
+   ============================================================ */
+
+/* ============================================================
+   CAMPOS DE FORMULÁRIO (compartilhados)
+   ============================================================ */
+.cad-card {
+  background: var(--branco);
+  border: 6px solid var(--borda-card);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cad-card-titulo {
+  font-size: var(--texto-segundo);
+  font-weight: var(--texto-segundo-peso);
+  color: var(--azul);
+}
+
+.cad-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cad-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cad-linha-estreita {
+  grid-template-columns: 2fr 1fr;
+}
+
+.cad-label {
+  font-size: var(--texto-terceiro);
+  font-weight: var(--texto-terceiro-peso);
+  color: var(--cinza-letra);
+}
+
+.cad-input {
+  width: 100%;
+  background: #F4F6F8;
+  border: 1.5px solid var(--cinza-borda);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: var(--fonte);
+  font-size: var(--texto-segundo);
+  font-weight: var(--texto-segundo-peso);
+  color: var(--cinza-letra);
+  outline: none;
+  transition: border-color .2s, background-color .2s;
+}
+
+.cad-input::placeholder {
+  color: var(--cinza-borda);
+  font-weight: var(--texto-terceiro-peso);
+}
+
+.cad-input:focus {
+  border-color: var(--azul);
+  background: var(--branco);
+}
+
+.cad-input[aria-invalid="true"] {
+  border-color: var(--amarelo);
+  background: var(--rosa-card);
+}
+
+select.cad-input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--cinza-letra) 50%),
+                    linear-gradient(135deg, var(--cinza-letra) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+.cad-ajuda {
+  font-size: var(--texto-pequeno);
+  font-weight: var(--texto-pequeno-peso);
+  color: var(--cinza-letra);
+  opacity: .8;
+}
+
+.cad-erro {
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  background: var(--rosa-card);
+  border-left: 4px solid var(--amarelo);
+  border-radius: 6px;
+  padding: 8px 10px;
+  line-height: 1.5;
+}
+
+.cad-erro-campo {
+  font-size: var(--texto-pequeno);
+  color: var(--amarelo);
+  font-weight: 500;
+}
+
+.cad-botao {
+  width: 100%;
+  background-color: var(--azul);
+  color: var(--branco);
+  padding: 14px 16px;
+  font-size: var(--texto-segundo);
+  font-weight: var(--texto-segundo-peso);
+  box-shadow: 0 6px 18px rgba(8, 6, 141, 0.22);
+}
+
+.cad-botao:hover:not(:disabled) {
+  transform: translateY(-2px);
+  opacity: .95;
+}
+
+.cad-botao:disabled {
+  opacity: .55;
+  cursor: progress;
+  box-shadow: none;
+}
+
+.cad-botao-secundario {
+  width: 100%;
+  background-color: var(--branco);
+  border: 1px solid var(--cinza-letra);
+  color: var(--cinza-letra);
+  padding: 13px 16px;
+  font-size: var(--texto-segundo);
+}
+
+.cad-botao-secundario:hover {
+  background-color: #f8f8f8;
+  transform: translateY(-1px);
+}
+
+.cad-acoes {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+
+.cad-acoes-unica {
+  grid-template-columns: 1fr;
+}
+
+/* ============================================================
+   TELAS: ENTRAR E PRIMEIRO ACESSO
+   ============================================================ */
+.acs-subtitulo {
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  line-height: 1.6;
+  margin: -8px 0 18px;
+}
+
+.acs-enviado {
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  line-height: 1.6;
+}
+
+.acs-enviado strong {
+  color: var(--azul);
+  font-weight: 600;
+}
+
+.acs-demo {
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  background: var(--verde-claro-card);
+  border-left: 4px solid var(--verde);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.acs-demo strong {
+  font-size: var(--texto-terceiro);
+  letter-spacing: 2px;
+  color: var(--azul);
+}
+
+.acs-codigo {
+  text-align: center;
+  font-size: var(--titulo);
+  letter-spacing: 10px;
+  padding: 10px 14px;
+}
+
+.acs-link {
+  align-self: center;
+}
+
+.acs-sucesso {
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.acs-sucesso-icone {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--verde);
+  box-shadow: 0 0 0 8px var(--verde-claro-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acs-sucesso-icone img {
+  width: 30px;
+  height: 30px;
+}
+
+.acs-sucesso h2 {
+  font-size: var(--titulo);
+  font-weight: var(--titulo-peso);
+  color: var(--azul);
+}
+
+.acs-sucesso p {
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  line-height: 1.6;
+}
+
+.acs-rodape {
+  text-align: center;
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   TELA: ABRIR CONTA (ADESÃO)
+   ============================================================ */
+.ade-progresso {
+  margin: -6px 0 18px;
+}
+
+.ade-progresso-texto {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  margin-bottom: 6px;
+}
+
+.ade-progresso-texto strong {
+  color: var(--azul);
+  font-weight: 600;
+}
+
+.ade-progresso-barra {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--borda-card);
+  overflow: hidden;
+}
+
+.ade-progresso-preenchido {
+  height: 100%;
+  width: 33%;
+  border-radius: 999px;
+  background: var(--verde);
+  transition: width .35s ease;
+}
+
+.ade-estimativa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--verde-claro-card);
+  border-radius: var(--radius-card);
+  padding: 12px;
+}
+
+.ade-estimativa img {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.ade-estimativa p {
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  line-height: 1.5;
+}
+
+.ade-estimativa strong {
+  display: block;
+  font-size: var(--texto-segundo);
+  font-weight: 600;
+  color: var(--azul);
+}
+
+.ade-protocolo {
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  background: var(--borda-card);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+.ade-protocolo strong {
+  color: var(--azul);
+}
+
+.ade-proximos {
+  list-style: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.ade-proximos li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  line-height: 1.5;
+}
+
+.ade-proximos-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--azul);
+  color: var(--branco);
+  font-size: var(--texto-pequeno);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   TELA: INDICAÇÕES
+   Mesmo esqueleto da tela Status: cabeçalho e barra inferior
+   fixos, conteúdo rolando no meio.
+   ============================================================ */
+#screen-indicacoes.active {
+  display: block;
+}
+
+.ind-main {
+  position: absolute;
+  top: 56px;
+  bottom: 64px;
+  left: 0;
+  right: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 16px 16px 24px;
+}
+
+.ind-main::-webkit-scrollbar {
+  display: none;
+}
+
+.ind-hero {
+  background: var(--azul);
+  border-radius: 18px;
+  padding: 18px 16px;
+  color: var(--branco);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ind-hero-icone {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--branco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ind-hero-icone img {
+  width: 30px;
+}
+
+.ind-hero h1 {
+  font-size: var(--titulo);
+  font-weight: var(--titulo-peso);
+  line-height: 1.15;
+}
+
+.ind-hero p {
+  margin-top: 4px;
+  font-size: var(--texto-terceiro);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, .92);
+}
+
+.ind-hero em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--amarelo);
+}
+
+.ind-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ind-resumo-item {
+  border: 3px solid var(--borda-card);
+  border-radius: var(--radius-card);
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.ind-resumo-item strong {
+  display: block;
+  font-size: var(--texto-segundo);
+  font-weight: 600;
+  color: var(--azul);
+}
+
+.ind-resumo-item span {
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+}
+
+.ind-resumo-ganho strong {
+  color: var(--verde);
+}
+
+.ind-sucesso {
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  background: var(--verde-claro-card);
+  border-left: 4px solid var(--verde);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.ind-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--whatsapp);
+  color: var(--branco);
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  font-size: var(--texto-terceiro);
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform .18s ease, opacity .18s ease;
+}
+
+.ind-whatsapp:hover {
+  transform: translateY(-2px);
+  opacity: .95;
+}
+
+.ind-lista-titulo {
+  font-size: var(--texto-segundo);
+  font-weight: var(--texto-segundo-peso);
+  color: var(--azul);
+  margin: 4px 0 10px;
+}
+
+.ind-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ind-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 3px solid var(--borda-card);
+  border-radius: var(--radius-card);
+  padding: 10px 12px;
+}
+
+.ind-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--rosa-card);
+  color: var(--amarelo);
+  font-weight: 600;
+  font-size: var(--texto-terceiro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ind-item-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.ind-item-texto strong {
+  display: block;
+  font-size: var(--texto-terceiro);
+  font-weight: 500;
+  color: var(--cinza-letra);
+}
+
+.ind-item-texto span {
+  display: block;
+  font-size: var(--texto-pequeno);
+  color: var(--cinza-letra);
+  opacity: .8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ind-selo {
+  font-size: var(--texto-pequeno);
+  font-weight: 500;
+  border-radius: 999px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
+.ind-selo-pendente  { background: var(--rosa-card);        color: var(--amarelo); }
+.ind-selo-aderiu    { background: var(--verde-claro-card); color: var(--verde); }
+.ind-selo-cancelada { background: var(--borda-card);       color: var(--cinza-letra); }
+
+.ind-vazio {
+  text-align: center;
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  border: 2px dashed var(--cinza-borda);
+  border-radius: var(--radius-card);
+  padding: 18px 12px;
+  line-height: 1.6;
+}
+
+.ind-sem-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+}
+
+.ind-sem-login p {
+  font-size: var(--texto-terceiro);
+  color: var(--cinza-letra);
+  line-height: 1.6;
+}
+
+/* Item "Sair" do menu lateral (criado pelo telas.js quando há sessão) */
+.ml-nav-sair span {
+  color: var(--amarelo);
+}

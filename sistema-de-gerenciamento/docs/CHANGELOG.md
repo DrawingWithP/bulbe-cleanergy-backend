@@ -1,5 +1,15 @@
 # CHANGELOG — `docs/`
 
+## Integração com o app (v3) — branch `chore/finalizacao-projeto`
+
+### Adicionado
+- `integracao-com-o-app.md`: sincronização app → painel, regras de vínculo, mudança de etapa painel → app, rotas,
+  variáveis de ambiente, recriação do banco e testes.
+
+### Alterado
+- `README.md` (índice e "o que a v3 acrescentou"), `guia-do-painel.md` (variáveis da integração e telas),
+  `PENDENCIAS.md` (itens 1 a 3 resolvidos) e o `README.md` da pasta (v3, 20 tabelas, rotas do chat, testes).
+
 ## Melhorias (v2) — branch `feat/python-melhorias-sistema`
 
 Documentação atualizada conforme a seção 5 de `CONTRATOS-MELHORIAS.md` e conferida, no fim, com o código de
