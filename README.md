@@ -132,6 +132,20 @@ iniciar.py              sobe app e painel juntos
 
    No app, **Entrar** pede o CPF de um cliente do seed (constantes `CPF_MARCOS` e `CPF_ANA` em `backend/app/db/seed.py`, dados fictícios). Fora de produção a tela mostra o código de 6 dígitos, porque não há envio real de SMS.
 
+### Demonstração (entrega final)
+
+- **Relógio de demonstração:** no topo do painel (admin) há "+1 dia", "+7 dias" e "Hoje". Ele adianta a data do app
+  (cartas semanais do Clube, validade dos cupons) sem mexer no relógio do computador. Não existe com `BULBE_AMBIENTE=producao`.
+- **Fale conosco:** no app, menu → Fale conosco. O assistente automático responde (prazo, fatura, Clube, indicação,
+  endereço); "Falar com um atendente" coloca a conversa na fila do painel (Atendimentos), onde o funcionário responde.
+- **Vitrine de dicas:** no painel (Dicas), arraste os cards para escolher as 5 que aparecem no app e clique em
+  "Confirmar alterações".
+- **Cupons:** no painel (Parceiros e cupons), cadastre cupons por parceiro. Cada cliente recebe por semana um cupom
+  sorteado desse catálogo; a carta especial (5ª semana) é sempre R$ 50 de desconto na fatura.
+- **Adesões:** no painel, aprove uma adesão feita no app para criar o cliente (ele faz o primeiro acesso pelo CPF).
+
+O roteiro completo da apresentação está em [`ROTEIRO-APRESENTACAO.md`](ROTEIRO-APRESENTACAO.md).
+
 Para rodar cada parte separadamente, veja [`QuickCommandIfError.txt`](QuickCommandIfError.txt), [`backend/docs/banco-de-dados.md`](backend/docs/banco-de-dados.md) e o [`README`](sistema-de-gerenciamento/README.md) do sistema de gerenciamento.
 
 ## Como rodar os testes

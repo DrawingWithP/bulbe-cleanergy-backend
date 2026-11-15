@@ -9,13 +9,21 @@ app/painel/
 ├── auth.py          # token HMAC-SHA256, dependências funcionario_logado / exigir_admin
 ├── alertas.py       # limites de tentativas de login + alerta por e-mail (smtplib, só stdlib)
 ├── controller.py    # router /v1/painel (login, métricas, clientes, ativações, auditoria, ...)
+├── operacoes.py     # operações no app: relógio, parceiros, catálogo de cupons, dicas, atendimento, adesões
 └── static/          # interface servida em /painel (HTML/CSS/JS puro, sem frameworks)
     ├── index.html   # login
     ├── login.js
-    ├── painel.html  # app de uma página (menu lateral + conteúdo + chat)
-    ├── painel.css
-    ├── painel.js
-    └── logo-bulbe.svg
+    ├── painel.html  # casca: menu lateral, topo (relógio), <main> e assistente
+    ├── painel.css   # tokens (cores da marca), componentes, telas, gráficos
+    ├── icones-dicas/        # 12 ícones das dicas (os mesmos do app)
+    ├── logo-bulbe.svg
+    └── js/
+        ├── nucleo.js        # window.Painel: formatação, esc(), api(), toast, modal, paginação, registro de telas
+        ├── graficos.js      # barras, rosca, linhas e colunas em SVG (a CSP não aceita CDN)
+        ├── telas/           # um módulo por tela (visao-geral, clientes+ficha, adesoes, atendimentos+conversa,
+        │                    #   ativacoes, dicas, parceiros, gestao: usinas/auditoria/uso)
+        ├── assistente.js    # chat lateral com streaming (SSE) e conversas
+        └── app.js           # rotas por hash, menu, relógio de demonstração, contador de atendimentos
 ```
 
 ## Integração (em `app/main.py`)

@@ -158,24 +158,28 @@ O banco guarda apenas o **hash** dela.
 
 ## 5. Telas do painel
 
-A interface é um app de uma página (`painel.html`) com menu lateral, a ficha do cliente e o chat sempre à direita.
-As telas marcadas com **(v2)** são novas; as marcadas com **(admin)** só aparecem para o perfil `admin`.
+A interface (v4, entrega final) é um app de uma página (`painel.html`) com menu lateral em três seções (Operação,
+Conteúdo do app e Gestão), o assistente à direita e o **relógio de demonstração** no topo. Cada tela é um módulo em
+`static/js/telas/`. As marcadas com **(admin)** só aparecem para o perfil `admin`; as ações que mudam o app também
+exigem `admin` na API, exceto responder atendimento, aprovar/recusar adesão e mudar etapa (qualquer funcionário).
 
-| Tela | O que mostra | Rotas usadas |
+| Tela | O que mostra e faz | Rotas usadas |
 |---|---|---|
-| **Login** (`/painel/`) | E-mail e senha. O token fica em `sessionStorage` (some ao fechar a aba) e expira em 8 h. **v2:** depois de muitas tentativas erradas aparece "Muitas tentativas. Tente de novo em N minutos." | `POST /v1/painel/login` |
-| **Visão geral** | Cards de clientes por status, economia total, faturas vencidas, indicações, Clube Bulbe (**v2:** com o total de bônus pagos), adesões, simulações e acesso ao app; barras de ativação por etapa (**v2:** a barra da etapa 5 mostra "Ativados (30 dias)"). | `GET /v1/painel/metricas` |
-| **Clientes** | Busca por nome, e-mail, CPF, nº de instalação ou código de indicação, com filtros de status, cidade e (**v2**) etapa da ativação. **v2:** paginação real (anterior/próxima, "página X de Y", itens por página). | `GET /v1/painel/clientes` |
-| **Ficha do cliente** (`#/cliente/<id>`) | Dados cadastrais e usina; jornada de ativação em 5 etapas; economia (**v2:** com total de bônus do Clube); Indique e Ganhe; faturas (**v2:** coluna de bônus do Clube); Clube e cartas; cupons; notificações; atendimentos. Botão "Perguntar ao assistente sobre este cliente". **v2:** cada abertura fica registrada na auditoria. | `GET /v1/painel/clientes/{id}` |
-| **Ativações** (v2) | Resumo da jornada (em ativação, por etapa, dias médios na etapa, atrasados há mais de 90 dias, ativados nos últimos 30 dias, tempo médio) e lista de **clientes parados**, com filtros de etapa e de dias mínimos parados. | `GET /v1/painel/ativacoes/resumo`, `GET /v1/painel/clientes/parados` |
-| **Adesões** | Filtro de situação e link para a ficha quando já virou cliente. **v2:** paginada. | `GET /v1/painel/adesoes` |
-| **Atendimentos** | Filtro de status, nome do cliente e link para a ficha. **v2:** paginada. | `GET /v1/painel/atendimentos` |
-| **Dicas** (v2) | Dicas de economia com valor mensal e anual. | `GET /v1/painel/dicas` |
-| **Usinas** (v2) | Usinas, localização, capacidade, status e clientes ativos. | `GET /v1/painel/usinas` |
-| **Parceiros** (v2) | Parceiros do Clube Bulbe e categoria. | `GET /v1/painel/parceiros` |
-| **Auditoria** (v2, admin) | Registros de `auditoria_acessos` (quem, ação, recurso, IP, quando), com filtros por funcionário e ação e paginação. Consultar esta tela também fica registrado (`ver_auditoria`). Botão **Expurgar dados antigos** (pede confirmação). | `GET /v1/painel/auditoria`, `POST /v1/painel/admin/expurgo` |
-| **Uso do assistente** (v2, admin) | Perguntas, conversas, funcionários ativos, tokens, **custo estimado** total e por pergunta, ranking por funcionário, ferramentas mais usadas e série por dia, nos últimos 7, 30, 90 ou 365 dias. | `GET /v1/painel/uso-chatbot?dias=` |
-| **Chat** (lateral, em todas as telas) | **v2:** a resposta aparece enquanto é escrita (streaming), com indicação do que o assistente está consultando e o custo estimado discreto ao final; botões **Nova conversa** e **Conversas anteriores** (reabre uma conversa). | `POST /v1/painel/chat/stream` (reserva: `POST /v1/painel/chat`), `GET /v1/painel/chat/conversas`, `GET /v1/painel/chat/conversas/{id}`, `GET /v1/painel/chat/sugestoes` |
+| **Login** (`/painel/`) | E-mail e senha; token em `sessionStorage`, expira em 8 h; bloqueio após muitas tentativas. | `POST /v1/painel/login` |
+| **Visão geral** | 6 indicadores; gráficos (economia por mês, clientes por status, funil de ativação, crescimento); widgets de atendimentos abertos, clientes parados, últimas adesões, Clube/app e usinas; estado da integração. | `/metricas`, `/metricas/series`, `/clientes/parados`, `/atendimentos`, `/adesoes`, `/usinas`, `/integracao` |
+| **Clientes** | Busca + filtros (status, etapa, cidade, origem app/fictício, acesso ao app, período de cadastro) e ordenação por nome, data, status, etapa ou cidade (também clicando no cabeçalho). | `GET /v1/painel/clientes` |
+| **Ficha do cliente** (`#/cliente/<id>`) | Jornada em 5 etapas com histórico e **Atualizar no app** (clientes do app); dados, economia, faturas com gráfico "sem × com Bulbe", Clube e cupons, indicações, atendimentos, notificações; "Perguntar ao assistente". | `GET /v1/painel/clientes/{id}`, `PATCH .../ativacao` |
+| **Adesões** | Pedidos de assinatura. Por padrão mostra as feitas no app aguardando análise; **Aprovar** cria o cliente no app (etapa 1), **Recusar** encerra o pedido. | `GET /v1/painel/adesoes?apenas_app=`, `POST /v1/painel/adesoes/{id}/aprovacao` e `/recusa` |
+| **Atendimentos** | Fila do "Fale conosco" (atualiza a cada 10 s; "Buscar novos no app" sincroniza na hora). Quem pediu atendente aparece destacado. O menu mostra quantos estão abertos. | `GET /v1/painel/atendimentos`, `POST /v1/painel/atendimentos/atualizacao` |
+| **Atendimento** (`#/atendimento/<id>`) | Chat com o cliente do app (novas mensagens a cada 2,5 s), resposta com o nome do funcionário e **Encerrar conversa**. | `GET .../{id}/conversa?depois_de=`, `POST .../respostas`, `POST .../encerramento` |
+| **Ativações** | 4 números, funil das etapas (clicar filtra a lista) e clientes parados com barra do prazo de 90 dias. | `/ativacoes/resumo`, `/clientes/parados` |
+| **Dicas** | Vitrine com as 5 dicas do app + acervo. Arrastar e soltar (ou botões ← → / Tirar / Exibir); nada muda no app até **Confirmar alterações**. Nova dica/editar com seletor de ícone. | `GET /v1/painel/app/dicas`, `PUT .../app/dicas/vitrine`, `POST/PUT/DELETE .../app/dicas` |
+| **Parceiros e cupons** | Parceiros do app com seus cupons do catálogo (sorteio semanal do Clube): cadastrar/editar/desativar parceiro; cadastrar, editar, pausar e excluir cupom (peso = chance no sorteio). | `/parceiros`, `/catalogo-cupons` |
+| **Usinas** | Capacidade total, clientes por usina e tabela. | `GET /v1/painel/usinas` |
+| **Auditoria e integração** (admin) | Estado da sincronização com o app + **Sincronizar agora**; expurgo (LGPD); registros de auditoria com filtros. | `/integracao`, `/admin/sincronizar`, `/admin/expurgo`, `/auditoria` |
+| **Uso do assistente** (admin) | Perguntas, custo estimado, tempo de resposta, tokens, perguntas por dia, ferramentas e uso por funcionário. | `GET /v1/painel/uso-chatbot?dias=` |
+| **Relógio de demonstração** (topo, admin) | Data do app e botões +1 dia, +7 dias e Hoje. Some quando a API não está em modo demonstração. | `/demonstracao/relogio`, `.../avancar`, `.../resetar` |
+| **Assistente** (lateral) | Chat com streaming, conversas anteriores e sugestões (somente leitura). | `/chat/stream`, `/chat`, `/chat/conversas`, `/chat/sugestoes` |
 
 As telas **Auditoria** e **Uso do assistente** ficam na seção **Gestão** do menu, visível só para `admin`; a API
 também recusa essas rotas (403) para o perfil `atendimento`. O expurgo manual apaga na hora o que passou dos prazos

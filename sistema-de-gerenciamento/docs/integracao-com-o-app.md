@@ -114,6 +114,29 @@ Clientes só do banco fictício não têm o botão (a rota responde `409 CLIENTE
 | POST | `/v1/painel/admin/sincronizar` | admin | Sincroniza agora; grava `sincronizar_app` na auditoria |
 | PATCH | `/v1/painel/clientes/{id}/ativacao` | qualquer funcionário | Altera a etapa no app (corpo `{etapa_atual: 1-5, observacao?}`) |
 
+### 4.1 Operações no app (entrega final, `app/painel/operacoes.py`)
+
+Tudo o que o funcionário muda vai para a API do app (fonte da verdade) com o token de operador e, em seguida, o
+painel sincroniza. Erros da API do app voltam no formato `{"error": {...}}` do painel, com o mesmo status.
+
+| Método | Rota | Quem | O quê |
+|---|---|---|---|
+| GET | `/v1/painel/demonstracao/relogio` | qualquer funcionário | Data do app e dias adiantados |
+| POST | `/v1/painel/demonstracao/relogio/avancar` · `/resetar` | admin | Adianta (1 a 60 dias) ou volta para a data real |
+| POST/PUT | `/v1/painel/parceiros` · `/parceiros/{id}` | admin | Cadastra/edita parceiro no app (`ativo=false` desativa) |
+| GET/POST/PATCH/DELETE | `/v1/painel/catalogo-cupons` · `/{modelo_id}` | leitura: todos; escrita: admin | Catálogo de cupons do sorteio semanal (só parceiros com vínculo no app; senão 409 `PARCEIRO_SEM_VINCULO_APP`) |
+| GET | `/v1/painel/app/dicas` | qualquer funcionário | Acervo com `em_exibicao`/`ordem` e a lista de ícones |
+| PUT | `/v1/painel/app/dicas/vitrine` | admin | Exatamente 5 ids, na ordem do carrossel |
+| POST/PUT/DELETE | `/v1/painel/app/dicas` · `/{id}` | admin | Cadastro de dicas (ícone de lista fechada) |
+| POST | `/v1/painel/atendimentos/atualizacao` | qualquer funcionário | Sincroniza agora para trazer conversas novas |
+| GET | `/v1/painel/atendimentos/{id}/conversa?depois_de=` | qualquer funcionário | Atendimento do painel + mensagens lidas ao vivo na API do app |
+| POST | `/v1/painel/atendimentos/{id}/respostas` · `/encerramento` | qualquer funcionário | Responde com o nome do funcionário / encerra (409 `ATENDIMENTO_SEM_CHAT` nos fictícios) |
+| POST | `/v1/painel/adesoes/{id}/aprovacao` · `/recusa` | qualquer funcionário | Aprova (cria o cliente no app) ou recusa (409 `ADESAO_SEM_VINCULO_APP` nas fictícias) |
+| GET | `/v1/painel/metricas/series?meses=` | qualquer funcionário | Séries mensais dos gráficos (economia, clientes novos, adesões) |
+
+A sincronização passou a trazer também os atendimentos do app (`status_app`, `atendente_nome`; o status do painel
+segue `bot`/`aguardando_atendente` → `aberto`, `em_atendimento` → `em_andamento`, `resolvido` → `resolvido`).
+
 `GET /v1/painel/clientes/{id}` passa a trazer `cliente.id_app` e `cliente.origem` (`app` ou `ficticio`); as listas
 de clientes trazem `origem`.
 

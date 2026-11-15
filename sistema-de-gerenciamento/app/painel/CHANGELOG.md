@@ -1,5 +1,25 @@
 # CHANGELOG — `app/painel/`
 
+## Entrega final (v4)
+
+### Interface
+- Front-end refeito: `painel.js` (≈2 mil linhas) dividido em `js/nucleo.js`, `js/graficos.js`, `js/telas/*.js`,
+  `js/assistente.js` (o chat com streaming foi mantido) e `js/app.js`; `painel.css` reescrito com tokens.
+- Visão geral com gráficos em SVG próprio e widgets; Clientes com filtros e ordenação; Adesões com aprovar/recusar;
+  Atendimentos com fila e tela de conversa (polling 2,5 s); Ativações com funil clicável; Dicas com vitrine de 5 por
+  arrastar e soltar; Parceiros com catálogo de cupons; relógio de demonstração no topo; contador de atendimentos.
+- Grade responsiva por *container queries* (a largura muda com o assistente aberto ou fechado).
+
+### Rotas
+- `operacoes.py`: relógio, parceiros, catálogo de cupons, dicas/vitrine, conversa do atendimento, aprovar/recusar adesão
+  e `POST /atendimentos/atualizacao`.
+- `GET /metricas/series`; `/clientes` com `ordenar_por`, `ordem`, `origem`, `acesso_app`, `cadastro_de`, `cadastro_ate`;
+  `/adesoes` com `apenas_app` e `id_app` em cada item; parceiros com `id_app`/`origem`.
+
+### Testes
+- `tests/test_operacoes_app.py` (API do app simulada): permissões, validações, vínculo com o app, filtros novos e
+  carregamento dos módulos do front.
+
 ## Melhorias (v2)
 
 ### Segurança do login
