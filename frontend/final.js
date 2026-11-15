@@ -475,8 +475,9 @@ window._onAtivacao = async function () {
       return;
     }
 
+    let simulacao;
     try {
-      const simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
+      simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
         valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos
       }) });
       if (revision !== simRevision) return;
@@ -489,10 +490,11 @@ window._onAtivacao = async function () {
     secEconomia.classList.remove('oculto');
     secComp.classList.remove('oculto');
 
-    const descontoMensal = valorConta * 0.15;
+    // Economia calculada pela API com a bandeira tarifaria vigente (RF-03).
+    const descontoMensal = simulacao.economia_mensal ?? valorConta * 0.15;
     const descontoTotal  = descontoMensal * meses;
     const bonusTotal     = amigos * 50;
-    const total          = descontoTotal + bonusTotal;
+    const total          = simulacao.economia_total ?? (descontoTotal + bonusTotal);
     const novaConta      = Math.max(0, valorConta - descontoMensal);
     const periodoLabel   = meses === 12 ? '1 ANO' : `${meses} ${meses === 1 ? 'MÊS' : 'MESES'}`;
 
@@ -633,9 +635,10 @@ window._onAtivacao = async function () {
       return;
     }
 
+    let simulacao;
     try {
-      const simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
-        valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos
+      simulacao = await BulbeAPI.request('/v1/simulacoes', { method: 'POST', body: JSON.stringify({
+        valor_atual: valorConta, valor_proposto: Math.max(0, valorConta * 0.85), periodo_meses: meses, indicacoes: amigos, cliente_id: (window.BULBE_CONFIG && window.BULBE_CONFIG.clienteId) || undefined
       }) });
       if (revision !== slogRevision) return;
       valorConta = simulacao.valor_atual; meses = simulacao.periodo_meses; amigos = simulacao.indicacoes;
@@ -647,10 +650,11 @@ window._onAtivacao = async function () {
     secEconomia.classList.remove('oculto');
     secComp.classList.remove('oculto');
 
-    const descontoMensal = valorConta * 0.15;
+    // Economia calculada pela API com a bandeira tarifaria vigente (RF-03).
+    const descontoMensal = simulacao.economia_mensal ?? valorConta * 0.15;
     const descontoTotal  = descontoMensal * meses;
     const bonusTotal     = amigos * 50;
-    const total          = descontoTotal + bonusTotal;
+    const total          = simulacao.economia_total ?? (descontoTotal + bonusTotal);
     const novaConta      = Math.max(0, valorConta - descontoMensal);
     const periodoLabel   = meses === 12 ? '1 ANO' : `${meses} ${meses === 1 ? 'MÊS' : 'MESES'}`;
 
