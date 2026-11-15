@@ -73,6 +73,7 @@ def _esperar(url: str, processo: subprocess.Popen, segundos: int = 60) -> None:
 
 SCRIPT_PAINEL = textwrap.dedent('''
     import json, sys
+    import httpx
     from fastapi.testclient import TestClient
     from app.database.conexao import inicializar_banco
     from app.database import consultas
@@ -92,6 +93,35 @@ SCRIPT_PAINEL = textwrap.dedent('''
     assert any(i["nome_indicado"] == "Indicada Pelo App" for i in indicacoes), indicacoes
     cupons = consultas.listar_cupons(cliente["id"])
     assert any(c["codigo"] for c in cupons), cupons
+
+    # Adesao criada via HTTP deve aparecer uma unica vez, com os mesmos valores.
+    adesoes = consultas.listar_adesoes_paginado(pagina=1, por_pagina=100)["data"]
+    novas = [a for a in adesoes if a["email"] == "joana.e2e@example.com"]
+    assert len(novas) == 1, novas
+    adesao_painel = novas[0]
+    assert adesao_painel["origem"] == "app", adesao_painel
+    assert adesao_painel["situacao"] == "enviada", adesao_painel
+    assert adesao_painel["valor_conta_atual"] == 320.0, adesao_painel
+    assert adesao_painel["economia_mensal_estimada"] == 48.0, adesao_painel
+
+    # Operador aprova no app; nova sincronizacao atualiza o mesmo registro no painel.
+    with httpx.Client(base_url=sys.argv[2], trust_env=False, timeout=15) as api:
+        login = api.post("/v1/auth/login", data={
+            "username": "admin@bulbe.com.br", "password": "bulbe12345",
+        })
+        assert login.status_code == 200, login.text
+        atualizada = api.patch(
+            f"/v1/adesoes/{sys.argv[3]}", json={"status": "aprovada"},
+            headers={"Authorization": "Bearer " + login.json()["access_token"]},
+        )
+        assert atualizada.status_code == 200, atualizada.text
+        assert atualizada.json()["status"] == "aprovada", atualizada.text
+    assert sincronizacao.sincronizar()["sucesso"] is True
+    depois = consultas.listar_adesoes_paginado(pagina=1, por_pagina=100)["data"]
+    novas = [a for a in depois if a["email"] == "joana.e2e@example.com"]
+    assert len(novas) == 1, novas
+    assert novas[0]["id"] == adesao_painel["id"], novas
+    assert novas[0]["situacao"] == "aprovada", novas
 
     admin = consultas.obter_funcionario_por_email("admin@bulbe.com.br")
     with TestClient(app) as http:
@@ -145,6 +175,14 @@ def main() -> None:
             status, abertura = _http("POST", f"{base}/v1/cartas/{ID_CARTA_MARCOS}/abertura")
             assert status == 201, abertura
 
+            status, adesao = _http("POST", base + "/v1/adesoes", {
+                "nome": "Joana E2E", "email": "joana.e2e@example.com", "cpf": "39053344705",
+                "telefone": "31977776666", "cep": "30130010", "logradouro": "Rua da Bahia",
+                "numero": 45, "bairro": "Centro", "cidade": "Belo Horizonte", "uf": "MG",
+                "distribuidora": "CEMIG", "numero_instalacao": "3009876543", "valor_conta_atual": 320,
+            })
+            assert status == 201 and adesao["status"] == "enviada", adesao
+
             # Painel: sincroniza e altera a etapa pela API do app
             env_painel = {
                 **os.environ,
@@ -157,13 +195,15 @@ def main() -> None:
                 "PAINEL_SENHA_DEMO": "senha-do-teste-integrado",
                 "SMTP_HOST": "",
             }
-            painel = subprocess.run([python_painel, "-c", SCRIPT_PAINEL, ID_MARCOS], cwd=PAINEL, env=env_painel,
+            painel = subprocess.run([python_painel, "-c", SCRIPT_PAINEL, ID_MARCOS, base, str(adesao["id"])], cwd=PAINEL, env=env_painel,
                                     capture_output=True, text=True, timeout=180)
             assert painel.returncode == 0, painel.stdout + painel.stderr
 
             # O app ve a etapa alterada pelo painel
             status, ativacao = _http("GET", f"{base}/v1/clientes/{ID_MARCOS}/ativacao")
             assert status == 200 and ativacao["etapa_atual"] == 3, ativacao
+            status, adesao_final = _http("GET", f"{base}/v1/adesoes/{adesao['id']}")
+            assert status == 200 and adesao_final["status"] == "aprovada", adesao_final
         finally:
             api.terminate()
             try:
