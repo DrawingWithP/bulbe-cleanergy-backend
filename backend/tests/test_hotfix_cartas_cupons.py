@@ -19,11 +19,13 @@ def test_cupom_pode_ser_salvo_sem_token(client, session_factory):
     assert resposta.json()["situacao"] == "salvo"
 
 
-def test_descartar_cupom_sem_token_preserva_contrato(client, session_factory):
+def test_descartar_cupom_exige_token(client, session_factory, headers_auth):
     from app.db.seed import ID_CUPOM_MARCOS
     with session_factory() as session:
         popular(session)
-    resposta = client.delete(f"/v1/cupons/{ID_CUPOM_MARCOS}")
+    assert client.delete(f"/v1/cupons/{ID_CUPOM_MARCOS}").status_code == 401
+    assert client.get(f"/v1/cupons/{ID_CUPOM_MARCOS}").status_code == 200
+    resposta = client.delete(f"/v1/cupons/{ID_CUPOM_MARCOS}", headers=headers_auth)
     assert resposta.status_code == 204
     assert resposta.content == b""
     assert client.get(f"/v1/cupons/{ID_CUPOM_MARCOS}").status_code == 404

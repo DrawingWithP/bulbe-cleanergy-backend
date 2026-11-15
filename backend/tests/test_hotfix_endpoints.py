@@ -26,6 +26,7 @@ CASOS = [
     ("POST", "/v1/adesoes", 201),
     ("GET", "/v1/adesoes/{adesao_id}", 200),
     ("PUT", "/v1/adesoes/{adesao_id}", 200),
+    ("PATCH", "/v1/adesoes/{adesao_id}", 200),
     ("DELETE", "/v1/adesoes/{adesao_id}", 204),
     ("GET", "/v1/dicas", 200),
     ("POST", "/v1/dicas", 201),
@@ -60,6 +61,10 @@ CASOS = [
     ("GET", "/v1/clientes/{cliente_id}/cartas", 200),
     ("GET", "/v1/cartas/{carta_id}", 200),
     ("POST", "/v1/cartas/{carta_id}/abertura", 201),
+    ("GET", "/v1/bandeiras", 200),
+    ("GET", "/v1/bandeiras/atual", 200),
+    ("GET", "/v1/bandeiras/{mes_referencia}", 200),
+    ("PUT", "/v1/bandeiras/{mes_referencia}", 200),
     ("GET", "/", 200),
 ]
 ESQUEMA = app.openapi()
@@ -71,6 +76,7 @@ PROTEGIDAS = {
     ("PUT", "/v1/usinas/{usina_id}"),
     ("DELETE", "/v1/usinas/{usina_id}"),
     ("PUT", "/v1/adesoes/{adesao_id}"),
+    ("PATCH", "/v1/adesoes/{adesao_id}"),
     ("DELETE", "/v1/adesoes/{adesao_id}"),
     ("POST", "/v1/dicas"),
     ("PUT", "/v1/dicas/{dica_id}"),
@@ -78,22 +84,22 @@ PROTEGIDAS = {
     ("DELETE", "/v1/indicacoes/{indicacao_id}"),
     ("PUT", "/v1/clientes/{cliente_id}"),
     ("DELETE", "/v1/clientes/{cliente_id}"),
+    ("DELETE", "/v1/cupons/{cupom_id}"),
+    ("PUT", "/v1/bandeiras/{mes_referencia}"),
 }
 
 
 def test_inventario_e_autenticacao_dos_contratos():
     assert set(ROTAS) == {(m, p) for m, p, _ in CASOS}
-    assert len(CASOS) == len(ROTAS) == 47
+    assert len(CASOS) == len(ROTAS) == 52
     assert {rota for rota, op in ROTAS.items() if op.get("security")} == PROTEGIDAS
 
 
 def _url(caminho):
     ids = {"usina_id": 1, "adesao_id": 1, "dica_id": 1, "indicacao_id": 1,
            "cliente_id": ID_MARCOS, "parceiro_id": ID_ARAUJO,
-           "cupom_id": ID_CUPOM_MARCOS, "carta_id": ID_CARTA_MARCOS}
-    # Indicacoes ja usavam um ID inteiro, independentemente dos UUIDs de clientes.
-    if caminho.endswith("/indicacoes"):
-        ids["cliente_id"] = 1
+           "cupom_id": ID_CUPOM_MARCOS, "carta_id": ID_CARTA_MARCOS,
+           "mes_referencia": "2026-11"}
     return caminho.format(**ids)
 
 
@@ -104,7 +110,7 @@ def contratos(client, session_factory, adesao_valida, cliente_valido, usina_vali
     login = client.post("/v1/auth/login", data={"username": EMAIL_ADMIN, "password": SENHA_ADMIN})
     assert login.status_code == 200
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
-    indicacao = {"cliente_id": 1, "nome": "Maria Silva", "contato": "maria@example.com"}
+    indicacao = {"cliente_id": ID_MARCOS, "nome": "Maria Silva", "contato": "maria@example.com"}
     assert client.post("/v1/indicacoes", json=indicacao).status_code == 201
     verificacao = client.post("/v1/primeiro-acesso/verificacoes", json={"cpf": CPF_MARCOS})
     assert verificacao.status_code == 202
@@ -127,6 +133,7 @@ def contratos(client, session_factory, adesao_valida, cliente_valido, usina_vali
         "/v1/parceiros": {"nome": "Novo Parceiro", "categoria": "Energia"},
         "/v1/parceiros/{parceiro_id}": {"nome": "Parceiro Atualizado"},
         "/v1/cupons/{cupom_id}": {"situacao": "salvo"},
+        "/v1/bandeiras/{mes_referencia}": {"bandeira": "amarela"},
     }
 
 

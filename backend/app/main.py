@@ -19,6 +19,7 @@ from app.controllers.ativacao_controller import router as ativacao_router
 from app.controllers.parceiro_controller import router as parceiro_router
 from app.controllers.cupom_controller import router as cupom_router
 from app.controllers.carta_controller import router as carta_router
+from app.controllers.bandeira_controller import router as bandeira_router
 
 from app.services.usina_service import ErroDeNegocio
 from app.services.dica_service import (
@@ -51,6 +52,9 @@ from app.services.cupom_service import (
 from app.services.carta_service import (
     ErroDeNegocio as CartaErroDeNegocio,
 )
+from app.services.bandeira_service import (
+    ErroDeNegocio as BandeiraErroDeNegocio,
+)
 
 
 app = FastAPI(
@@ -76,6 +80,7 @@ app.include_router(ativacao_router)
 app.include_router(parceiro_router)
 app.include_router(cupom_router)
 app.include_router(carta_router)
+app.include_router(bandeira_router)
 
 
 def _formatar_erro(exc) -> JSONResponse:
@@ -186,6 +191,14 @@ def tratar_erro_cupom(
 def tratar_erro_carta(
     request: Request,
     exc: CartaErroDeNegocio,
+) -> JSONResponse:
+    return _formatar_erro(exc)
+
+
+@app.exception_handler(BandeiraErroDeNegocio)
+def tratar_erro_bandeira(
+    request: Request,
+    exc: BandeiraErroDeNegocio,
 ) -> JSONResponse:
     return _formatar_erro(exc)
 

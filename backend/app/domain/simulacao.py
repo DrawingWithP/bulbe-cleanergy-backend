@@ -10,6 +10,8 @@ from pydantic import (
     Field,
 )
 
+from app.domain.bandeira import BandeiraTarifaria
+
 
 class SimulacaoBase(BaseModel):
     valor_atual: float = Field(
@@ -40,9 +42,37 @@ class SimulacaoBase(BaseModel):
 class SimulacaoCreate(SimulacaoBase):
     """
     Campos exigidos para criar uma simulacao (POST).
+
+    cliente_id e bandeira sao opcionais: o simulador aberto nao tem
+    cliente, e sem bandeira a API usa a bandeira vigente no mes (RF-03).
     """
 
-    pass
+    cliente_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=36,
+        description="Cliente que simulou (simulador logado)",
+    )
+
+    bandeira: BandeiraTarifaria | None = Field(
+        default=None,
+        description=(
+            "Bandeira tarifaria usada no calculo. "
+            "Vazio = bandeira vigente no mes atual"
+        ),
+    )
+
+
+class SimulacaoCalculada(SimulacaoBase):
+    """
+    Simulacao com a economia ja calculada pelo servico,
+    pronta para ser gravada.
+    """
+
+    cliente_id: str | None = None
+    bandeira: BandeiraTarifaria
+    economia_mensal: float = Field(..., ge=0)
+    economia_total: float = Field(..., ge=0)
 
 
 class Simulacao(BaseModel):
@@ -61,3 +91,7 @@ class Simulacao(BaseModel):
     periodo_meses: int
     indicacoes: int
     data_ativacao: date
+    cliente_id: str | None = None
+    bandeira: BandeiraTarifaria = BandeiraTarifaria.verde
+    economia_mensal: float | None = None
+    economia_total: float | None = None

@@ -108,7 +108,9 @@ def test_remover_cliente_remove_os_cupons_dele(client, session_factory, headers_
     assert client.get(f"/v1/cupons/{cupom_id}").status_code == 404
 
 
-def test_adesao_e_indicacao_persistem(client):
+def test_adesao_e_indicacao_persistem(client, session_factory):
+    with session_factory() as session:
+        popular(session)
     adesao = {
         "nome": "Joao da Silva", "email": "joao@email.com", "cpf": "14444444444",
         "telefone": "31999999999", "cep": "30575160", "logradouro": "Rua Oliveira",
@@ -119,16 +121,16 @@ def test_adesao_e_indicacao_persistem(client):
     assert client.post("/v1/adesoes", json=adesao).status_code == 409
 
     indicacao = client.post(
-        "/v1/indicacoes", json={"cliente_id": 1, "nome": "Maria Souza", "contato": "maria@email.com"}
+        "/v1/indicacoes", json={"cliente_id": ID_MARCOS, "nome": "Maria Souza", "contato": "maria@email.com"}
     )
     assert indicacao.status_code == 201
     assert client.post(
-        "/v1/indicacoes", json={"cliente_id": 1, "nome": "Maria", "contato": "MARIA@email.com"}
+        "/v1/indicacoes", json={"cliente_id": ID_MARCOS, "nome": "Maria", "contato": "MARIA@email.com"}
     ).status_code == 409
 
     novo_client = TestClient(app)
     assert novo_client.get(f"/v1/adesoes/{adesao_id}").json()["cpf"] == "14444444444"
-    assert len(novo_client.get("/v1/clientes/1/indicacoes").json()) == 1
+    assert len(novo_client.get(f"/v1/clientes/{ID_MARCOS}/indicacoes").json()) == 1
 
 
 def test_seed_e_idempotente(session_factory):

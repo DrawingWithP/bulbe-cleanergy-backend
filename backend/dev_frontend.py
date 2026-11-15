@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
+from app.db.seed import ID_MARCOS
 from app.main import app
 
 
@@ -31,8 +32,11 @@ def frontend_config() -> Response:
 
     config = {
         "apiBase": "",
+        # Sem a variavel, usa o cliente de demonstracao do seed
+        # (Marcos), para a jornada funcionar logo apos o seed.
         "clienteId": os.getenv(
-            "BULBE_FRONTEND_CLIENTE_ID"
+            "BULBE_FRONTEND_CLIENTE_ID",
+            ID_MARCOS,
         ),
     }
 

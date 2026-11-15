@@ -47,7 +47,7 @@ class IndicacaoRepository(Protocol):
 
     def listar_por_cliente(
         self,
-        cliente_id: int,
+        cliente_id: str,
     ) -> list[Indicacao]:
         ...
 
@@ -101,7 +101,7 @@ class InMemoryIndicacaoRepository:
 
     def listar_por_cliente(
         self,
-        cliente_id: int,
+        cliente_id: str,
     ) -> list[Indicacao]:
         indicacoes = [
             indicacao
@@ -190,7 +190,7 @@ class SqlIndicacaoRepository:
 
     def listar_por_cliente(
         self,
-        cliente_id: int,
+        cliente_id: str,
     ) -> list[Indicacao]:
         with self._session_factory() as session:
             consulta = (

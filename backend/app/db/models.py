@@ -13,8 +13,12 @@ Chaves estrangeiras (FK):
 - cartas.cupom_id nao e uma FK, evitando um ciclo entre cartas e cupons.
 - cupons guarda um retrato do parceiro, sem FK. Assim, o cupom continua
   valido mesmo que o parceiro seja removido do Clube.
-- indicacoes.cliente_id ainda e inteiro no Dominio, enquanto clientes.id
-  utiliza UUID em texto. Por isso, ainda nao existe FK entre essas tabelas.
+- indicacoes.cliente_id aponta para clientes.id (UUID em texto) com
+  ON DELETE CASCADE.
+- simulacoes.cliente_id e opcional (simulador aberto, sem login) e utiliza
+  ON DELETE SET NULL.
+- bandeiras_tarifarias guarda a bandeira vigente de cada mes, usada no
+  calculo de economia do simulador.
 """
 
 from datetime import date, datetime
@@ -265,6 +269,58 @@ class SimulacaoModel(Base):
         nullable=False,
     )
 
+    # Simulador logado: cliente que simulou. Vazio no simulador aberto.
+    cliente_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey(
+            "clientes.id",
+            ondelete="SET NULL",
+        ),
+        index=True,
+        nullable=True,
+    )
+
+    # Bandeira tarifaria usada no calculo (RF-03).
+    bandeira: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="verde",
+        server_default="verde",
+    )
+
+    economia_mensal: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    economia_total: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+
+class BandeiraTarifariaModel(Base):
+    """
+    Bandeira tarifaria vigente em cada mes (AAAA-MM).
+    """
+
+    __tablename__ = "bandeiras_tarifarias"
+
+    mes_referencia: Mapped[str] = mapped_column(
+        String(7),
+        primary_key=True,
+    )
+
+    bandeira: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+    )
+
 
 class IndicacaoModel(Base):
     __tablename__ = "indicacoes"
@@ -275,8 +331,12 @@ class IndicacaoModel(Base):
         autoincrement=True,
     )
 
-    cliente_id: Mapped[int] = mapped_column(
-        Integer,
+    cliente_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "clientes.id",
+            ondelete="CASCADE",
+        ),
         index=True,
         nullable=False,
     )
