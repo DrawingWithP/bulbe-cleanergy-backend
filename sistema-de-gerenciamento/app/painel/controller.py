@@ -13,6 +13,7 @@ ver_ficha, ver_auditoria, expurgo) com o IP da requisicao.
 """
 import json
 import logging
+from datetime import date
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query, Request, status
 from fastapi.responses import JSONResponse
@@ -167,6 +168,12 @@ def me(funcionario: dict = Depends(funcionario_logado)) -> dict:
     return funcionario
 
 
+@router.get("/metricas/series", dependencies=PROTEGIDO)
+def metricas_series(meses: int = Query(6, ge=1, le=24)) -> dict:
+    """Series mensais para os graficos da visao geral (economia, clientes novos, adesoes)."""
+    return consultas.series_mensais(meses)
+
+
 @router.get("/metricas", dependencies=PROTEGIDO)
 def metricas() -> dict:
     """Indicadores gerais para a tela Visao geral."""
@@ -182,6 +189,12 @@ def listar_clientes(
     status_cliente: str | None = Query(None, alias="status", max_length=20, description="ativo, em_ativacao ou cancelado"),
     cidade: str | None = Query(None, max_length=80),
     etapa: int | None = Query(None, ge=1, le=5, description="Etapa atual da ativacao (1 a 5)"),
+    ordenar_por: str = Query("nome", pattern="^(nome|criado_em|status|etapa|cidade)$"),
+    ordem: str = Query("asc", pattern="^(asc|desc)$"),
+    origem: str | None = Query(None, pattern="^(app|ficticio)$", description="app: sincronizado do app"),
+    acesso_app: bool | None = Query(None, description="Com ou sem acesso ao app"),
+    cadastro_de: date | None = Query(None, description="Cadastro a partir de (AAAA-MM-DD)"),
+    cadastro_ate: date | None = Query(None, description="Cadastro ate (AAAA-MM-DD)"),
     pagina: int = Query(1, ge=1, le=100_000),
     por_pagina: int | None = Query(None, ge=1, le=100),
     limite: int | None = Query(None, ge=1, le=100, deprecated=True, description="Use por_pagina (mantido da v1)"),
@@ -194,6 +207,12 @@ def listar_clientes(
         etapa=etapa,
         pagina=pagina,
         por_pagina=por_pagina or limite or 20,
+        ordenar_por=ordenar_por,
+        ordem=ordem,
+        origem=origem,
+        acesso_app=acesso_app,
+        cadastro_de=cadastro_de,
+        cadastro_ate=cadastro_ate,
     )
 
 

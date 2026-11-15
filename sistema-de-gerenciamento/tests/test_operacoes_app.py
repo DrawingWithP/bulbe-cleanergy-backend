@@ -193,3 +193,30 @@ def test_aprovar_adesao_do_app(cliente_http, cab_atendimento, api):
     finally:
         with conexao.obter_sessao() as sessao:
             sessao.delete(sessao.get(Adesao, "ades-teste-app"))
+
+
+# ---------------------------------------------------------------- clientes e series (visao geral)
+
+
+def test_clientes_ordenacao_e_filtros(cliente_http, cab_atendimento):
+    base = "/v1/painel/clientes?por_pagina=100"
+    por_nome = [c["nome"] for c in cliente_http.get(base, headers=cab_atendimento).json()["data"]]
+    import unicodedata
+    sem_acento = lambda n: unicodedata.normalize("NFKD", n).encode("ascii", "ignore").decode().lower()  # noqa: E731
+    assert por_nome == sorted(por_nome, key=sem_acento)
+
+    recentes = cliente_http.get(base + "&ordenar_por=criado_em&ordem=desc", headers=cab_atendimento).json()["data"]
+    datas = [c["criado_em"] for c in recentes]
+    assert datas == sorted(datas, reverse=True)
+
+    sem_acesso = cliente_http.get(base + "&acesso_app=false", headers=cab_atendimento).json()["data"]
+    assert sem_acesso and all(c["id"] for c in sem_acesso)
+    assert cliente_http.get(base + "&origem=app", headers=cab_atendimento).json()["total"] == 0
+    assert cliente_http.get(base + "&ordenar_por=senha", headers=cab_atendimento).status_code == 422
+
+
+def test_series_mensais(cliente_http, cab_atendimento):
+    series = cliente_http.get("/v1/painel/metricas/series?meses=6", headers=cab_atendimento).json()
+    assert len(series["meses"]) == 6
+    assert len(series["economia"]) == len(series["clientes_novos"]) == len(series["adesoes"]) == 6
+    assert sum(series["economia"]) > 0
