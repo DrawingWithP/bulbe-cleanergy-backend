@@ -40,7 +40,7 @@ BULBE_DATABASE_URL=postgresql+psycopg://bulbe:bulbe@localhost:5432/bulbe
 
 | Arquivo | Papel |
 |---|---|
-| `app/core/config.py` | `DATABASE_URL` (variável `BULBE_DATABASE_URL`, padrão `sqlite:///./bulbe.db`) |
+| `app/core/config.py` | `DATABASE_URL` (variável `BULBE_DATABASE_URL`, padrão `sqlite:///./bulbe.db`); lê `backend/.env` (modelo em `.env.example`) |
 | `app/db/database.py` | `engine`, `SessionLocal` e `Base` (e liga as FKs no SQLite) |
 | `app/db/models.py` | Modelos ORM (`UsinaModel`, `ClienteModel`, ...) |
 | `app/db/seed.py` | Dados fictícios da demo (`python -m app.db.seed`) |
@@ -64,8 +64,10 @@ Controllers, Domínio e `main.py` não mudaram.
 | Tabela | PK | FK |
 |---|---|---|
 | `usuarios` | `id` | (email único) |
-| `usinas`, `dicas`, `adesoes`, `simulacoes` | `id` | |
-| `indicacoes` | `id` | ainda sem FK (ver pendências) |
+| `usinas`, `dicas`, `adesoes` | `id` | |
+| `simulacoes` | `id` | `cliente_id → clientes.id` (SET NULL, opcional: simulador aberto não tem cliente) |
+| `indicacoes` | `id` | `cliente_id → clientes.id` (CASCADE) |
+| `bandeiras_tarifarias` | `mes_referencia` (`AAAA-MM`) | |
 | `clientes` | `id` (UUID) | (email e CPF únicos) |
 | `ativacoes` | `cliente_id` | `cliente_id → clientes.id` (CASCADE) |
 | `verificacoes_primeiro_acesso` | `id` | `cliente_id → clientes.id` (CASCADE) |
@@ -74,13 +76,34 @@ Controllers, Domínio e `main.py` não mudaram.
 | `cupons` | `id` | `cliente_id → clientes.id` (CASCADE), `carta_id → cartas.id` (SET NULL) |
 | `ofensivas_clube` | `cliente_id` | `cliente_id → clientes.id` (CASCADE) |
 
-Remover um cliente apaga, no próprio banco, a ativação, as cartas, os cupons e a ofensiva dele.
+Remover um cliente apaga, no próprio banco, a ativação, as cartas, os cupons, a ofensiva e as indicações dele.
+As simulações feitas por ele ficam, sem o vínculo (`cliente_id` vira nulo).
+
+## Migrations
+
+| Revisão | O que faz |
+|---|---|
+| `785415a75946` | Cria as tabelas iniciais |
+| `a3c9e1f4b2d7` | `verificacoes_primeiro_acesso.codigo` passa a `VARCHAR(6)` (igual ao modelo); `indicacoes.cliente_id` passa a ser o UUID do cliente, com FK (indicações que não apontavam para um cliente existente são removidas); `simulacoes` ganha `cliente_id`, `bandeira`, `economia_mensal` e `economia_total`; cria `bandeiras_tarifarias` |
+
+`alembic check` deve responder "No new upgrade operations detected" (modelos e migrations alinhados).
 
 Escolhas de modelagem:
 
 - `cupons` guarda um "retrato" do parceiro (`parceiro_id`, `parceiro_nome`, `parceiro_categoria`) **sem FK**:
   o cupom emitido continua válido mesmo que o parceiro saia do Clube (US-26).
 - `cartas.cupom_id` não é FK, porque `cupons.carta_id` já aponta para a carta e uma FK nos dois sentidos criaria um ciclo.
+
+O seed também cadastra a bandeira do mês atual (verde), usada pelo simulador.
+
+## Integração com o sistema de gerenciamento
+
+O painel interno (`../sistema-de-gerenciamento`) lê este banco **em modo somente leitura** e espelha os dados
+no banco dele (veja `sistema-de-gerenciamento/docs/integracao-com-o-app.md`). Por isso:
+
+- nenhuma tabela daqui depende do painel;
+- ao renomear ou remover uma coluna lida pela sincronização, ajuste também
+  `sistema-de-gerenciamento/app/integracao/sincronizacao.py` e rode `integration-tests/test_sistemas_integrados.py`.
 
 ## Testes
 
@@ -96,6 +119,6 @@ pytest
 
 ## Pendências
 
-- `indicacoes.cliente_id` é inteiro no Domínio (`IndicacaoBase.cliente_id: int`), mas `clientes.id` é UUID (texto).
-  Para criar a FK é preciso alinhar o tipo no Domínio e na rota `GET /v1/clientes/{cliente_id}/indicacoes`.
 - Datas como `criado_em` continuam como texto ISO 8601 (como no Domínio). Trocar por `DateTime` exige mudar o Domínio.
+
+Resolvido na migration `a3c9e1f4b2d7`: `indicacoes.cliente_id` agora é o UUID do cliente, com FK.

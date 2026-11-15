@@ -5,7 +5,7 @@ consultarem clientes e a operação, com um **chatbot** (Claude Haiku 5.5, model
 *tool use*) que responde perguntas sobre clientes e sobre o funcionamento do app — tudo apoiado num
 **banco de dados fictício** (SQLite + SQLAlchemy 2).
 
-- Branches: `feat/python-adiciona-chatbot` (v1) e `feat/python-melhorias-sistema` (v2)
+- Branches: `feat/python-adiciona-chatbot` (v1), `feat/python-melhorias-sistema` (v2) e `chore/finalizacao-projeto` (v3, integração com o app)
 - Disciplina: Projeto Ciência de Dados II — Ibmec, 2º semestre de 2026
 - Front-end do cliente (Projeto I): repositório `Bulbe-Squad-cleanergy`
 
@@ -29,6 +29,15 @@ encontra o cliente, vê a etapa da ativação, as faturas e o engajamento em seg
 
 > Depois de atualizar para a v2, o banco local precisa ser **recriado** (`python -m app.database.seed`),
 > porque há tabelas e colunas novas e não há migração. Ver [guia-do-painel.md](guia-do-painel.md#31-recriar-o-banco-depois-de-atualizar-para-a-v2).
+
+## O que a v3 acrescentou
+
+| Área | Novidades |
+|---|---|
+| **Integração** | Sincronização app → painel (somente leitura, a cada 30 s, ao subir e pelo botão do admin) e mudança de etapa de ativação painel → app pela API, com auditoria. Ver [integracao-com-o-app.md](integracao-com-o-app.md) |
+| **Painel** | Selo **App**, formulário de etapa na ficha, estado da integração na visão geral e na auditoria |
+| **Dados** | Colunas `id_app` e `importado_do_app` nas tabelas espelhadas; ações de auditoria `sincronizar_app` e `alterar_ativacao` |
+| **Qualidade** | `tests/test_integracao_app.py` e o teste de ponta a ponta `integration-tests/test_sistemas_integrados.py` |
 
 ## O que foi entregue
 
@@ -57,6 +66,7 @@ Tudo fica na pasta `sistema-de-gerenciamento/`, separada do back-end do app (`ba
 | [guia-do-painel.md](guia-do-painel.md) | `.env` (inclusive SMTP e senha de app do Gmail), instalação, recriação do banco, testes, usuários demo, telas e perguntas de exemplo |
 | [seguranca-e-lgpd.md](seguranca-e-lgpd.md) | Dados fictícios, mascaramento, somente leitura, PBKDF2, token HMAC, bloqueio, alerta, auditoria, retenção, custo do chatbot, *prompt injection*, próximos passos |
 | [testes.md](testes.md) | Como a suíte `pytest` é organizada e isolada, o que cobre e como rodar; avaliação do chatbot com o modelo real |
+| [integracao-com-o-app.md](integracao-com-o-app.md) | v3: como o painel e o app trocam dados (sincronização, vínculo, etapa pelo painel, rotas, variáveis e testes) |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico desta pasta |
 | [PENDENCIAS.md](PENDENCIAS.md) | Lacunas e diferenças encontradas ao documentar a v2 |
 | [NOTAS_PARA_O_LIDER.md](NOTAS_PARA_O_LIDER.md) | Dúvidas e inconsistências registradas na v1 |

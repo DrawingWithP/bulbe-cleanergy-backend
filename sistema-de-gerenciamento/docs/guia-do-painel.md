@@ -83,6 +83,19 @@ Todas opcionais; os padrões já servem para o Claude Haiku 5.5.
 > **Nunca** commite o `.env` nem cole a chave da API, o segredo do token ou a senha de app em código, issue,
 > documentação ou chat. O `.gitignore` do projeto ignora `.env` e `*.db`.
 
+### 2.5 Novas na v3: integração com o app
+
+| Variável | Padrão | Para quê |
+|---|---|---|
+| `INTEGRACAO_APP_DB_URL` | `../backend/bulbe.db`, se existir | Banco do app, lido em modo somente leitura. Vazia = integração desligada |
+| `INTEGRACAO_INTERVALO_SEGUNDOS` | `30` | Intervalo da sincronização automática (`0` = só ao subir e pelo botão) |
+| `INTEGRACAO_APP_API_URL` | `http://127.0.0.1:8000` | API do app, usada para alterar a etapa de ativação |
+| `INTEGRACAO_APP_API_EMAIL` / `INTEGRACAO_APP_API_SENHA` | operador de demonstração do seed do backend | Operador usado nessa chamada |
+
+Na ficha de um cliente com o selo **App**, o cartão *Jornada de ativação* tem o formulário **Atualizar no app**.
+Na tela *Auditoria* (admin), o botão **Sincronizar com o app** roda a sincronização na hora e mostra o que foi criado,
+atualizado, vinculado e removido. Detalhes em [integracao-com-o-app.md](integracao-com-o-app.md).
+
 ## 3. Instalar e rodar
 
 Todos os comandos são executados dentro da pasta `sistema-de-gerenciamento/` (exemplos para Windows; no Linux/macOS

@@ -1,7 +1,5 @@
 # Documento de Requisitos Técnicos, App Bulbe Energia - Cleanergy
 
-> Preencha os campos entre colchetes. Remova esta linha de instrução antes da entrega.
-
 ## Identificação
 
 - **Projeto:** App Bulbe Energia — API (back-end do front-end entregue na Sprint anterior)
@@ -38,6 +36,19 @@ Os requisitos abaixo foram levantados a partir da análise das funcionalidades j
 - **Prioridade Média:** importante, mas não bloqueia a primeira entrega.
 - **Prioridade Baixa:** desejável, pode ficar para uma sprint futura.
 
-## Próximos passos
+## Rastreabilidade (o que foi implementado)
 
-Estes requisitos serão utilizados na Aula 04 (Engenharia de Requisitos para APIs) para desenhar o contrato de endpoints da API.
+| ID | Onde está | Situação |
+|---|---|---|
+| RF-01 | `POST /v1/auth/registrar` e `POST /v1/auth/login` (operadores); `POST /v1/clientes` (cliente) | Implementado. O app ainda não tem login de cliente: o frontend usa um cliente de demonstração (`BULBE_FRONTEND_CLIENTE_ID`) |
+| RF-02 | `POST /v1/primeiro-acesso/verificacoes` e `/confirmacoes` | Implementado (o envio real de SMS/e-mail fica fora do escopo) |
+| RF-03 | `POST /v1/simulacoes` + `/v1/bandeiras` | Implementado: a economia usa a bandeira tarifária do mês, cadastrada pelo operador |
+| RF-04 | `GET /v1/clientes/{id}/ativacao` e `/etapas`; `PATCH` (operador e painel interno) | Implementado |
+| RF-05 | `GET /v1/clientes/{id}/clube` (sequência de semanas) | Implementado |
+| RF-06 | `GET /v1/clientes/{id}/cartas`, `/cupons`, `POST /v1/cartas/{id}/abertura` | Implementado |
+| RF-07 | `GET /v1/parceiros` | Implementado |
+| RF-08 | `GET /v1/dicas` | Implementado |
+| RNF-01 | `app/core/security.py` (bcrypt com salt) | Implementado. Em produção, `BULBE_SECRET_KEY` é obrigatória |
+
+O sistema de gerenciamento interno (`sistema-de-gerenciamento/`) lê os mesmos dados e permite à equipe da Bulbe
+acompanhar os clientes e alterar a etapa de ativação, que volta para o app pela API.

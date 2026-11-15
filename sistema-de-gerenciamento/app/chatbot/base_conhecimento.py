@@ -55,7 +55,7 @@ BASE_CONHECIMENTO: str = """\
 
 ### Novas, criadas pela squad Cleanergy (ainda não estão no app oficial)
 - **Home aberta / modo visitante** — o app passa a ter uma tela inicial sem login que explica como a Bulbe funciona. — [novo (squad Cleanergy)]
-- **Simulador de economia sem login** — o visitante informa o valor da conta, o período (meses) e quantos amigos indicaria; o app mostra desconto mensal, economia no período, bônus de indicação e o bloco **"Com esse dinheiro você poderia..."** (mercado, jantar em família, gasolina, streaming, remédios, tênis). — [novo (squad Cleanergy)]
+- **Simulador de economia sem login** — o visitante informa o valor da conta, o período (meses) e quantos amigos indicaria; o app mostra desconto mensal, economia no período, bônus de indicação e o bloco **"Com esse dinheiro você poderia..."** (mercado, jantar em família, gasolina, streaming, remédios, tênis). A economia considera a **bandeira tarifária** do mês (verde, amarela, vermelha patamar 1 ou 2): com bandeira mais cara a conta sobe e o desconto rende mais em reais. — [novo (squad Cleanergy)]
 - **Adesão pelo app** — fluxo guiado de contratação dentro do próprio app (situações: rascunho, enviada, aprovada, recusada). — [novo (squad Cleanergy)]
 - **Primeiro acesso por CPF com código** — o cliente informa o CPF e recebe um código de verificação no contato cadastrado para criar o acesso ao app. — [novo (squad Cleanergy)]
 - **Jornada de ativação em 5 etapas com trilha visual** — barra de progresso (15/30/45/70/90%), etapa atual destacada e prazo de até 90 dias explicado ao cliente. — [novo (squad Cleanergy)]
@@ -66,7 +66,9 @@ BASE_CONHECIMENTO: str = """\
 ## 5. Painel de Gestão (uso interno)
 - Login de funcionário (perfis `atendimento` e `admin`).
 - Visão geral com métricas; busca de clientes por nome, e-mail, CPF, nº de instalação ou código de indicação; ficha completa do cliente (ativação, faturas, economia, indicações, Clube, cupons, notificações, atendimentos).
-- O chatbot é **somente leitura**: consulta dados, não altera cadastro, fatura, cupom ou atendimento. Alterações são feitas nos sistemas operacionais da Bulbe pelo time responsável.
+- **Integração com o app**: os dados do app (clientes, jornada de ativação, Clube, cupons, indicações, simulações, adesões, parceiros, dicas e usinas) são sincronizados com o painel a cada poucos segundos. Clientes que vieram do app têm o selo **App** na lista e na ficha. Faturas, notificações e atendimentos continuam vindo do banco do painel.
+- Na ficha de um cliente do app, o funcionário pode **alterar a etapa de ativação** (botão "Atualizar no app"); a mudança vai direto para o app e o cliente vê na hora. Clientes só do banco fictício do painel não têm esse botão.
+- O chatbot é **somente leitura**: consulta dados, não altera cadastro, etapa, fatura, cupom ou atendimento. Para mudar a etapa, o funcionário usa a ficha do cliente; as demais alterações são feitas nos sistemas operacionais da Bulbe pelo time responsável.
 - CPF e telefone aparecem **mascarados** no chat (LGPD). Para ver o dado completo, o funcionário usa a ficha do cliente no painel.
 - Cada pergunta e resposta do chat fica registrada para auditoria.
 

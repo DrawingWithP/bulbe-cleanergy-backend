@@ -60,10 +60,13 @@ from app.services.bandeira_service import (
 app = FastAPI(
     title="Bulbe Energia, API",
     description=(
-        "Handson de CRUD em FastAPI, arquitetura em camadas "
-        "com autenticacao JWT e testes."
+        "API do app da Bulbe Energia (squad Cleanergy): clientes, adesao, "
+        "primeiro acesso, jornada de ativacao, simulador com bandeira "
+        "tarifaria, indicacoes, Clube Bulbe (cartas e cupons), parceiros, "
+        "dicas e usinas. Arquitetura em camadas, SQLAlchemy/Alembic e "
+        "autenticacao JWT para operadores."
     ),
-    version="1.0.0",
+    version="1.1.0",
 )
 
 

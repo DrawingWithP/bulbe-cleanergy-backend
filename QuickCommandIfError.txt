@@ -4,10 +4,22 @@ Esse comando é temporário, sendo necessário a execução novamente caso feche
 Caso queira a alteração permanente (não recomendado), use:
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-Ativação do venv e da API (dentro da pasta backend):
+=== Jeito mais simples: tudo junto (na raiz do repositório) ===
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe iniciar.py
+
+App (frontend): http://127.0.0.1:8000/frontend/final.html
+API (Swagger):  http://127.0.0.1:8000/docs
+Painel interno: http://127.0.0.1:8001/painel/
+
+=== Só a API (dentro da pasta backend) ===
 python -m venv venv
 venv\Scripts\activate (Para linux: source venv/bin/activate)
 pip install -r requirements.txt
+
+(Opcional) Copiar o .env de exemplo:
+copy .env.example .env
 
 Criar/atualizar as tabelas do banco (bulbe.db) com o Alembic:
 alembic upgrade head
@@ -16,11 +28,14 @@ alembic upgrade head
 python -m app.db.seed
 
 Ativar API: uvicorn app.main:app --reload
+Ativar API + frontend: uvicorn dev_frontend:app --reload
 
 http://localhost:8000/docs
+http://localhost:8000/frontend/final.html
 
 Rodar os testes:
 pytest
 
 Se aparecer "no such table": faltou rodar "alembic upgrade head".
+Se mudar uma rota: rode "python gerar_openapi.py" (o teste test_openapi.py confere).
 Mais detalhes em backend/docs/banco-de-dados.md

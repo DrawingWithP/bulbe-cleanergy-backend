@@ -3,6 +3,9 @@
 Pontos encontrados ao documentar a v2. Em cada um, a documentação segue o **código implementado**; o que depende de
 arquivos fora de `docs/` fica registrado aqui.
 
+> **v3:** os itens 1, 2 e 3 foram resolvidos na integração com o app (README da pasta atualizado; `app/main.py`
+> já declara `version="2.0.0"`; `PAINEL_SENHA_DEMO` vazia no `.env.example`, com o seed usando a senha padrão).
+
 ## Para a integração (arquivos fora de `docs/`)
 
 1. **`README.md` da pasta `sistema-de-gerenciamento/`** ainda descreve a v1: "Modelos (17 tabelas)" (agora são 20),

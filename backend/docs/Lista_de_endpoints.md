@@ -1,5 +1,9 @@
 # Lista de Endpoints da API, App Bulbe Energia - Cleanergy
 
+> **Documento de design da Sprint 1.** O contrato implementado (fonte da verdade) é o OpenAPI gerado
+> do código em [`api/openapi.json`](api/openapi.json) e o Swagger em `/docs`. A seção
+> [Estado implementado](#estado-implementado-sprint-final) no fim deste arquivo resume o que mudou desde o design.
+
 ## Identificação
 
 - **Projeto:** App Bulbe Energia — API (back-end do front-end entregue na Sprint anterior)
@@ -13,7 +17,7 @@
 
 - **URL base:** `/v1`
 - **Formato de dados:** JSON, tanto na requisição quanto na resposta
-- **Autenticação:** [a definir na Aula 29, Autenticação e Autorização]
+- **Autenticação:** JWT (Bearer) para operadores: `POST /v1/auth/login` devolve o token; as operações administrativas exigem `Authorization: Bearer <token>`
 - **Nomenclatura:** recursos no plural, kebab-case para múltiplas palavras, sem verbos na URL
 - **Identificadores:** `id` em formato UUID v4, sempre serializado como string
 - **Datas:** ISO 8601 — `AAAA-MM-DD` para datas e `AAAA-MM-DDTHH:MM:SSZ` (UTC) para instantes
@@ -48,13 +52,18 @@ Um endpoint por linha, cobrindo o CRUD de cada entidade do domínio. A coluna Re
 | POST | `/v1/adesoes` | Inicia uma adesão pelo app | US-04 | 201 / 400 / 422 |
 | GET | `/v1/adesoes/{id}` | Retorna uma adesão específica | US-04 | 200 / 404 |
 | PUT | `/v1/adesoes/{id}` | Atualiza os dados de uma adesão em andamento | US-04 | 200 / 400 / 404 / 409 |
+| PATCH | `/v1/adesoes/{id}` | Atualiza parcialmente uma adesão em andamento (US-07) | US-04 | 200 / 404 / 422 |
 | DELETE | `/v1/adesoes/{id}` | Cancela uma adesão não concluída | US-04 | 204 / 404 / 409 |
 | POST | `/v1/primeiro-acesso/verificacoes` | Verifica se o CPF informado já é cliente e dispara o código | US-05 | 202 / 404 |
 | POST | `/v1/primeiro-acesso/confirmacoes` | Confirma o código e habilita o acesso ao app | US-05 | 201 / 400 / 410 |
 | GET | `/v1/clientes/{id}/ativacao` | Retorna o status atual da ativação | US-06 | 200 / 404 |
 | GET | `/v1/clientes/{id}/ativacao/etapas` | Lista as 5 etapas da jornada de ativação | US-06 | 200 / 404 |
 | PATCH | `/v1/clientes/{id}/ativacao` | Avança ou corrige a etapa atual da ativação | US-06 | 200 / 400 / 404 |
-| POST | `/v1/simulacoes` | Calcula a economia estimada, sem persistir | US-02 | 200 / 400 |
+| POST | `/v1/simulacoes` | Calcula a economia com a bandeira tarifária vigente e registra a simulação | US-02 | 201 / 404 / 422 |
+| GET | `/v1/bandeiras` | Lista as bandeiras tarifárias cadastradas por mês (RF-03) | US-02 | 200 |
+| GET | `/v1/bandeiras/atual` | Bandeira do mês atual (verde quando não cadastrada) | US-02 | 200 |
+| GET | `/v1/bandeiras/{mes}` | Bandeira de um mês (`AAAA-MM`) | US-02 | 200 / 422 |
+| PUT | `/v1/bandeiras/{mes}` | Define a bandeira de um mês (operador) | US-02 | 200 / 401 / 422 |
 | GET | `/v1/clientes/{id}/indicacoes` | Lista as indicações feitas pelo cliente | US-05 | 200 / 404 |
 | POST | `/v1/indicacoes` | Registra uma nova indicação | US-05 | 201 / 400 / 409 |
 | GET | `/v1/indicacoes/{id}` | Retorna uma indicação específica | US-05 | 200 / 404 |
@@ -66,7 +75,7 @@ Um endpoint por linha, cobrindo o CRUD de cada entidade do domínio. A coluna Re
 | GET | `/v1/clientes/{id}/cupons` | Lista os cupons do cliente | US-05 | 200 / 404 |
 | GET | `/v1/cupons/{id}` | Retorna um cupom específico | US-05 | 200 / 404 |
 | PATCH | `/v1/cupons/{id}` | Atualiza a situação do cupom (salvo ou usado) | US-05 | 200 / 400 / 404 / 409 |
-| DELETE | `/v1/cupons/{id}` | Descarta um cupom do cliente | US-05 | 204 / 404 |
+| DELETE | `/v1/cupons/{id}` | Descarta um cupom do cliente (operador) | US-05 | 204 / 401 / 404 |
 | GET | `/v1/parceiros` | Lista os parceiros do Clube Bulbe | US-03 | 200 |
 | POST | `/v1/parceiros` | Cadastra um novo parceiro | US-03 | 201 / 400 |
 | GET | `/v1/parceiros/{id}` | Retorna um parceiro específico | US-03 | 200 / 404 |
@@ -1113,6 +1122,20 @@ Um endpoint por linha, cobrindo o CRUD de cada entidade do domínio. A coluna Re
 - **Recompensas fixas vs. cadastráveis.** No protótipo, as 5 recompensas do Clube são um array fixo no código. Não foi criada uma entidade `recompensas` com CRUD próprio; se a Bulbe precisar cadastrar campanhas, ela deve entrar na próxima sprint.
 - **Fora do escopo desta entrega**, por decisão da squad: faturas e economia realizada, notificações (o sino do app), FAQ/conteúdo institucional, "Fale conosco" e o formulário de mudança de endereço (hoje coberto parcialmente pelo `PUT /v1/clientes/{id}`).
 
-## Próximos passos
+## Estado implementado (Sprint final)
 
-Este documento será formalizado em OpenAPI/Swagger em `docs/api/openapi.yaml` e servirá de base para a modelagem dos casos de uso na Aula 06 (Modelagem Comportamental, Casos de Uso da API).
+O contrato formal está em [`api/openapi.json`](api/openapi.json), gerado do código por `python gerar_openapi.py`
+(o teste `tests/test_openapi.py` falha se o arquivo ficar desatualizado). Diferenças em relação ao design acima:
+
+- **Erros:** o corpo implementado é `{"error": {"code", "message", "status"}}`; erros de validação do FastAPI vêm em `detail` (422).
+- **Identificadores:** clientes, cartas, cupons e parceiros usam UUID; usinas, dicas, adesões, indicações e simulações usam inteiro.
+- **`POST /v1/simulacoes`** recebe `valor_atual`, `valor_proposto`, `periodo_meses`, `indicacoes` e, opcionais,
+  `cliente_id` (simulador logado) e `bandeira`. Responde **201** e grava a simulação com `bandeira`,
+  `economia_mensal` e `economia_total`. Sem `bandeira`, usa a vigente no mês (`/v1/bandeiras/atual`).
+  Com bandeira verde o resultado é o mesmo do app: 15% da conta por mês + R$ 50 por indicação.
+- **Bandeiras tarifárias (RF-03):** valores de referência da ANEEL (R$ por kWh) em `app/domain/bandeira.py`;
+  o consumo é estimado pela tarifa média (`TARIFA_MEDIA_KWH`).
+- **Indicações:** `cliente_id` é o UUID do cliente; cliente inexistente responde 404.
+- **Adesões:** `PATCH /v1/adesoes/{id}` (US-07) e o `PUT` aceitam endereço e conta, todos opcionais; ambos exigem token.
+- **`DELETE /v1/cupons/{id}`** exige token de operador (o app ainda não tem login de cliente).
+- **Operações que exigem token:** veja o inventário em [`../../INTEGRATION.md`](../../INTEGRATION.md#inventário-da-api-implementada).
