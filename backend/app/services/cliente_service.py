@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import re
 import uuid
 
+from app.core import relogio
 from app.domain.cliente import (
     Cliente,
     ClienteCreate,
@@ -223,9 +224,7 @@ class ClienteService:
 
         novo_id = str(uuid.uuid4())
 
-        criado_em = datetime.now(
-            timezone.utc
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        criado_em = relogio.agora().strftime("%Y-%m-%dT%H:%M:%SZ")
 
         cliente = Cliente(
             id=novo_id,

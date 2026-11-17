@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bulbe Energia, API",
-    "description": "API do app da Bulbe Energia (squad Cleanergy): clientes, adesao, primeiro acesso, jornada de ativacao, simulador com bandeira tarifaria, indicacoes, Clube Bulbe (cartas e cupons), parceiros, dicas e usinas. Arquitetura em camadas, SQLAlchemy/Alembic e autenticacao JWT para operadores.",
-    "version": "1.1.0"
+    "description": "API do app da Bulbe Energia (squad Cleanergy): clientes, adesao, primeiro acesso, jornada de ativacao, simulador com bandeira tarifaria, indicacoes, Clube Bulbe (cartas e cupons), parceiros, dicas, usinas e relogio de demonstracao. Arquitetura em camadas, SQLAlchemy/Alembic e autenticacao JWT para operadores.",
+    "version": "1.2.0"
   },
   "paths": {
     "/v1/auth/registrar": {
@@ -586,25 +586,145 @@
         }
       }
     },
-    "/v1/dicas": {
-      "get": {
+    "/v1/adesoes/{adesao_id}/aprovacao": {
+      "post": {
         "tags": [
-          "Dicas"
+          "Adesoes"
         ],
-        "summary": "Listar Dicas",
-        "description": "Lista todas as dicas cadastradas.",
-        "operationId": "listar_dicas_v1_dicas_get",
+        "summary": "Aprovar adesao e criar o cliente",
+        "description": "Aprova a adesao e cria o cliente com os dados dela; a jornada de\nativacao comeca na etapa 1. O cliente passa a usar o primeiro acesso\ndo app com o CPF. Requer autenticacao.",
+        "operationId": "aprovar_adesao_v1_adesoes__adesao_id__aprovacao_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/AdesaoAprovada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/adesoes/{adesao_id}/recusa": {
+      "post": {
+        "tags": [
+          "Adesoes"
+        ],
+        "summary": "Recusar adesao",
+        "description": "Recusa a adesao. Requer autenticacao.",
+        "operationId": "recusar_adesao_v1_adesoes__adesao_id__recusa_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "adesao_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adesao Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adesao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dicas": {
+      "get": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Listar Dicas",
+        "description": "Dicas exibidas no app (vitrine, na ordem do carrossel) ou o acervo inteiro.",
+        "operationId": "listar_dicas_v1_dicas_get",
+        "parameters": [
+          {
+            "name": "todas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true: o acervo inteiro; padrao: so as 5 dicas da vitrine do app",
+              "default": false,
+              "title": "Todas"
+            },
+            "description": "true: o acervo inteiro; padrao: so as 5 dicas da vitrine do app"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Dica"
                   },
-                  "type": "array",
                   "title": "Response Listar Dicas V1 Dicas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -618,15 +738,20 @@
         "summary": "Criar Dica",
         "description": "Cria uma nova dica.\n\nRequer autenticacao.",
         "operationId": "criar_dica_v1_dicas_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DicaCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -635,6 +760,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Dica"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dicas/vitrine": {
+      "put": {
+        "tags": [
+          "Dicas"
+        ],
+        "summary": "Definir as 5 dicas exibidas no app",
+        "description": "Troca as 5 dicas do carrossel do app de uma vez, na ordem informada.\n\nRequer autenticacao.",
+        "operationId": "definir_vitrine_v1_dicas_vitrine_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VitrineDicas"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Dica"
+                  },
+                  "type": "array",
+                  "title": "Response Definir Vitrine V1 Dicas Vitrine Put"
                 }
               }
             }
@@ -2336,6 +2507,721 @@
         }
       }
     },
+    "/v1/demonstracao/relogio": {
+      "get": {
+        "tags": [
+          "Demonstracao"
+        ],
+        "summary": "Data usada pela API (com os dias adiantados)",
+        "description": "Data e hora que a API esta usando e quantos dias foram adiantados.",
+        "operationId": "consultar_relogio_v1_demonstracao_relogio_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelogioDemonstracao"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demonstracao/relogio/avancar": {
+      "post": {
+        "tags": [
+          "Demonstracao"
+        ],
+        "summary": "Adiantar o relogio (somente demonstracao)",
+        "description": "Adianta o relogio da API em alguns dias. Requer autenticacao e\nresponde 404 em producao.",
+        "operationId": "avancar_relogio_v1_demonstracao_relogio_avancar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvancarRelogio"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelogioDemonstracao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/demonstracao/relogio/resetar": {
+      "post": {
+        "tags": [
+          "Demonstracao"
+        ],
+        "summary": "Voltar o relogio para a data real (somente demonstracao)",
+        "description": "Volta o relogio para hoje. Requer autenticacao.",
+        "operationId": "resetar_relogio_v1_demonstracao_relogio_resetar_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelogioDemonstracao"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/catalogo-cupons": {
+      "get": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Listar o catalogo",
+        "operationId": "listar_catalogo_v1_catalogo_cupons_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "parceiro_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 36
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parceiro Id"
+            }
+          },
+          {
+            "name": "apenas_ativos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Apenas Ativos"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CupomCatalogo"
+                  },
+                  "title": "Response Listar Catalogo V1 Catalogo Cupons Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Cadastrar cupom no catalogo",
+        "operationId": "criar_modelo_v1_catalogo_cupons_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CupomCatalogoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/catalogo-cupons/{modelo_id}": {
+      "get": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Consultar cupom do catalogo",
+        "operationId": "buscar_modelo_v1_catalogo_cupons__modelo_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modelo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Modelo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Alterar cupom do catalogo",
+        "operationId": "atualizar_modelo_v1_catalogo_cupons__modelo_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modelo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Modelo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CupomCatalogoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CupomCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Catalogo de cupons"
+        ],
+        "summary": "Remover cupom do catalogo",
+        "operationId": "remover_modelo_v1_catalogo_cupons__modelo_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modelo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Modelo Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Abrir conversa (o robo responde na hora)",
+        "operationId": "abrir_atendimento_v1_atendimentos_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbrirAtendimento"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoDetalhe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Fila de atendimentos (operador)",
+        "operationId": "fila_de_atendimentos_v1_atendimentos_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusAtendimento"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtendimentoResumo"
+                  },
+                  "title": "Response Fila De Atendimentos V1 Atendimentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{cliente_id}/atendimentos": {
+      "get": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Conversas do cliente",
+        "operationId": "atendimentos_do_cliente_v1_clientes__cliente_id__atendimentos_get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cliente Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtendimentoResumo"
+                  },
+                  "title": "Response Atendimentos Do Cliente V1 Clientes  Cliente Id  Atendimentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}": {
+      "get": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Conversa com as mensagens",
+        "operationId": "detalhar_atendimento_v1_atendimentos__atendimento_id__get",
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          },
+          {
+            "name": "depois_de",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "So mensagens com id maior (polling)",
+              "default": 0,
+              "title": "Depois De"
+            },
+            "description": "So mensagens com id maior (polling)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoDetalhe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}/mensagens": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Mensagem do cliente",
+        "operationId": "enviar_mensagem_v1_atendimentos__atendimento_id__mensagens_post",
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaMensagem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Mensagem"
+                  },
+                  "title": "Response Enviar Mensagem V1 Atendimentos  Atendimento Id  Mensagens Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}/respostas": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Resposta do atendente (operador)",
+        "operationId": "responder_atendimento_v1_atendimentos__atendimento_id__respostas_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespostaAtendente"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atendimentos/{atendimento_id}/encerramento": {
+      "post": {
+        "tags": [
+          "Atendimento"
+        ],
+        "summary": "Encerrar conversa (com nota opcional)",
+        "operationId": "encerrar_atendimento_v1_atendimentos__atendimento_id__encerramento_post",
+        "parameters": [
+          {
+            "name": "atendimento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atendimento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Encerramento"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoDetalhe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -2396,6 +3282,33 @@
         ],
         "title": "AberturaCartaResponse",
         "description": "Resposta após abrir a carta e resgatar\no cupom (US-21)."
+      },
+      "AbrirAtendimento": {
+        "properties": {
+          "cliente_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cliente Id"
+          },
+          "assunto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assunto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cliente_id"
+        ],
+        "title": "AbrirAtendimento"
       },
       "Adesao": {
         "properties": {
@@ -2520,6 +3433,24 @@
         ],
         "title": "Adesao",
         "description": "Representação completa de uma adesão,\ncomo a API devolve."
+      },
+      "AdesaoAprovada": {
+        "properties": {
+          "adesao": {
+            "$ref": "#/components/schemas/Adesao"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "adesao",
+          "cliente_id"
+        ],
+        "title": "AdesaoAprovada",
+        "description": "Resposta do POST /v1/adesoes/{id}/aprovacao: a adesao aprovada\ne o cliente criado a partir dela."
       },
       "AdesaoCreate": {
         "properties": {
@@ -2829,6 +3760,182 @@
         "title": "AdesaoUpdate",
         "description": "Campos que podem ser atualizados.\nTodos são opcionais."
       },
+      "AtendimentoDetalhe": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "assunto": {
+            "type": "string",
+            "title": "Assunto"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusAtendimento"
+          },
+          "atendente_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendente Nome"
+          },
+          "avaliacao": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avaliacao"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          },
+          "encerrado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrado Em"
+          },
+          "mensagens": {
+            "items": {
+              "$ref": "#/components/schemas/Mensagem"
+            },
+            "type": "array",
+            "title": "Mensagens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "cliente_id",
+          "assunto",
+          "status",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "title": "AtendimentoDetalhe",
+        "description": "Conversa com as mensagens (a partir de `depois_de`, para o polling)."
+      },
+      "AtendimentoResumo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "cliente_id": {
+            "type": "string",
+            "title": "Cliente Id"
+          },
+          "assunto": {
+            "type": "string",
+            "title": "Assunto"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusAtendimento"
+          },
+          "atendente_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendente Nome"
+          },
+          "avaliacao": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avaliacao"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          },
+          "encerrado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrado Em"
+          },
+          "cliente_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Nome"
+          },
+          "ultima_mensagem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultima Mensagem"
+          },
+          "total_mensagens": {
+            "type": "integer",
+            "title": "Total Mensagens",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "cliente_id",
+          "assunto",
+          "status",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "title": "AtendimentoResumo",
+        "description": "Item da lista/fila, com a ultima mensagem."
+      },
       "AtivacaoAtualizadaResponse": {
         "properties": {
           "cliente_id": {
@@ -2959,6 +4066,33 @@
         ],
         "title": "AtivacaoUpdateRequest",
         "description": "Corpo para avançar ou corrigir a etapa de ativação.\n\nPATCH /v1/clientes/{id}/ativacao\nUS-12."
+      },
+      "AutorMensagem": {
+        "type": "string",
+        "enum": [
+          "cliente",
+          "bot",
+          "atendente",
+          "sistema"
+        ],
+        "title": "AutorMensagem"
+      },
+      "AvancarRelogio": {
+        "properties": {
+          "dias": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Dias",
+            "description": "Quantos dias adiantar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dias"
+        ],
+        "title": "AvancarRelogio",
+        "description": "Corpo do POST /v1/demonstracao/relogio/avancar."
       },
       "BandeiraMes": {
         "properties": {
@@ -3663,6 +4797,18 @@
               }
             ],
             "title": "Usado Em"
+          },
+          "modelo_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo Id",
+            "description": "Modelo do catalogo que gerou o cupom"
           }
         },
         "type": "object",
@@ -3678,6 +4824,275 @@
         ],
         "title": "Cupom",
         "description": "Representação completa do cupom.\n\nGET /v1/cupons/{id}\nUS-22."
+      },
+      "CupomCatalogo": {
+        "properties": {
+          "parceiro_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Parceiro Id"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 5,
+            "title": "Descricao"
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 3,
+            "title": "Tag",
+            "description": "Etiqueta exibida no cupom",
+            "default": "PARCERIA BULBE"
+          },
+          "prefixo_codigo": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{3,12}$",
+            "title": "Prefixo Codigo",
+            "description": "Inicio do codigo (letras maiusculas e numeros); o resto e gerado"
+          },
+          "validade_dias": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Validade Dias",
+            "default": 14
+          },
+          "peso": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Peso",
+            "description": "Chance relativa no sorteio (1 a 10)",
+            "default": 1
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "parceiro_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parceiro Nome"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parceiro_id",
+          "titulo",
+          "descricao",
+          "prefixo_codigo",
+          "id",
+          "criado_em"
+        ],
+        "title": "CupomCatalogo"
+      },
+      "CupomCatalogoCreate": {
+        "properties": {
+          "parceiro_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Parceiro Id"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 5,
+            "title": "Descricao"
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 3,
+            "title": "Tag",
+            "description": "Etiqueta exibida no cupom",
+            "default": "PARCERIA BULBE"
+          },
+          "prefixo_codigo": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{3,12}$",
+            "title": "Prefixo Codigo",
+            "description": "Inicio do codigo (letras maiusculas e numeros); o resto e gerado"
+          },
+          "validade_dias": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Validade Dias",
+            "default": 14
+          },
+          "peso": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Peso",
+            "description": "Chance relativa no sorteio (1 a 10)",
+            "default": 1
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "parceiro_id",
+          "titulo",
+          "descricao",
+          "prefixo_codigo"
+        ],
+        "title": "CupomCatalogoCreate",
+        "description": "Corpo do POST /v1/catalogo-cupons."
+      },
+      "CupomCatalogoUpdate": {
+        "properties": {
+          "parceiro_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parceiro Id"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          },
+          "prefixo_codigo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9]{3,12}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prefixo Codigo"
+          },
+          "validade_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 90.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validade Dias"
+          },
+          "peso": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peso"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "CupomCatalogoUpdate",
+        "description": "Corpo do PATCH /v1/catalogo-cupons/{id}: todos os campos opcionais."
       },
       "CupomListaPaginada": {
         "properties": {
@@ -3744,11 +5159,23 @@
             "title": "Economia",
             "description": "Economia mensal da dica"
           },
+          "icone": {
+            "$ref": "#/components/schemas/IconeDica",
+            "description": "Icone pronto exibido no app",
+            "default": "lampada_led"
+          },
           "imagem_svg": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Imagem Svg",
-            "description": "Código XML/Texto puro do arquivo SVG"
+            "description": "Obsoleto: o app usa o campo icone. Mantido so por compatibilidade com clientes antigos da API."
           },
           "id": {
             "type": "integer",
@@ -3758,6 +5185,22 @@
             "type": "string",
             "format": "date",
             "title": "Data Ativacao"
+          },
+          "em_exibicao": {
+            "type": "boolean",
+            "title": "Em Exibicao",
+            "default": false
+          },
+          "ordem": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordem"
           }
         },
         "type": "object",
@@ -3765,7 +5208,6 @@
           "titulo",
           "descricao",
           "economia",
-          "imagem_svg",
           "id",
           "data_ativacao"
         ],
@@ -3794,19 +5236,30 @@
             "title": "Economia",
             "description": "Economia mensal da dica"
           },
+          "icone": {
+            "$ref": "#/components/schemas/IconeDica",
+            "description": "Icone pronto exibido no app",
+            "default": "lampada_led"
+          },
           "imagem_svg": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Imagem Svg",
-            "description": "Código XML/Texto puro do arquivo SVG"
+            "description": "Obsoleto: o app usa o campo icone. Mantido so por compatibilidade com clientes antigos da API."
           }
         },
         "type": "object",
         "required": [
           "titulo",
           "descricao",
-          "economia",
-          "imagem_svg"
+          "economia"
         ],
         "title": "DicaCreate",
         "description": "Campos exigidos para criar uma dica (POST)."
@@ -3862,11 +5315,41 @@
               }
             ],
             "title": "Imagem Svg"
+          },
+          "icone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IconeDica"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "title": "DicaUpdate",
         "description": "Campos que podem ser atualizados.\nTodos são opcionais."
+      },
+      "Encerramento": {
+        "properties": {
+          "avaliacao": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avaliacao",
+            "description": "Nota de 1 a 5 (opcional)"
+          }
+        },
+        "type": "object",
+        "title": "Encerramento"
       },
       "Endereco": {
         "properties": {
@@ -4106,6 +5589,25 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "IconeDica": {
+        "type": "string",
+        "enum": [
+          "lampada_led",
+          "lampada_apagada",
+          "chuveiro",
+          "maquina_lavar",
+          "cofrinho",
+          "geladeira",
+          "ar_condicionado",
+          "tomada",
+          "televisao",
+          "ferro_passar",
+          "sol",
+          "ventilador"
+        ],
+        "title": "IconeDica",
+        "description": "Icones prontos das dicas (o app mostra o desenho correspondente).\nOs 5 primeiros sao os icones originais do protótipo."
+      },
       "Indicacao": {
         "properties": {
           "cliente_id": {
@@ -4186,6 +5688,62 @@
         ],
         "title": "IndicacaoCreate",
         "description": "Campos exigidos para criar uma indicacao (POST)."
+      },
+      "Mensagem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/AutorMensagem"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "opcoes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opcoes"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "autor",
+          "texto",
+          "criado_em"
+        ],
+        "title": "Mensagem"
+      },
+      "NovaMensagem": {
+        "properties": {
+          "texto": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Texto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "texto"
+        ],
+        "title": "NovaMensagem"
       },
       "Parceiro": {
         "properties": {
@@ -4460,6 +6018,61 @@
         ],
         "title": "ProximaCartaInfo"
       },
+      "RelogioDemonstracao": {
+        "properties": {
+          "modo_demonstracao": {
+            "type": "boolean",
+            "title": "Modo Demonstracao"
+          },
+          "agora": {
+            "type": "string",
+            "title": "Agora",
+            "description": "Instante simulado (UTC)"
+          },
+          "hoje": {
+            "type": "string",
+            "title": "Hoje",
+            "description": "Data simulada (AAAA-MM-DD)"
+          },
+          "dias_adiantados": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dias Adiantados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modo_demonstracao",
+          "agora",
+          "hoje",
+          "dias_adiantados"
+        ],
+        "title": "RelogioDemonstracao",
+        "description": "Estado do relogio, como a API devolve."
+      },
+      "RespostaAtendente": {
+        "properties": {
+          "texto": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Texto"
+          },
+          "atendente": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Atendente",
+            "description": "Nome exibido para o cliente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "texto",
+          "atendente"
+        ],
+        "title": "RespostaAtendente"
+      },
       "Simulacao": {
         "properties": {
           "id": {
@@ -4638,6 +6251,16 @@
           "recusada"
         ],
         "title": "StatusAdesao"
+      },
+      "StatusAtendimento": {
+        "type": "string",
+        "enum": [
+          "bot",
+          "aguardando_atendente",
+          "em_atendimento",
+          "resolvido"
+        ],
+        "title": "StatusAtendimento"
       },
       "StatusCliente": {
         "type": "string",
@@ -4994,6 +6617,26 @@
         ],
         "title": "VerificacaoResponse",
         "description": "Resposta ao solicitar o envio do código\nde confirmação (202 Accepted)."
+      },
+      "VitrineDicas": {
+        "properties": {
+          "dicas": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "minItems": 5,
+            "title": "Dicas",
+            "description": "Ids das 5 dicas, na ordem do carrossel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dicas"
+        ],
+        "title": "VitrineDicas",
+        "description": "Corpo do PUT /v1/dicas/vitrine: as 5 dicas exibidas no app, na ordem."
       }
     },
     "securitySchemes": {

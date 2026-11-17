@@ -273,15 +273,49 @@ def buscar_clientes(termo: str | None = None, status: str | None = None,
         return resultado
 
 
+ORDENACOES_CLIENTES = ("nome", "criado_em", "status", "etapa", "cidade")
+ORIGENS_CLIENTE = ("app", "ficticio")
+
+
+def _chave_ordenacao(campo: str):
+    if campo == "criado_em":
+        return lambda c: c.criado_em or datetime.min
+    if campo == "status":
+        return lambda c: (c.status, _normalizar(c.nome))
+    if campo == "etapa":
+        return lambda c: (c.ativacao.etapa_atual if c.ativacao else 99, _normalizar(c.nome))
+    if campo == "cidade":
+        return lambda c: (_normalizar(c.cidade), _normalizar(c.nome))
+    return lambda c: _normalizar(c.nome)
+
+
 def buscar_clientes_paginado(termo: str | None = None, status: str | None = None, cidade: str | None = None,
-                             etapa: int | None = None, pagina: int = 1, por_pagina: int = 20) -> dict:
-    """Mesma busca de buscar_clientes, no formato paginado padrao. Filtro invalido -> pagina vazia."""
+                             etapa: int | None = None, pagina: int = 1, por_pagina: int = 20,
+                             ordenar_por: str = "nome", ordem: str = "asc", origem: str | None = None,
+                             acesso_app: bool | None = None, cadastro_de: date | None = None,
+                             cadastro_ate: date | None = None) -> dict:
+    """
+    Mesma busca de buscar_clientes, no formato paginado padrao. Filtro invalido -> pagina vazia.
+    Ordenacao: nome, criado_em, status, etapa ou cidade (asc/desc). Filtros extras: origem (app/ficticio),
+    acesso ao app e periodo de cadastro.
+    """
     pagina, por_pagina = _paginacao(pagina, por_pagina)
     etapa_ok, etapa_num = _etapa_filtro(etapa)
-    if not _texto_valido(status, STATUS_CLIENTE) or not etapa_ok:
+    if (not _texto_valido(status, STATUS_CLIENTE) or not etapa_ok
+            or ordenar_por not in ORDENACOES_CLIENTES or ordem not in ("asc", "desc")
+            or not _texto_valido(origem, ORIGENS_CLIENTE)):
         return _resultado_paginado([], pagina, por_pagina, 0)
     with obter_sessao() as sessao:
         todos = list(_clientes_filtrados(sessao, termo, status, cidade, etapa_num))
+        if origem:
+            todos = [c for c in todos if (c.id_app is not None) == (origem == "app")]
+        if acesso_app is not None:
+            todos = [c for c in todos if bool(c.app_acesso_habilitado) == acesso_app]
+        if cadastro_de:
+            todos = [c for c in todos if c.criado_em and c.criado_em.date() >= cadastro_de]
+        if cadastro_ate:
+            todos = [c for c in todos if c.criado_em and c.criado_em.date() <= cadastro_ate]
+        todos.sort(key=_chave_ordenacao(ordenar_por), reverse=ordem == "desc")
         inicio = (pagina - 1) * por_pagina
         data = [_cliente_resumo(cli) for cli in todos[inicio:inicio + por_pagina]]
         return _resultado_paginado(data, pagina, por_pagina, len(todos))
@@ -727,6 +761,11 @@ def _atendimento_para_dict(a: Atendimento, cliente_nome: str) -> dict:
         "status": a.status,
         "criado_em": _iso(a.criado_em),
         "resolvido_em": _iso(a.resolvido_em),
+        # Chat do app (None nos atendimentos ficticios)
+        "id_app": a.id_app,
+        "status_app": a.status_app,
+        "atendente_nome": a.atendente_nome,
+        "atualizado_em": _iso(a.atualizado_em),
     }
 
 
@@ -737,6 +776,17 @@ def _filtros_atendimento(cliente_id: str | None, status: str | None) -> list[Any
     if status:
         filtros.append(Atendimento.status == status)
     return filtros
+
+
+def obter_atendimento(atendimento_id: int) -> dict | None:
+    """Um atendimento com o nome do cliente, ou None."""
+    with obter_sessao() as sessao:
+        linha = sessao.execute(
+            select(Atendimento, Cliente.nome)
+            .join(Cliente, Cliente.id == Atendimento.cliente_id)
+            .where(Atendimento.id == atendimento_id)
+        ).first()
+        return _atendimento_para_dict(*linha) if linha else None
 
 
 def listar_atendimentos(cliente_id: str | None = None, status: str | None = None,
@@ -795,6 +845,7 @@ def _adesao_para_dict(a: Adesao) -> dict:
         "origem": a.origem,
         "cliente_id": a.cliente_id,
         "criado_em": _iso(a.criado_em),
+        "id_app": a.id_app,
     }
 
 
@@ -809,12 +860,18 @@ def listar_adesoes(situacao: str | None = None, limite: int = 20) -> list[dict]:
         return [_adesao_para_dict(a) for a in sessao.scalars(consulta)]
 
 
-def listar_adesoes_paginado(situacao: str | None = None, pagina: int = 1, por_pagina: int = 20) -> dict:
-    """Adesoes no formato paginado padrao (mais recentes primeiro)."""
+def listar_adesoes_paginado(situacao: str | None = None, pagina: int = 1, por_pagina: int = 20,
+                            apenas_app: bool = False) -> dict:
+    """
+    Adesoes no formato paginado padrao (mais recentes primeiro).
+    apenas_app=True: so as adesoes feitas no app (as unicas que podem ser aprovadas/recusadas).
+    """
     pagina, por_pagina = _paginacao(pagina, por_pagina)
     if not _texto_valido(situacao, SITUACOES_ADESAO):
         return _resultado_paginado([], pagina, por_pagina, 0)
     filtros = [Adesao.situacao == situacao] if situacao else []
+    if apenas_app:
+        filtros.append(Adesao.id_app.is_not(None))
     with obter_sessao() as sessao:
         total = sessao.scalar(select(func.count()).select_from(Adesao).where(*filtros)) or 0
         consulta = (
@@ -869,6 +926,8 @@ def listar_parceiros(apenas_ativos: bool = True) -> list[dict]:
                 "logo_url": p.logo_url,
                 "ativo": p.ativo,
                 "criado_em": _iso(p.criado_em),
+                "id_app": p.id_app,
+                "origem": "app" if p.id_app else "ficticio",
             }
             for p in sessao.scalars(consulta)
         ]
@@ -981,6 +1040,43 @@ def metricas_gerais() -> dict:
             "simulacoes_30_dias": int(simulacoes),
             "app": {"clientes_com_acesso": int(com_acesso), "logins_ultimos_30_dias": int(logins)},
         }
+
+
+def series_mensais(meses: int = 6) -> dict:
+    """
+    Series dos ultimos `meses` meses (inclui o atual) para os graficos da visao geral:
+    economia gerada (desconto + bonus das faturas), clientes novos e adesoes recebidas.
+    """
+    meses = max(1, min(int(meses), 24))
+    hoje = _hoje()
+    rotulos: list[str] = []
+    ano, mes = hoje.year, hoje.month
+    for _ in range(meses):
+        rotulos.append(f"{ano:04d}-{mes:02d}")
+        mes -= 1
+        if mes == 0:
+            ano, mes = ano - 1, 12
+    rotulos.reverse()
+    economia = dict.fromkeys(rotulos, 0.0)
+    clientes = dict.fromkeys(rotulos, 0)
+    adesoes = dict.fromkeys(rotulos, 0)
+    with obter_sessao() as sessao:
+        for f in sessao.scalars(select(Fatura).where(Fatura.mes_referencia.in_(rotulos))):
+            economia[f.mes_referencia] += (f.desconto or 0) + (f.bonus_indicacao or 0) + (f.bonus_clube or 0)
+        for criado in sessao.scalars(select(Cliente.criado_em)):
+            chave = criado.strftime("%Y-%m") if criado else None
+            if chave in clientes:
+                clientes[chave] += 1
+        for criado in sessao.scalars(select(Adesao.criado_em)):
+            chave = criado.strftime("%Y-%m") if criado else None
+            if chave in adesoes:
+                adesoes[chave] += 1
+    return {
+        "meses": rotulos,
+        "economia": [_dinheiro(economia[m]) for m in rotulos],
+        "clientes_novos": [clientes[m] for m in rotulos],
+        "adesoes": [adesoes[m] for m in rotulos],
+    }
 
 
 def simular_economia(valor_conta: float, meses: int = 12, amigos_indicados: int = 0) -> dict:

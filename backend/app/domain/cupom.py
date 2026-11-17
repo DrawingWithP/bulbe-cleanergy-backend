@@ -110,6 +110,11 @@ class Cupom(CupomBase):
 
     usado_em: str | None = None
 
+    modelo_id: str | None = Field(
+        default=None,
+        description="Modelo do catalogo que gerou o cupom",
+    )
+
 
 class CupomListaPaginada(BaseModel):
     """

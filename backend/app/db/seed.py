@@ -17,19 +17,23 @@ Usuario de demonstracao do painel:
     Senha: bulbe12345
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
+from app.core import relogio
 from app.core.security import gerar_hash_senha
 from app.domain.bandeira import BANDEIRA_PADRAO, mes_referencia_atual
 from app.db.database import SessionLocal, engine
 from app.db.models import (
     AdesaoModel,
+    AtendimentoMensagemModel,
+    AtendimentoModel,
     AtivacaoModel,
     BandeiraTarifariaModel,
+    CupomCatalogoModel,
     CartaModel,
     ClienteModel,
     CupomModel,
@@ -57,15 +61,6 @@ SENHA_ADMIN = "bulbe12345"
 CPF_MARCOS = "52998224725"
 CPF_ANA = "11144477735"
 CPF_ADESAO = "16899535009"
-
-SVG_LAMPADA = (
-    '<svg xmlns="http://www.w3.org/2000/svg" '
-    'viewBox="0 0 24 24">'
-    '<path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 '
-    '12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>'
-    "</svg>"
-)
-
 
 def _inserir_por_id(
     session: Session,
@@ -182,31 +177,30 @@ def _popular_usinas(
     return inseridos
 
 
+# Dicas: (titulo, descricao, economia mensal, icone). As 5 primeiras formam a
+# vitrine inicial do app; as 4 primeiras sao as dicas originais do protótipo.
+DICAS = (
+    ("Troque por LED", "Lâmpadas LED duram mais e gastam menos energia.", 8.0, "lampada_led"),
+    ("Banhos rápidos", "Além de economizar água, você economiza energia.", 25.0, "chuveiro"),
+    ("Cestos cheios", "Use a máquina de lavar só quando estiver cheia: menos ciclos, menos energia.", 15.0,
+     "maquina_lavar"),
+    ("Cômodos em uso", "Deixe acesas só as luzes dos cômodos em que você está.", 10.0, "lampada_apagada"),
+    ("Desligue o stand-by", "Tire da tomada aparelhos que ficam em stand-by.", 12.5, "tomada"),
+    ("Banho mais curto", "Reduza o banho de chuveiro elétrico em 5 minutos.", 25.0, "chuveiro"),
+    ("Geladeira longe do fogão", "Calor por perto faz o motor da geladeira trabalhar mais.", 9.0, "geladeira"),
+    ("Ar-condicionado em 23 °C", "Cada grau a menos aumenta o consumo; portas e janelas fechadas.", 30.0,
+     "ar_condicionado"),
+    ("Junte as roupas para passar", "Passe tudo de uma vez: o ferro gasta mais para esquentar.", 7.0, "ferro_passar"),
+    ("Aproveite a luz do sol", "Abra cortinas e janelas durante o dia e apague as lâmpadas.", 6.0, "sol"),
+)
+
+
 def _popular_dicas(
     session: Session,
 ) -> int:
     inseridos = 0
 
-    dicas = [
-        (
-            "Desligue o stand-by",
-            (
-                "Tire da tomada aparelhos que ficam "
-                "em stand-by."
-            ),
-            12.5,
-        ),
-        (
-            "Banho mais curto",
-            (
-                "Reduza o banho de chuveiro eletrico "
-                "em 5 minutos."
-            ),
-            25.0,
-        ),
-    ]
-
-    for titulo, descricao, economia in dicas:
+    for titulo, descricao, economia, icone in DICAS:
         inseridos += _inserir_se_nao_existir(
             session,
             DicaModel,
@@ -214,9 +208,26 @@ def _popular_dicas(
             titulo=titulo,
             descricao=descricao,
             economia=economia,
-            imagem_svg=SVG_LAMPADA,
+            icone=icone,
+            imagem_svg=None,
             data_ativacao=date(2026, 4, 1),
         )
+
+    session.flush()
+
+    # Bancos antigos: dicas criadas antes dos icones ficam com o padrao.
+    icones = {titulo: icone for titulo, _, _, icone in DICAS}
+    for dica in session.scalars(select(DicaModel)).all():
+        if dica.titulo in icones and dica.icone in (None, "lampada_led") and icones[dica.titulo] != dica.icone:
+            dica.icone = icones[dica.titulo]
+
+    # Vitrine inicial: so se ninguem montou a vitrine ainda.
+    if not session.scalars(select(DicaModel).where(DicaModel.em_exibicao.is_(True))).first():
+        for ordem, (titulo, *_resto) in enumerate(DICAS[:5], start=1):
+            dica = session.scalars(select(DicaModel).where(DicaModel.titulo == titulo)).first()
+            if dica is not None:
+                dica.em_exibicao = True
+                dica.ordem = ordem
 
     return inseridos
 
@@ -446,7 +457,8 @@ def _popular_clube_bulbe(
         parceiro_nome="Drogaria Araújo",
         parceiro_categoria="Farmácia",
         situacao="ativo",
-        valido_ate="2026-11-15",
+        # Validade relativa: o cupom de demonstracao vale 14 dias a partir de hoje.
+        valido_ate=(relogio.hoje() + timedelta(days=14)).isoformat(),
         dias_restantes=14,
         criado_em="2026-06-12T19:42:00Z",
         usado_em=None,
@@ -489,6 +501,85 @@ def _popular_adesao(
     )
 
 
+# Catalogo de cupons sorteados nas cartas normais (ids fixos: seed idempotente).
+CATALOGO_CUPONS = (
+    ("c1a0f3e2-0001-4b6c-9a11-000000000001", ID_ARAUJO, "PARCERIA DROGARIA ARAÚJO",
+     "15% de desconto na Araújo", "Use o cupom em qualquer loja física ou no app da Araújo.", "BULBE15", 3),
+    ("c1a0f3e2-0002-4b6c-9a11-000000000002", ID_ARAUJO, "PARCERIA DROGARIA ARAÚJO",
+     "10% de desconto na Araújo", "Use o cupom em qualquer loja física ou no app da Araújo.", "BULBE10", 2),
+    ("c1a0f3e2-0003-4b6c-9a11-000000000003", ID_INTER, "PARCERIA BANCO INTER",
+     "Cashback dobrado no Inter", "Compras no débito ou crédito Inter com cashback em dobro por 30 dias.", "INTERCASH", 2),
+    ("c1a0f3e2-0004-4b6c-9a11-000000000004", ID_LIVELO, "PARCERIA LIVELO",
+     "500 pontos Livelo", "Use o cupom no app ou site da Livelo para liberar 500 pontos.", "BULBELIV", 2),
+)
+
+
+def _popular_catalogo(
+    session: Session,
+) -> int:
+    inseridos = 0
+
+    for modelo_id, parceiro_id, tag, titulo, descricao, prefixo, peso in CATALOGO_CUPONS:
+        if session.get(ParceiroModel, parceiro_id) is None:
+            continue
+        inseridos += int(
+            _inserir_por_id(
+                session,
+                CupomCatalogoModel,
+                modelo_id,
+                parceiro_id=parceiro_id,
+                tag=tag,
+                titulo=titulo,
+                descricao=descricao,
+                prefixo_codigo=prefixo,
+                validade_dias=14,
+                peso=peso,
+                ativo=True,
+                criado_em="2026-05-20T12:00:00Z",
+            )
+        )
+
+    return inseridos
+
+
+ID_ATENDIMENTO_ANA = "a7e1d0c2-5b3f-4c9e-8d21-000000000001"
+
+
+def _popular_atendimento(
+    session: Session,
+) -> int:
+    """Conversa da Ana na fila do atendimento (mudanca de endereco)."""
+
+    if session.get(ClienteModel, ID_ANA) is None or session.get(AtendimentoModel, ID_ATENDIMENTO_ANA):
+        return 0
+
+    from app.services import atendimento_bot as bot
+
+    session.add(AtendimentoModel(
+        id=ID_ATENDIMENTO_ANA,
+        cliente_id=ID_ANA,
+        assunto="Mudança de endereço",
+        status="aguardando_atendente",
+        criado_em="2026-11-14T13:02:00Z",
+        atualizado_em="2026-11-14T13:04:00Z",
+    ))
+    session.flush()  # a conversa precisa existir antes das mensagens (FK)
+    mensagens = (
+        ("bot", bot.boas_vindas("Ana").texto, bot.OPCOES_MENU, "2026-11-14T13:02:00Z"),
+        ("cliente", "Mudança de endereço", None, "2026-11-14T13:02:30Z"),
+        ("bot", bot.responder("Mudança de endereço", {}).texto, bot.OPCOES_DEPOIS, "2026-11-14T13:02:31Z"),
+        ("cliente", "Falar com um atendente", None, "2026-11-14T13:03:40Z"),
+        ("bot", bot.responder("Falar com um atendente", {}).texto, None, "2026-11-14T13:03:41Z"),
+        ("sistema", "Você entrou na fila de atendimento.", None, "2026-11-14T13:03:41Z"),
+        ("cliente", "Vou mudar para Contagem no fim do mês. O que preciso enviar?", None, "2026-11-14T13:04:00Z"),
+    )
+    for autor, texto, opcoes, criado_em in mensagens:
+        session.add(AtendimentoMensagemModel(
+            atendimento_id=ID_ATENDIMENTO_ANA, autor=autor, texto=texto, opcoes=opcoes, criado_em=criado_em,
+        ))
+    return 1
+
+
 def _popular_bandeira(
     session: Session,
 ) -> int:
@@ -525,6 +616,9 @@ def popular(
         inseridos += _popular_clube_bulbe(session)
         inseridos += _popular_adesao(session)
         inseridos += _popular_bandeira(session)
+        session.flush()
+        inseridos += _popular_catalogo(session)
+        inseridos += _popular_atendimento(session)
 
         session.commit()
 

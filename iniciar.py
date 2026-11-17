@@ -64,6 +64,8 @@ def main() -> None:
         "INTEGRACAO_APP_API_URL": f"http://127.0.0.1:{args.porta_app}",
     }
     env_painel.setdefault("INTEGRACAO_APP_DB_URL", _banco_do_app())
+    # Na demonstracao o painel busca o app a cada 10 s (o chat de atendimento aparece rapido).
+    env_painel.setdefault("INTEGRACAO_INTERVALO_SEGUNDOS", "10")
 
     _rodar([python, "-m", "alembic", "upgrade", "head"], BACKEND, env_app)
     if not args.sem_seed:

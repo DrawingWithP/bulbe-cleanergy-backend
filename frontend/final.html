@@ -1729,6 +1729,77 @@
 
   </div>
   <!-- ===================== FIM: INDICAÇÕES ===================== -->
+  <!-- ===================== TELA: FALE CONOSCO ===================== -->
+  <div class="screen" id="screen-fale-conosco">
+
+    <header class="sim-topo-bar">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <img src="icons_final/bulbe.svg" alt="Bulbe" class="sim-logo-img">
+    </header>
+
+    <div class="sim-scroll">
+      <div class="sim-titulo-sec">
+        <span class="sim-dot-laranja" aria-hidden="true"></span>
+        <h1>Fale conosco</h1>
+      </div>
+
+      <section class="cad-card chat-intro">
+        <p>Nossa assistente responde na hora sobre conexão, conta de luz, Clube e indicações. Se precisar, ela chama um atendente para você.</p>
+        <button type="button" class="cad-botao" id="chat-nova">Nova conversa</button>
+        <p class="cad-erro" role="alert" hidden></p>
+      </section>
+
+      <section class="ind-sem-login cad-card oculto" id="chat-sem-login">
+        <p>Entre na sua conta para falar com a Bulbe.</p>
+        <button type="button" class="cad-botao" data-nav="screen-entrar">Entrar</button>
+      </section>
+
+      <h2 class="ind-lista-titulo" id="chat-lista-titulo">Suas conversas</h2>
+      <ul class="chat-lista" id="chat-lista" aria-live="polite"></ul>
+    </div>
+
+  </div>
+  <!-- ===================== FIM: FALE CONOSCO ===================== -->
+
+  <!-- ===================== TELA: CONVERSA ===================== -->
+  <div class="screen" id="screen-conversa">
+
+    <header class="chat-topo">
+      <button class="sim-btn-voltar" type="button" data-nav-back aria-label="Voltar">
+        <img src="icons_final/seta.svg" alt="">
+      </button>
+      <div class="chat-topo-texto">
+        <strong>Atendimento Bulbe</strong>
+        <span id="chat-situacao">Assistente virtual</span>
+      </div>
+      <button type="button" class="chat-encerrar" id="chat-encerrar">Encerrar</button>
+    </header>
+
+    <ol class="chat-mensagens" id="chat-mensagens" aria-live="polite" aria-label="Mensagens da conversa"></ol>
+
+    <div class="chat-opcoes" id="chat-opcoes" aria-label="Respostas rápidas"></div>
+
+    <section class="chat-avaliacao oculto" id="chat-avaliacao" aria-label="Avaliar atendimento">
+      <p>Como foi o atendimento?</p>
+      <div class="chat-estrelas" role="group" aria-label="Nota de 1 a 5">
+        <button type="button" data-nota="1" aria-label="1 estrela">★</button>
+        <button type="button" data-nota="2" aria-label="2 estrelas">★</button>
+        <button type="button" data-nota="3" aria-label="3 estrelas">★</button>
+        <button type="button" data-nota="4" aria-label="4 estrelas">★</button>
+        <button type="button" data-nota="5" aria-label="5 estrelas">★</button>
+      </div>
+    </section>
+
+    <form class="chat-entrada" id="chat-form" novalidate>
+      <label class="sr-only" for="chat-texto">Mensagem</label>
+      <input class="cad-input" id="chat-texto" name="texto" maxlength="1000" autocomplete="off" placeholder="Escreva sua mensagem">
+      <button type="submit" class="chat-enviar" aria-label="Enviar">➤</button>
+    </form>
+
+  </div>
+  <!-- ===================== FIM: CONVERSA ===================== -->
   <!-- BULBE-TELAS-NOVAS: fim -->
 
   <script src="config.js"></script>

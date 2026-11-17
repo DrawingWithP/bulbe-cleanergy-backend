@@ -51,9 +51,11 @@ def mes_referencia_valido(mes_referencia: str) -> bool:
 
 
 def mes_referencia_atual(agora: datetime | None = None) -> str:
-    """Mes corrente no formato AAAA-MM."""
+    """Mes corrente no formato AAAA-MM (segue o relogio da demonstracao)."""
 
-    return (agora or datetime.now()).strftime("%Y-%m")
+    from app.core import relogio
+
+    return (agora or relogio.agora()).strftime("%Y-%m")
 
 
 class BandeiraUpdate(BaseModel):

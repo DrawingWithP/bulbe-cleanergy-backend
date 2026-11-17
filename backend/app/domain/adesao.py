@@ -223,3 +223,13 @@ class Adesao(AdesaoBase):
 
     id: int
     data_ativacao: date
+
+
+class AdesaoAprovada(BaseModel):
+    """
+    Resposta do POST /v1/adesoes/{id}/aprovacao: a adesao aprovada
+    e o cliente criado a partir dela.
+    """
+
+    adesao: Adesao
+    cliente_id: str

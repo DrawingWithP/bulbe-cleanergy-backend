@@ -138,6 +138,8 @@
   const botaoEntrar = $('#screen-inicio .primary-button');
   const itemIndique = $$('#menu-lateral .ml-nav-item').find((item) => item.textContent.trim() === 'Indique e ganhe');
   if (itemIndique) itemIndique.dataset.nav = 'screen-indicacoes';
+  const itemFaleConosco = $$('#menu-lateral .ml-nav-item').find((item) => item.textContent.trim() === 'Fale conosco');
+  if (itemFaleConosco) itemFaleConosco.dataset.nav = 'screen-fale-conosco';
 
   const itemSair = document.createElement('button');
   itemSair.type = 'button';
@@ -529,6 +531,284 @@
       limparErro(form);
       carregar();
     };
+  }());
+
+  // ------------------------------------------------------------
+  // FALE CONOSCO e CONVERSA (chat com a assistente e o atendente)
+  // ------------------------------------------------------------
+  (function () {
+    const telaLista = $('#screen-fale-conosco');
+    const telaConversa = $('#screen-conversa');
+    if (!telaLista || !telaConversa) return;
+
+    const lista = $('#chat-lista', telaLista);
+    const listaMsgs = $('#chat-mensagens', telaConversa);
+    const opcoes = $('#chat-opcoes', telaConversa);
+    const form = $('#chat-form', telaConversa);
+    const campo = $('#chat-texto', telaConversa);
+    const situacao = $('#chat-situacao', telaConversa);
+    const avaliacao = $('#chat-avaliacao', telaConversa);
+    const botaoEncerrar = $('#chat-encerrar', telaConversa);
+    const INTERVALO = 2500;
+    const SITUACOES = {
+      bot: 'Assistente virtual',
+      aguardando_atendente: 'Aguardando um atendente…',
+      em_atendimento: 'Em atendimento',
+      resolvido: 'Conversa encerrada',
+    };
+    const ROTULOS_LISTA = {
+      bot: 'Assistente', aguardando_atendente: 'Na fila', em_atendimento: 'Em atendimento', resolvido: 'Encerrada',
+    };
+
+    let conversa = null;   // atendimento aberto na tela
+    let ultimaId = 0;      // id da ultima mensagem mostrada
+    let temporizador = null;
+    let enviando = false;
+
+    const hora = (iso) => {
+      const d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+    const data = (iso) => {
+      const d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    };
+
+    // ---------------- lista de conversas
+    async function carregarLista() {
+      const logado = Boolean(BulbeAPI.clienteId());
+      $('#chat-sem-login', telaLista).classList.toggle('oculto', logado);
+      $('.chat-intro', telaLista).classList.toggle('oculto', !logado);
+      $('#chat-lista-titulo', telaLista).classList.toggle('oculto', !logado);
+      lista.replaceChildren();
+      if (!logado) return;
+      try {
+        const conversas = await BulbeAPI.request(`${BulbeAPI.clientePath()}/atendimentos`);
+        if (!conversas.length) {
+          const vazio = document.createElement('li');
+          vazio.className = 'ind-vazio';
+          vazio.textContent = 'Você ainda não conversou com a gente por aqui.';
+          lista.append(vazio);
+          return;
+        }
+        conversas.forEach((c) => {
+          const li = document.createElement('li');
+          const botao = document.createElement('button');
+          botao.type = 'button';
+          botao.className = 'chat-item';
+          const topo = document.createElement('span');
+          topo.className = 'chat-item-topo';
+          const titulo = document.createElement('strong');
+          titulo.textContent = c.assunto;
+          const selo = document.createElement('span');
+          selo.className = `ind-selo chat-selo-${c.status}`;
+          selo.textContent = ROTULOS_LISTA[c.status] || c.status;
+          topo.append(titulo, selo);
+          const msg = document.createElement('span');
+          msg.className = 'chat-item-msg';
+          msg.textContent = c.ultima_mensagem || '';
+          const quando = document.createElement('time');
+          quando.textContent = `${data(c.atualizado_em)} · ${hora(c.atualizado_em)}`;
+          botao.append(topo, msg, quando);
+          botao.addEventListener('click', () => abrirConversa(c.id));
+          li.append(botao);
+          lista.append(li);
+        });
+      } catch (erro) {
+        BulbeAPI.report(erro);
+      }
+    }
+
+    $('#chat-nova', telaLista).addEventListener('click', async (evento) => {
+      const botao = evento.currentTarget;
+      try {
+        const nova = await enviando_(botao, () => BulbeAPI.request('/v1/atendimentos', {
+          method: 'POST', body: JSON.stringify({ cliente_id: BulbeAPI.clienteId() }),
+        }));
+        abrirConversa(nova.id, nova);
+      } catch (erro) {
+        mostrarErro($('.chat-intro', telaLista), erro.message);
+      }
+    });
+
+    async function enviando_(botao, tarefa) {
+      botao.disabled = true;
+      try { return await tarefa(); } finally { botao.disabled = false; }
+    }
+
+    // ---------------- conversa
+    function bolha(m) {
+      const li = document.createElement('li');
+      li.className = `chat-msg chat-msg-${m.autor}`;
+      if (m.autor === 'atendente' || m.autor === 'bot') {
+        const autor = document.createElement('span');
+        autor.className = 'chat-msg-autor';
+        autor.textContent = m.autor === 'bot' ? 'Assistente Bulbe' : (conversa && conversa.atendente_nome) || 'Atendente';
+        li.append(autor);
+      }
+      li.append(document.createTextNode(m.texto));
+      if (m.autor !== 'sistema') {
+        const quando = document.createElement('small');
+        quando.textContent = hora(m.criado_em);
+        li.append(quando);
+      }
+      return li;
+    }
+
+    function mostrarOpcoes(lista_) {
+      opcoes.replaceChildren();
+      if (!conversa || conversa.status !== 'bot' || !lista_) return;
+      lista_.forEach((texto) => {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.textContent = texto;
+        botao.addEventListener('click', () => enviar(texto));
+        opcoes.append(botao);
+      });
+    }
+
+    function aplicarSituacao() {
+      const encerrada = conversa.status === 'resolvido';
+      let texto = SITUACOES[conversa.status] || '';
+      if (conversa.status === 'em_atendimento' && conversa.atendente_nome) {
+        texto = `${conversa.atendente_nome} está atendendo você`;
+      }
+      situacao.textContent = texto;
+      campo.disabled = encerrada;
+      $('button[type="submit"]', form).disabled = encerrada;
+      botaoEncerrar.classList.toggle('oculto', encerrada);
+      avaliacao.classList.toggle('oculto', !encerrada || Boolean(conversa.avaliacao));
+      campo.placeholder = encerrada ? 'Conversa encerrada' : 'Escreva sua mensagem';
+      if (encerrada) opcoes.replaceChildren();
+    }
+
+    function acrescentar(mensagens) {
+      let ultimaOpcoes = null;
+      mensagens.forEach((m) => {
+        if (m.id <= ultimaId) return;
+        listaMsgs.append(bolha(m));
+        ultimaId = m.id;
+        if (m.autor === 'bot') ultimaOpcoes = m.opcoes;
+        else if (m.autor !== 'sistema') ultimaOpcoes = null;
+      });
+      if (mensagens.length) {
+        mostrarOpcoes(ultimaOpcoes);
+        listaMsgs.scrollTop = listaMsgs.scrollHeight;
+      }
+    }
+
+    async function abrirConversa(id, detalhe) {
+      conversa = null;
+      ultimaId = 0;
+      listaMsgs.replaceChildren();
+      opcoes.replaceChildren();
+      navigateTo('screen-conversa');
+      try {
+        const dados = detalhe || await BulbeAPI.request(`/v1/atendimentos/${encodeURIComponent(id)}`);
+        conversa = dados;
+        acrescentar(dados.mensagens || []);
+        aplicarSituacao();
+        agendar();
+        if (!campo.disabled) campo.focus();
+      } catch (erro) {
+        BulbeAPI.report(erro);
+      }
+    }
+
+    function agendar() {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(atualizar, INTERVALO);
+    }
+
+    async function atualizar() {
+      // So consulta enquanto a tela da conversa estiver aberta.
+      if (!conversa || !telaConversa.classList.contains('active')) return;
+      try {
+        const dados = await BulbeAPI.request(
+          `/v1/atendimentos/${encodeURIComponent(conversa.id)}?depois_de=${ultimaId}`,
+        );
+        conversa = { ...conversa, ...dados, mensagens: undefined };
+        acrescentar(dados.mensagens || []);
+        aplicarSituacao();
+      } catch {
+        // falha momentanea de rede: tenta de novo no proximo ciclo
+      }
+      if (conversa.status !== 'resolvido') agendar();
+    }
+
+    async function enviar(texto) {
+      const limpo = String(texto || '').trim();
+      if (!conversa || !limpo || enviando) return;
+      enviando = true;
+      opcoes.replaceChildren();
+      const digitando = document.createElement('li');
+      digitando.className = 'chat-digitando';
+      try {
+        const pendente = bolha({ autor: 'cliente', texto: limpo, criado_em: new Date().toISOString() });
+        pendente.style.opacity = '.6';
+        listaMsgs.append(pendente);
+        if (conversa.status === 'bot') {
+          digitando.textContent = 'Assistente digitando…';
+          listaMsgs.append(digitando);
+        }
+        listaMsgs.scrollTop = listaMsgs.scrollHeight;
+        campo.value = '';
+        const novas = await BulbeAPI.request(`/v1/atendimentos/${encodeURIComponent(conversa.id)}/mensagens`, {
+          method: 'POST', body: JSON.stringify({ texto: limpo }),
+        });
+        pendente.remove();
+        digitando.remove();
+        acrescentar(novas);
+        const dados = await BulbeAPI.request(`/v1/atendimentos/${encodeURIComponent(conversa.id)}?depois_de=${ultimaId}`);
+        conversa = { ...conversa, ...dados, mensagens: undefined };
+        acrescentar(dados.mensagens || []);
+        aplicarSituacao();
+        agendar();
+      } catch (erro) {
+        digitando.remove();
+        BulbeAPI.report(erro);
+      } finally {
+        enviando = false;
+      }
+    }
+
+    form.addEventListener('submit', (evento) => {
+      evento.preventDefault();
+      enviar(campo.value);
+    });
+
+    botaoEncerrar.addEventListener('click', async () => {
+      if (!conversa || !window.confirm('Encerrar esta conversa?')) return;
+      try {
+        conversa = { ...conversa, ...(await BulbeAPI.request(
+          `/v1/atendimentos/${encodeURIComponent(conversa.id)}/encerramento`,
+          { method: 'POST', body: JSON.stringify({}) },
+        )), mensagens: undefined };
+        await atualizar();
+        aplicarSituacao();
+      } catch (erro) {
+        BulbeAPI.report(erro);
+      }
+    });
+
+    $$('[data-nota]', avaliacao).forEach((estrela) => {
+      estrela.addEventListener('click', async () => {
+        const nota = Number(estrela.dataset.nota);
+        $$('[data-nota]', avaliacao).forEach((e) => e.classList.toggle('ativa', Number(e.dataset.nota) <= nota));
+        try {
+          conversa = { ...conversa, ...(await BulbeAPI.request(
+            `/v1/atendimentos/${encodeURIComponent(conversa.id)}/encerramento`,
+            { method: 'POST', body: JSON.stringify({ avaliacao: nota }) },
+          )), mensagens: undefined };
+          avaliacao.replaceChildren(Object.assign(document.createElement('p'), { textContent: 'Obrigado pela avaliação!' }));
+        } catch (erro) {
+          BulbeAPI.report(erro);
+        }
+      });
+    });
+
+    preparar['screen-fale-conosco'] = carregarLista;
+    window._onFaleConosco = carregarLista;
   }());
 
   atualizarSessao();

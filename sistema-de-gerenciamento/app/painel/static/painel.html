@@ -22,47 +22,50 @@
     <aside class="menu-lateral" aria-label="Menu principal">
       <div class="menu-marca">
         <img src="/painel/logo-bulbe.svg" alt="Bulbe Energia" width="100" height="29">
-        <span class="menu-marca-texto">Painel de Gestão</span>
+        <span>Painel de Gestão</span>
       </div>
-      <nav>
+      <nav aria-label="Telas do painel">
+        <p class="menu-secao">Operação</p>
         <ul class="menu-lista">
           <li><a href="#/visao-geral" class="menu-item" data-rota="visao-geral">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M4 13h6V4H4v9zm0 7h6v-5H4v5zm8 0h8v-9h-8v9zm0-16v5h8V4h-8z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13h6V4H4v9zm0 7h6v-5H4v5zm8 0h8v-9h-8v9zm0-16v5h8V4h-8z"/></svg>
             Visão geral</a></li>
           <li><a href="#/clientes" class="menu-item" data-rota="clientes">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.7 0-6 1.3-6 3.5V19h7v-2.5c0-1 .4-2 1.2-2.8A9 9 0 0 0 8 13zm8 0c-3 0-7 1.5-7 4v2h14v-2c0-2.5-4-4-7-4z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.7 0-6 1.3-6 3.5V19h7v-2.5c0-1 .4-2 1.2-2.8A9 9 0 0 0 8 13zm8 0c-3 0-7 1.5-7 4v2h14v-2c0-2.5-4-4-7-4z"/></svg>
             Clientes</a></li>
           <li><a href="#/adesoes" class="menu-item" data-rota="adesoes">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2.2 9L7 14.2l1.4-1.4 2.4 2.4 4.8-4.8 1.4 1.4-6.2 6.2z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2.2 9L7 14.2l1.4-1.4 2.4 2.4 4.8-4.8 1.4 1.4-6.2 6.2z"/></svg>
             Adesões</a></li>
           <li><a href="#/atendimentos" class="menu-item" data-rota="atendimentos">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-            Atendimentos</a></li>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            Atendimentos <span class="menu-contador" id="contador-atendimentos" hidden title="Atendimentos abertos"></span></a></li>
           <li><a href="#/ativacoes" class="menu-item" data-rota="ativacoes">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M13 2 4.1 13.2a.5.5 0 0 0 .4.8H11l-1 8 8.9-11.2a.5.5 0 0 0-.4-.8H13l1-8z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M13 2 4.1 13.2a.5.5 0 0 0 .4.8H11l-1 8 8.9-11.2a.5.5 0 0 0-.4-.8H13l1-8z"/></svg>
             Ativações</a></li>
-          <li><a href="#/dicas" class="menu-item" data-rota="dicas">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z"/></svg>
-            Dicas</a></li>
-          <li><a href="#/usinas" class="menu-item" data-rota="usinas">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM4.2 5.6l1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1zm12.1 12.1 1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1zM18.4 4.2l1.4 1.4-2.1 2.1-1.4-1.4 2.1-2.1zM6.3 16.3l1.4 1.4-2.1 2.1-1.4-1.4 2.1-2.1z"/></svg>
-            Usinas</a></li>
-          <li><a href="#/parceiros" class="menu-item" data-rota="parceiros">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M20 6h-2.2A3 3 0 0 0 12 3.8 3 3 0 0 0 6.2 6H4a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h8V6.5h2V11h8a1 1 0 0 0 1-1V8a2 2 0 0 0-2-2zM9 6a1 1 0 1 1 1-1v1H9zm6 0h-1V5a1 1 0 1 1 1 1zM4 13v7a2 2 0 0 0 2 2h5v-9H4zm9 9h5a2 2 0 0 0 2-2v-7h-7v9z"/></svg>
-            Parceiros</a></li>
         </ul>
-        <!-- Itens de gestão: o painel.js só mostra para o perfil admin (a API também exige admin). -->
+        <p class="menu-secao">Conteúdo do app</p>
+        <ul class="menu-lista">
+          <li><a href="#/dicas" class="menu-item" data-rota="dicas">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z"/></svg>
+            Dicas</a></li>
+          <li><a href="#/parceiros" class="menu-item" data-rota="parceiros">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 6h-2.2A3 3 0 0 0 12 3.8 3 3 0 0 0 6.2 6H4a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h8V6.5h2V11h8a1 1 0 0 0 1-1V8a2 2 0 0 0-2-2zM9 6a1 1 0 1 1 1-1v1H9zm6 0h-1V5a1 1 0 1 1 1 1zM4 13v7a2 2 0 0 0 2 2h5v-9H4zm9 9h5a2 2 0 0 0 2-2v-7h-7v9z"/></svg>
+            Parceiros e cupons</a></li>
+          <li><a href="#/usinas" class="menu-item" data-rota="usinas">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM4.2 5.6l1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1zm12.1 12.1 1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1zM18.4 4.2l1.4 1.4-2.1 2.1-1.4-1.4 2.1-2.1zM6.3 16.3l1.4 1.4-2.1 2.1-1.4-1.4 2.1-2.1z"/></svg>
+            Usinas</a></li>
+        </ul>
         <p class="menu-secao" id="menu-secao-admin" hidden>Gestão</p>
         <ul class="menu-lista" id="menu-admin" hidden>
           <li><a href="#/auditoria" class="menu-item" data-rota="auditoria">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5l-9-4zm-1 15-4-4 1.4-1.4 2.6 2.6 5.6-5.6L18 9l-7 7z"/></svg>
-            Auditoria</a></li>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5l-9-4zm-1 15-4-4 1.4-1.4 2.6 2.6 5.6-5.6L18 9l-7 7z"/></svg>
+            Auditoria e integração</a></li>
           <li><a href="#/uso-assistente" class="menu-item" data-rota="uso-assistente">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="menu-icone"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
             Uso do assistente</a></li>
         </ul>
       </nav>
-      <p class="menu-aviso">Dados <strong>fictícios</strong> para demonstração.</p>
+      <p class="menu-rodape">Clientes do app + base fictícia de demonstração.</p>
     </aside>
 
     <!-- ===================== ÁREA PRINCIPAL ===================== -->
@@ -70,312 +73,19 @@
       <header class="barra-topo">
         <div class="barra-topo-titulo" id="barra-titulo">Painel</div>
         <div class="barra-topo-acoes">
-          <span class="funcionario-info" id="funcionario-info" aria-live="polite"></span>
+          <div class="relogio" id="relogio" hidden aria-live="polite"></div>
           <button type="button" class="botao botao-secundario botao-pequeno" id="botao-chat-alternar"
                   aria-controls="painel-chat" aria-expanded="true">Assistente</button>
+          <div class="funcionario" id="funcionario-info"></div>
           <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-sair">Sair</button>
         </div>
       </header>
 
-      <main id="conteudo" class="conteudo" tabindex="-1">
-
-        <!-- VISÃO GERAL -->
-        <section class="tela" id="tela-visao-geral" data-tela="visao-geral" hidden aria-labelledby="titulo-visao-geral">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-visao-geral" tabindex="-1">Visão geral</h1>
-              <p class="tela-descricao">Indicadores da base de clientes, ativações, faturas, indicações e Clube Bulbe.</p>
-            </div>
-            <button type="button" class="botao botao-secundario botao-pequeno" id="botao-atualizar-metricas">Atualizar</button>
-          </div>
-          <div id="integracao-status"></div>
-          <div id="visao-geral-conteudo" aria-live="polite"></div>
-        </section>
-
-        <!-- CLIENTES -->
-        <section class="tela" id="tela-clientes" data-tela="clientes" hidden aria-labelledby="titulo-clientes">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-clientes" tabindex="-1">Clientes</h1>
-              <p class="tela-descricao">Busque por nome, e-mail, CPF, número de instalação ou código de indicação.</p>
-            </div>
-          </div>
-
-          <form class="filtros" id="form-clientes" role="search">
-            <div class="campo campo-grande">
-              <label for="filtro-termo">Buscar</label>
-              <input id="filtro-termo" type="search" maxlength="100" placeholder="Ex.: Marcos, MARCOS50, 12345678900" autocomplete="off">
-            </div>
-            <div class="campo">
-              <label for="filtro-status">Status</label>
-              <select id="filtro-status">
-                <option value="">Todos</option>
-                <option value="ativo">Ativo</option>
-                <option value="em_ativacao">Em ativação</option>
-                <option value="cancelado">Cancelado</option>
-              </select>
-            </div>
-            <div class="campo">
-              <label for="filtro-cidade">Cidade</label>
-              <input id="filtro-cidade" type="text" maxlength="80" placeholder="Ex.: Belo Horizonte">
-            </div>
-            <div class="campo">
-              <label for="filtro-etapa">Etapa da ativação</label>
-              <select id="filtro-etapa">
-                <option value="">Todas</option>
-                <option value="1">1. Cadastro</option>
-                <option value="2">2. Documentos</option>
-                <option value="3">3. Solicitação à CEMIG</option>
-                <option value="4">4. Análise CEMIG</option>
-                <option value="5">5. Energia liberada</option>
-              </select>
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-limite">Por página</label>
-              <select id="filtro-limite">
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-            <div class="filtros-acoes">
-              <button type="submit" class="botao botao-primario">Buscar</button>
-              <button type="reset" class="botao botao-fantasma">Limpar</button>
-            </div>
-          </form>
-
-          <div id="clientes-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- FICHA DO CLIENTE -->
-        <section class="tela" id="tela-ficha" data-tela="ficha" hidden aria-labelledby="titulo-ficha">
-          <a href="#/clientes" class="link-voltar">&larr; Voltar para clientes</a>
-          <div id="ficha-conteudo" aria-live="polite"></div>
-        </section>
-
-        <!-- ADESÕES -->
-        <section class="tela" id="tela-adesoes" data-tela="adesoes" hidden aria-labelledby="titulo-adesoes">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-adesoes" tabindex="-1">Adesões</h1>
-              <p class="tela-descricao">Pedidos de assinatura feitos pelo app, site ou WhatsApp.</p>
-            </div>
-          </div>
-          <form class="filtros" id="form-adesoes">
-            <div class="campo">
-              <label for="filtro-adesao-situacao">Situação</label>
-              <select id="filtro-adesao-situacao">
-                <option value="">Todas</option>
-                <option value="rascunho">Rascunho</option>
-                <option value="enviada">Enviada</option>
-                <option value="aprovada">Aprovada</option>
-                <option value="recusada">Recusada</option>
-              </select>
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-adesao-limite">Por página</label>
-              <select id="filtro-adesao-limite">
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-            <div class="filtros-acoes">
-              <button type="submit" class="botao botao-primario">Filtrar</button>
-            </div>
-          </form>
-          <div id="adesoes-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- ATENDIMENTOS -->
-        <section class="tela" id="tela-atendimentos" data-tela="atendimentos" hidden aria-labelledby="titulo-atendimentos">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-atendimentos" tabindex="-1">Atendimentos</h1>
-              <p class="tela-descricao">Chamados abertos pelos clientes em todos os canais.</p>
-            </div>
-          </div>
-          <form class="filtros" id="form-atendimentos">
-            <div class="campo">
-              <label for="filtro-atendimento-status">Status</label>
-              <select id="filtro-atendimento-status">
-                <option value="">Todos</option>
-                <option value="aberto">Aberto</option>
-                <option value="em_andamento">Em andamento</option>
-                <option value="resolvido">Resolvido</option>
-              </select>
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-atendimento-limite">Por página</label>
-              <select id="filtro-atendimento-limite">
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-            <div class="filtros-acoes">
-              <button type="submit" class="botao botao-primario">Filtrar</button>
-            </div>
-          </form>
-          <div id="atendimentos-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- ATIVAÇÕES -->
-        <section class="tela" id="tela-ativacoes" data-tela="ativacoes" hidden aria-labelledby="titulo-ativacoes">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-ativacoes" tabindex="-1">Ativações</h1>
-              <p class="tela-descricao">Jornada de ativação (5 etapas, até 90 dias): resumo por etapa e clientes parados.</p>
-            </div>
-            <button type="button" class="botao botao-secundario botao-pequeno" id="botao-atualizar-ativacoes">Atualizar</button>
-          </div>
-          <div id="ativacoes-resumo" aria-live="polite"></div>
-
-          <h2 class="secao-titulo" id="titulo-parados">Clientes parados na mesma etapa</h2>
-          <form class="filtros" id="form-parados" aria-labelledby="titulo-parados">
-            <div class="campo">
-              <label for="filtro-parados-etapa">Etapa</label>
-              <select id="filtro-parados-etapa">
-                <option value="">Todas</option>
-                <option value="1">1. Cadastro</option>
-                <option value="2">2. Documentos</option>
-                <option value="3">3. Solicitação à CEMIG</option>
-                <option value="4">4. Análise CEMIG</option>
-                <option value="5">5. Energia liberada</option>
-              </select>
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-parados-dias">Parados há (dias)</label>
-              <input id="filtro-parados-dias" type="number" min="0" max="3650" step="1" value="30" inputmode="numeric">
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-parados-limite">Mostrar</label>
-              <select id="filtro-parados-limite">
-                <option value="50">50</option>
-                <option value="20">20</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-            <div class="filtros-acoes">
-              <button type="submit" class="botao botao-primario">Filtrar</button>
-            </div>
-          </form>
-          <div id="parados-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- DICAS -->
-        <section class="tela" id="tela-dicas" data-tela="dicas" hidden aria-labelledby="titulo-dicas">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-dicas" tabindex="-1">Dicas de economia</h1>
-              <p class="tela-descricao">As dicas exibidas no carrossel do app, na mesma ordem.</p>
-            </div>
-          </div>
-          <div id="dicas-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- USINAS -->
-        <section class="tela" id="tela-usinas" data-tela="usinas" hidden aria-labelledby="titulo-usinas">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-usinas" tabindex="-1">Usinas</h1>
-              <p class="tela-descricao">Usinas solares da Bulbe e clientes ativos vinculados a cada uma.</p>
-            </div>
-          </div>
-          <div id="usinas-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- PARCEIROS -->
-        <section class="tela" id="tela-parceiros" data-tela="parceiros" hidden aria-labelledby="titulo-parceiros">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-parceiros" tabindex="-1">Parceiros do Clube Bulbe</h1>
-              <p class="tela-descricao">Empresas que oferecem os cupons das cartas semanais do Clube.</p>
-            </div>
-          </div>
-          <form class="filtros" id="form-parceiros">
-            <div class="campo-checkbox">
-              <input id="filtro-parceiros-inativos" type="checkbox">
-              <label for="filtro-parceiros-inativos">Incluir parceiros inativos</label>
-            </div>
-          </form>
-          <div id="parceiros-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- AUDITORIA (admin) -->
-        <section class="tela" id="tela-auditoria" data-tela="auditoria" hidden aria-labelledby="titulo-auditoria">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-auditoria" tabindex="-1">Auditoria</h1>
-              <p class="tela-descricao">Logins, bloqueios, alertas, fichas abertas, expurgos e ações de integração com o app. Consultar esta tela também fica registrado.</p>
-            </div>
-            <div class="tela-cabecalho-acoes">
-              <button type="button" class="botao botao-secundario botao-pequeno" id="botao-sincronizar">Sincronizar com o app</button>
-              <button type="button" class="botao botao-fantasma botao-pequeno" id="botao-expurgo">Expurgar dados antigos</button>
-            </div>
-          </div>
-          <div id="integracao-admin" aria-live="polite"></div>
-          <div id="expurgo-resultado" aria-live="polite"></div>
-          <form class="filtros" id="form-auditoria">
-            <div class="campo">
-              <label for="filtro-auditoria-acao">Ação</label>
-              <select id="filtro-auditoria-acao">
-                <option value="">Todas</option>
-                <option value="login_ok">Login com sucesso</option>
-                <option value="login_falha">Login com falha</option>
-                <option value="login_bloqueado">Login bloqueado</option>
-                <option value="alerta_email">Alerta por e-mail</option>
-                <option value="ver_ficha">Abriu ficha</option>
-                <option value="ver_auditoria">Consultou auditoria</option>
-                <option value="expurgo">Expurgo</option>
-                <option value="sincronizar_app">Sincronizou com o app</option>
-                <option value="alterar_ativacao">Alterou etapa no app</option>
-              </select>
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-auditoria-funcionario">ID do funcionário</label>
-              <input id="filtro-auditoria-funcionario" type="number" min="1" step="1" inputmode="numeric">
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-auditoria-limite">Por página</label>
-              <select id="filtro-auditoria-limite">
-                <option value="50">50</option>
-                <option value="20">20</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-            <div class="filtros-acoes">
-              <button type="submit" class="botao botao-primario">Filtrar</button>
-              <button type="reset" class="botao botao-fantasma">Limpar</button>
-            </div>
-          </form>
-          <div id="auditoria-resultado" aria-live="polite"></div>
-        </section>
-
-        <!-- USO DO ASSISTENTE (admin) -->
-        <section class="tela" id="tela-uso-assistente" data-tela="uso-assistente" hidden aria-labelledby="titulo-uso-assistente">
-          <div class="tela-cabecalho">
-            <div>
-              <h1 class="tela-titulo" id="titulo-uso-assistente" tabindex="-1">Uso do assistente</h1>
-              <p class="tela-descricao">Perguntas, tokens e custo estimado (US$) do Claude Haiku no período.</p>
-            </div>
-            <div class="campo campo-pequeno">
-              <label for="filtro-uso-dias">Período</label>
-              <select id="filtro-uso-dias">
-                <option value="7">Últimos 7 dias</option>
-                <option value="30" selected>Últimos 30 dias</option>
-                <option value="90">Últimos 90 dias</option>
-                <option value="365">Últimos 365 dias</option>
-              </select>
-            </div>
-          </div>
-          <div id="uso-resultado" aria-live="polite"></div>
-        </section>
-
-      </main>
+      <!-- As telas são montadas aqui pelos módulos de js/telas/ -->
+      <main id="conteudo" class="conteudo" tabindex="-1" aria-live="polite"></main>
     </div>
 
-    <!-- ===================== PAINEL DE CHAT ===================== -->
+    <!-- ===================== ASSISTENTE (chat interno) ===================== -->
     <aside class="painel-chat" id="painel-chat" aria-labelledby="chat-titulo">
       <header class="chat-cabecalho">
         <div class="chat-cabecalho-texto">
@@ -406,7 +116,7 @@
 
       <div class="chat-mensagens" id="chat-mensagens" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Conversa com o assistente">
         <div class="chat-boas-vindas" id="chat-boas-vindas">
-          <p>Olá! Sou o assistente interno da Bulbe. Consulto os dados (fictícios) de clientes, faturas, ativações, indicações e Clube Bulbe, e explico como o app funciona.</p>
+          <p>Olá! Sou o assistente interno da Bulbe. Consulto os dados de clientes, faturas, ativações, indicações e Clube Bulbe, e explico como o app funciona.</p>
           <p class="chat-nota">Somente leitura: não altero nenhum dado.</p>
         </div>
       </div>
@@ -434,6 +144,19 @@
     </button>
   </div>
 
-  <script src="/painel/painel.js"></script>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="/painel/js/nucleo.js"></script>
+  <script src="/painel/js/graficos.js"></script>
+  <script src="/painel/js/telas/visao-geral.js"></script>
+  <script src="/painel/js/telas/clientes.js"></script>
+  <script src="/painel/js/telas/adesoes.js"></script>
+  <script src="/painel/js/telas/atendimentos.js"></script>
+  <script src="/painel/js/telas/ativacoes.js"></script>
+  <script src="/painel/js/telas/dicas.js"></script>
+  <script src="/painel/js/telas/parceiros.js"></script>
+  <script src="/painel/js/telas/gestao.js"></script>
+  <script src="/painel/js/assistente.js"></script>
+  <script src="/painel/js/app.js"></script>
 </body>
 </html>

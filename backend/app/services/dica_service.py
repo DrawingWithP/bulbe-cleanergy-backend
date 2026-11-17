@@ -3,6 +3,7 @@ Camada de Servico, DicaService.
 """
 
 from app.domain.dica import (
+    TAMANHO_VITRINE,
     Dica,
     DicaCreate,
     DicaUpdate,
@@ -38,12 +39,41 @@ class DicaService:
     ) -> None:
         self._repository = repository
 
-    def listar(self) -> list[Dica]:
+    def listar(self, todas: bool = False) -> list[Dica]:
         """
-        Lista todas as dicas cadastradas.
+        Sem `todas`: as dicas da vitrine do app, na ordem do carrossel.
+        Se a vitrine ainda nao foi montada, todas as dicas (compatibilidade).
+        Com `todas`: o acervo inteiro (vitrine primeiro, na ordem).
         """
 
-        return self._repository.listar()
+        dicas = self._repository.listar()
+        vitrine = sorted(
+            (d for d in dicas if d.em_exibicao),
+            key=lambda d: (d.ordem or 0, d.id),
+        )
+        if todas:
+            return vitrine + [d for d in dicas if not d.em_exibicao]
+        return vitrine or dicas
+
+    def definir_vitrine(self, ids: list[int]) -> list[Dica]:
+        """Troca as 5 dicas do app de uma vez (ordem = ordem da lista)."""
+
+        if len(ids) != TAMANHO_VITRINE or len(set(ids)) != TAMANHO_VITRINE:
+            raise ErroDeNegocio(
+                code="VITRINE_INVALIDA",
+                message=f"A vitrine precisa de exatamente {TAMANHO_VITRINE} dicas diferentes.",
+                status=422,
+            )
+        existentes = {d.id for d in self._repository.listar()}
+        faltando = [dica_id for dica_id in ids if dica_id not in existentes]
+        if faltando:
+            raise ErroDeNegocio(
+                code="VITRINE_INVALIDA",
+                message=f"Dica(s) inexistente(s): {', '.join(map(str, faltando))}.",
+                status=422,
+            )
+        self._repository.definir_vitrine(ids)
+        return self.listar()
 
     def buscar_por_id(
         self,
@@ -108,8 +138,16 @@ class DicaService:
         dica_id: int,
     ) -> None:
         """
-        Remove uma dica pelo ID.
+        Remove uma dica pelo ID. Dica na vitrine precisa ser trocada antes,
+        para o app continuar com 5 dicas.
         """
+
+        if self.buscar_por_id(dica_id).em_exibicao:
+            raise ErroDeNegocio(
+                code="DICA_NA_VITRINE",
+                message="Tire a dica da vitrine do app antes de remove-la.",
+                status=409,
+            )
 
         removido = self._repository.remover(dica_id)
 

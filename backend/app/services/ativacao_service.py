@@ -4,6 +4,7 @@ Camada de Serviço, AtivacaoService (regras de negócio para US-11 e US-12).
 
 from datetime import datetime, timedelta, timezone
 
+from app.core import relogio
 from app.domain.ativacao import (
     AtivacaoAtualizadaResponse,
     AtivacaoCliente,
@@ -102,7 +103,7 @@ class AtivacaoService:
 
         if not ativacao:
             # Inicializa jornada padrão para o cliente.
-            agora = datetime.now(timezone.utc)
+            agora = relogio.agora()
             prazo_ativacao_dias = 90
             previsao = agora + timedelta(days=prazo_ativacao_dias)
 
@@ -202,7 +203,7 @@ class AtivacaoService:
         ativacao = self._obter_registro(cliente_id)
 
         ativacao.etapa_atual = dados.etapa_atual
-        ativacao.atualizado_em = datetime.now(timezone.utc).strftime(
+        ativacao.atualizado_em = relogio.agora().strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
 

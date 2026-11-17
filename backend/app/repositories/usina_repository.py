@@ -6,12 +6,12 @@ Um contrato (Protocol) e duas implementacoes:
 - SqlUsinaRepository: SQLAlchemy + banco, usado pela API (usina_repository).
 """
 
-from datetime import date
 from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core import relogio
 from app.db.database import SessionLocal
 from app.db.models import UsinaModel
 from app.domain.usina import (
@@ -74,7 +74,7 @@ class InMemoryUsinaRepository:
     ) -> Usina:
         usina = Usina(
             id=self._proximo_id,
-            data_ativacao=date.today(),
+            data_ativacao=relogio.hoje(),
             **dados.model_dump(),
         )
 
@@ -172,7 +172,7 @@ class SqlUsinaRepository:
         with self._session_factory() as session:
             modelo = UsinaModel(
                 **dados.model_dump(mode="json"),
-                data_ativacao=date.today(),
+                data_ativacao=relogio.hoje(),
             )
 
             session.add(modelo)

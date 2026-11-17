@@ -372,8 +372,11 @@ class Notificacao(Base):
     cliente: Mapped["Cliente"] = relationship(back_populates="notificacoes")
 
 
-class Atendimento(Base):
-    """Atendimento/chamado aberto pelo cliente. Origem: Bulbe."""
+class Atendimento(VinculoApp, Base):
+    """
+    Atendimento/chamado aberto pelo cliente. Origem: Bulbe (ficticio) ou o chat do app
+    (id_app preenchido; as mensagens ficam no app e sao lidas ao vivo pela API).
+    """
 
     __tablename__ = "atendimentos"
     __table_args__ = (
@@ -389,6 +392,10 @@ class Atendimento(Base):
     status: Mapped[str] = mapped_column(String(20), default="aberto", index=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=agora_utc)
     resolvido_em: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    # Status detalhado do chat do app: bot | aguardando_atendente | em_atendimento | resolvido
+    status_app: Mapped[Optional[str]] = mapped_column(String(30), default=None)
+    atendente_nome: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    atualizado_em: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
 
     cliente: Mapped["Cliente"] = relationship(back_populates="atendimentos")
 

@@ -25,6 +25,7 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
+    false as sa_false,
     Boolean,
     Date,
     DateTime,
@@ -133,9 +134,29 @@ class DicaModel(Base):
         nullable=False,
     )
 
-    imagem_svg: Mapped[str] = mapped_column(
+    imagem_svg: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    icone: Mapped[str] = mapped_column(
+        String(30),
         nullable=False,
+        default="lampada_led",
+        server_default="lampada_led",
+    )
+
+    # Vitrine do app: exatamente 5 dicas em exibicao, com ordem 1..5.
+    em_exibicao: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa_false(),
+    )
+
+    ordem: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
     )
 
     data_ativacao: Mapped[date] = mapped_column(
@@ -764,6 +785,13 @@ class CupomModel(Base):
         nullable=True,
     )
 
+    # Modelo do catalogo que gerou o cupom (copia, sem FK: o cupom continua
+    # valido mesmo se o modelo for removido do catalogo).
+    modelo_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
+    )
+
 
 class OfensivaClubeModel(Base):
     """
@@ -787,3 +815,164 @@ class OfensivaClubeModel(Base):
         default=0,
         nullable=False,
     )
+
+
+# --------------------------------------------------------------------------
+# Demonstracao
+# --------------------------------------------------------------------------
+
+
+class RelogioDemonstracaoModel(Base):
+    """
+    Deslocamento do relogio usado na demonstracao (pular dias).
+    Uma unica linha (id = 1). Ignorado em producao.
+    """
+
+    __tablename__ = "relogio_demonstracao"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+    )
+
+    deslocamento_segundos: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+    )
+
+
+class CupomCatalogoModel(Base):
+    """
+    Modelo de cupom do Clube Bulbe (catalogo). A cada carta normal aberta,
+    um modelo ativo e sorteado e vira um cupom do cliente com codigo unico.
+    """
+
+    __tablename__ = "cupons_catalogo"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+    )
+
+    parceiro_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "parceiros.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+        nullable=False,
+    )
+
+    titulo: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+
+    descricao: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False,
+    )
+
+    tag: Mapped[str] = mapped_column(
+        String(60),
+        nullable=False,
+    )
+
+    prefixo_codigo: Mapped[str] = mapped_column(
+        String(12),
+        nullable=False,
+    )
+
+    validade_dias: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    peso: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+
+    ativo: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    criado_em: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+    )
+
+    atualizado_em: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+    )
+
+
+# --------------------------------------------------------------------------
+# Atendimento (chat do app com robo e atendente)
+# --------------------------------------------------------------------------
+
+
+class AtendimentoModel(Base):
+    """Conversa do cliente com o atendimento (robo e, se pedir, atendente)."""
+
+    __tablename__ = "atendimentos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+
+    cliente_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("clientes.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    assunto: Mapped[str] = mapped_column(String(120), nullable=False)
+
+    # bot | aguardando_atendente | em_atendimento | resolvido
+    status: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+
+    atendente_nome: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    avaliacao: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    criado_em: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    atualizado_em: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    encerrado_em: Mapped[str | None] = mapped_column(String(30), nullable=True)
+
+
+class AtendimentoMensagemModel(Base):
+    """Mensagem de uma conversa de atendimento."""
+
+    __tablename__ = "atendimento_mensagens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    atendimento_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("atendimentos.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    # cliente | bot | atendente | sistema
+    autor: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    texto: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Botoes de resposta rapida (so nas mensagens do robo)
+    opcoes: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+
+    criado_em: Mapped[str] = mapped_column(String(30), nullable=False)

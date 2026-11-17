@@ -5,12 +5,12 @@ Contrato (Protocol) + InMemoryAdesaoRepository (testes unitarios)
 + SqlAdesaoRepository (API, adesao_repository).
 """
 
-from datetime import date
 from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core import relogio
 from app.db.database import SessionLocal
 from app.db.models import AdesaoModel
 from app.domain.adesao import (
@@ -83,7 +83,7 @@ class InMemoryAdesaoRepository:
     ) -> Adesao:
         adesao = Adesao(
             id=self._proximo_id,
-            data_ativacao=date.today(),
+            data_ativacao=relogio.hoje(),
             **dados.model_dump(),
         )
 
@@ -196,7 +196,7 @@ class SqlAdesaoRepository:
                 **dados.model_dump(
                     mode="json"
                 ),
-                data_ativacao=date.today(),
+                data_ativacao=relogio.hoje(),
             )
 
             session.add(modelo)

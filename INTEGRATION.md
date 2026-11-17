@@ -149,11 +149,12 @@ A etapa real pode ser alterada pelo sistema de gerenciamento (ficha do cliente �
 
 ### Controles de demonstração
 
-Passar/voltar dias e resetar o Clube não representam atualmente comandos equivalentes da API.
-
-Esses controles não falsificam persistência.
-
-Quando acionados em contexto integrado, informam a limitação.
+Os botões flutuantes antigos do protótipo (passar/voltar dias, resetar o Clube) continuam sem efeito na API e informam
+a limitação. Para a demonstração existe agora o **relógio de demonstração** da API (`app/core/relogio.py`):
+`GET /v1/demonstracao/relogio`, `POST /v1/demonstracao/relogio/avancar` (`{"dias": 1..60}`) e `POST .../resetar`,
+com token de operador, controlado pelo topo do painel. Ele grava um deslocamento no banco (tabela
+`relogio_demonstracao`) e é ignorado com `BULBE_AMBIENTE=producao` (as rotas devolvem 404 `DEMONSTRACAO_INDISPONIVEL`).
+O JWT continua usando a hora real.
 
 ### Bônus especial
 
@@ -426,6 +427,33 @@ continua sendo a referência para os hashes do frontend original.
 - **Frontend:** os simuladores exibem a economia calculada pela API; o logado envia `cliente_id`. Telas novas Entrar, Primeiro acesso, Abrir conta e Indicações, com sessão do cliente no navegador.
 - **Sistema de gerenciamento:** integrado ao app (veja [`sistema-de-gerenciamento/docs/integracao-com-o-app.md`](sistema-de-gerenciamento/docs/integracao-com-o-app.md)).
 - **Execução:** `iniciar.py` na raiz sobe app e painel juntos; CI em `.github/workflows/testes.yml`.
+
+## Entrega final (branch `feat/entrega-final`)
+
+Detalhes e critérios de aceite em [`PLANO-DE-FINALIZACAO.md`](PLANO-DE-FINALIZACAO.md).
+
+- **API e banco** (migrations `b7d2e4f1a9c3`, `c4e8a2b6d1f5`, `d9f1b3c5e7a2`, `e2a4c6d8f0b1`):
+  relógio de demonstração; Clube Bulbe liberando a carta da semana e expirando cupons pela data; catálogo de cupons
+  (`/v1/catalogo-cupons`) com sorteio ponderado por cliente e carta especial fixa de R$ 50; dicas com ícone de lista
+  fechada e vitrine de exatamente 5 (`PUT /v1/dicas/vitrine`); atendimento com assistente automático e fila de
+  atendente humano (`/v1/atendimentos`); aprovar/recusar adesão (`POST /v1/adesoes/{id}/aprovacao` e `/recusa`).
+- **App:** ícones das dicas no padrão original (+7 novos em `icons_final/dicas/`) e tela de chat "Fale conosco"
+  (polling de 2,5 s).
+- **Sistema de gerenciamento:** front-end refeito (`static/js/nucleo.js`, `graficos.js`, `telas/*.js`,
+  `assistente.js`, `app.js`), gráficos em SVG próprio (a CSP não aceita CDN), e as operações no app pelas rotas de
+  `app/painel/operacoes.py`. `iniciar.py` sincroniza o painel a cada 10 s.
+
+### Resultados observados (entrega final, 15/11/2026)
+
+| Validação | Resultado |
+|---|---|
+| `alembic upgrade head` + `alembic check` (banco temporário) | sem diferenças entre modelos e migrations |
+| `pytest` em `backend/` | 319 aprovados |
+| `pytest` em `sistema-de-gerenciamento/` | 214 aprovados |
+| `integration-tests/check_preservation.py` | 76 arquivos originais idênticos; HTML só com os acréscimos declarados |
+| `integration-tests/test_browser.py` | 8 de 8 verificações aprovadas (dicas: vitrine de 5; carta: cupom sorteado do catálogo). No Windows o script ainda termina com `PermissionError` ao apagar o banco temporário, depois de todas as verificações |
+| `integration-tests/test_sistemas_integrados.py` | aprovado |
+| Navegador (portas 8010/8011, bancos temporários) | todas as telas do painel; aprovar adesão; chat app ↔ painel; mudar etapa; vitrine de dicas refletida em `GET /v1/dicas`; parceiro e cupom novos; relógio +7 dias e volta |
 
 ## Próxima etapa
 
